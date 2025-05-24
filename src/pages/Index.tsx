@@ -19,36 +19,59 @@ const Index = () => {
   const { selectedTemplate, setSelectedTemplate } = usePosterStore();
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Hero Section */}
-      <section className="py-10">
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative pt-16 pb-12">
+        {/* Background with subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-100/40 via-purple-50/40 to-pink-50/40" />
+        
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-3xl md:text-4xl font-semibold text-gray-900 text-center"
+            transition={{ duration: 0.8 }}
+            className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight"
           >
-            Build your own poster and receive it in perfect quality
+            Build your own poster and receive it in{' '}
+            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              perfect quality
+            </span>
           </motion.h1>
           
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed"
+          >
+            Describe your idea, pick a style, get beautiful prints in seconds
+          </motion.p>
+          
           {/* Gradient divider */}
-          <div className="mt-10 h-0.5 w-full bg-gradient-to-r from-transparent via-[#deeaff] to-transparent"></div>
+          <motion.div
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            transition={{ duration: 1, delay: 0.4 }}
+            className="h-px w-full max-w-4xl mx-auto bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
+          />
         </div>
       </section>
 
       {/* Main Content */}
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 space-y-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 space-y-16">
         
         {/* Template Picker */}
         <motion.section
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="space-y-4"
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="space-y-6"
         >
-          <h2 className="text-lg font-medium">Choose among these templates</h2>
-          <div className="grid grid-cols-4 gap-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-8">
+            Choose among these templates
+          </h2>
+          <div className="grid grid-cols-4 gap-4 md:gap-6">
             {templates.map((template) => (
               <TemplateCard
                 key={template.id}
@@ -62,9 +85,10 @@ const Index = () => {
 
         {/* Prompt Input */}
         <motion.section
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          viewport={{ once: true }}
         >
           <PromptBar />
         </motion.section>

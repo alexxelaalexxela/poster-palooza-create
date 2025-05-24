@@ -1,14 +1,49 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowUp, Paperclip } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+const examples = [
+  "a vintage travel poster for Lisbon",
+  "A motivational poster for students", 
+  "An abstract art poster about connection"
+];
 
 const PromptBar = () => {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [currentExample, setCurrentExample] = useState(0);
+  const [displayText, setDisplayText] = useState('');
+  const [isTyping, setIsTyping] = useState(true);
   const { toast } = useToast();
+
+  // Typewriter effect for examples
+  useEffect(() => {
+    if (!prompt) {
+      const currentExampleText = examples[currentExample];
+      let index = 0;
+      setIsTyping(true);
+      
+      const typeInterval = setInterval(() => {
+        if (index <= currentExampleText.length) {
+          setDisplayText(currentExampleText.slice(0, index));
+          index++;
+        } else {
+          clearInterval(typeInterval);
+          setIsTyping(false);
+          
+          // Wait before switching to next example
+          setTimeout(() => {
+            setCurrentExample((prev) => (prev + 1) % examples.length);
+          }, 2000);
+        }
+      }, 80);
+
+      return () => clearInterval(typeInterval);
+    }
+  }, [currentExample, prompt]);
 
   const handleFileSelect = () => {
     const input = document.createElement('input');
@@ -57,14 +92,21 @@ const PromptBar = () => {
     }
   };
 
+  const placeholderText = prompt ? "" : `Ask Postfilio to generate a poster to show ${displayText}${isTyping ? '|' : ''}`;
+
   return (
-    <div className="w-full md:w-3/4 mx-auto">
-      <div className="relative bg-[#e9f0fa]/60 ring-1 ring-[#c8d9f2] rounded-2xl p-4">
+    <div className="w-full max-w-4xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl p-6 shadow-xl shadow-indigo-100/20"
+      >
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Ask Postfilio to generate a poster to show …"
-          className="w-full min-h-20 bg-transparent border-none resize-none focus:outline-none focus:ring-0 placeholder-gray-500"
+          placeholder={placeholderText}
+          className="w-full min-h-24 bg-transparent border-none resize-none focus:outline-none focus:ring-0 placeholder-gray-400 text-lg leading-relaxed"
           style={{ resize: 'none' }}
           disabled={isLoading}
           aria-label="Poster description prompt"
@@ -74,32 +116,32 @@ const PromptBar = () => {
         <button
           onClick={handleFileSelect}
           disabled={isLoading}
-          className="absolute bottom-4 left-4 flex items-center space-x-1 text-xs text-gray-600 hover:underline transition-all disabled:opacity-50"
+          className="absolute bottom-6 left-6 flex items-center space-x-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors disabled:opacity-50 group"
           aria-label="Attach image file"
         >
-          <Paperclip size={12} />
-          <span>Attach picture of the people (optional)</span>
+          <Paperclip size={16} className="group-hover:rotate-12 transition-transform" />
+          <span className="font-medium">Attach picture of the people (optional)</span>
           {selectedFile && (
-            <span className="text-green-600">- {selectedFile.name}</span>
+            <span className="text-emerald-600 font-semibold">- {selectedFile.name}</span>
           )}
         </button>
         
         {/* Send Button */}
         <motion.button
-          whileHover={{ rotate: 45 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.05, rotate: 45 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleSubmit}
           disabled={isLoading}
-          className="absolute bottom-4 right-4 w-10 h-10 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-full flex items-center justify-center transition-all disabled:opacity-50"
+          className="absolute bottom-6 right-6 w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-2xl flex items-center justify-center transition-all disabled:opacity-50 shadow-lg"
           aria-label="Generate poster"
         >
           {isLoading ? (
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
-            <ArrowUp size={16} />
+            <ArrowUp size={20} />
           )}
         </motion.button>
-      </div>
+      </motion.div>
     </div>
   );
 };
