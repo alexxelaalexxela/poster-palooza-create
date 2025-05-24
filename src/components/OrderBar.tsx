@@ -1,18 +1,15 @@
 
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { usePosterStore } from '@/store/usePosterStore';
-import { useToast } from '@/hooks/use-toast';
 
 const OrderBar = () => {
   const { price, canOrder } = usePosterStore();
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleOrder = () => {
     if (canOrder()) {
-      toast({
-        title: "Order placed!",
-        description: `Your poster order for ${price} AUD has been submitted.`,
-      });
+      navigate('/order');
     }
   };
 
