@@ -1,148 +1,156 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUp, Paperclip } from 'lucide-react';
+import { usePosterStore } from '@/store/usePosterStore';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-const examples = [
-  "a vintage travel poster for Lisbon",
-  "A motivational poster for students", 
-  "An abstract art poster about connection"
-];
+import { useQueryClient } from '@tanstack/react-query';
 
 const PromptBar = () => {
   const [prompt, setPrompt] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [currentExample, setCurrentExample] = useState(0);
-  const [displayText, setDisplayText] = useState('');
-  const [isTyping, setIsTyping] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { selectedTemplate } = usePosterStore();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Typewriter effect for examples
-  useEffect(() => {
-    if (!prompt) {
-      const currentExampleText = examples[currentExample];
-      let index = 0;
-      setIsTyping(true);
-      
-      const typeInterval = setInterval(() => {
-        if (index <= currentExampleText.length) {
-          setDisplayText(currentExampleText.slice(0, index));
-          index++;
-        } else {
-          clearInterval(typeInterval);
-          setIsTyping(false);
-          
-          // Wait before switching to next example
-          setTimeout(() => {
-            setCurrentExample((prev) => (prev + 1) % examples.length);
-          }, 2000);
-        }
-      }, 80);
-
-      return () => clearInterval(typeInterval);
-    }
-  }, [currentExample, prompt]);
-
-  const handleFileSelect = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        setSelectedFile(file);
-        toast({
-          title: "Image attached",
-          description: `${file.name} has been attached to your request.`,
-        });
-      }
+  const getTemplateName = (templateId: number | null) => {
+    const templates = {
+      1: 'Minimalist',
+      2: 'Vintage', 
+      3: 'Modern',
+      4: 'Abstract'
     };
-    input.click();
+    return templateId ? templates[templateId as keyof typeof templates] : 'Unknown';
   };
 
-  const handleSubmit = async () => {
+  const handleGenerate = async () => {
     if (!prompt.trim()) {
       toast({
         title: "Please enter a prompt",
-        description: "Describe what you'd like your poster to show.",
+        description: "Describe what kind of poster you'd like to create.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsLoading(true);
+    if (!selectedTemplate) {
+      toast({
+        title: "Please select a template",
+        description: "Choose a template style before generating posters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Starting poster generation...');
       
-      toast({
-        title: "Poster generated!",
-        description: "Your beautiful poster has been created successfully.",
+      const { data, error } = await supabase.functions.invoke('generate-posters', {
+        body: {
+          prompt: prompt.trim(),
+          templateName: getTemplateName(selectedTemplate),
+          hasImage: false
+        }
       });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Generation failed');
+      }
+
+      console.log('Generation successful:', data);
+
+      toast({
+        title: "Posters generated successfully!",
+        description: "Your custom posters are ready. Check them out below!",
+      });
+
+      // Refresh the posters query
+      queryClient.invalidateQueries({ queryKey: ['generated-posters'] });
+      
+      // Clear the prompt
+      setPrompt('');
+
     } catch (error) {
+      console.error('Error generating posters:', error);
       toast({
         title: "Generation failed",
-        description: "Something went wrong. Please try again.",
+        description: error.message || "Failed to generate posters. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
-  const placeholderText = prompt ? "" : `Ask Postfilio to generate a poster to show ${displayText}${isTyping ? '|' : ''}`;
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleGenerate();
+    }
+  };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="relative bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl p-6 shadow-xl shadow-indigo-100/20"
-      >
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder={placeholderText}
-          className="w-full min-h-24 bg-transparent border-none resize-none focus:outline-none focus:ring-0 placeholder-gray-400 text-lg leading-relaxed"
-          style={{ resize: 'none' }}
-          disabled={isLoading}
-          aria-label="Poster description prompt"
-        />
-        
-        {/* File attach button */}
-        <button
-          onClick={handleFileSelect}
-          disabled={isLoading}
-          className="absolute bottom-6 left-6 flex items-center space-x-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors disabled:opacity-50 group"
-          aria-label="Attach image file"
-        >
-          <Paperclip size={16} className="group-hover:rotate-12 transition-transform" />
-          <span className="font-medium">Attach picture of the people (optional)</span>
-          {selectedFile && (
-            <span className="text-emerald-600 font-semibold">- {selectedFile.name}</span>
-          )}
-        </button>
-        
-        {/* Send Button */}
-        <motion.button
-          whileHover={{ scale: 1.05, rotate: 45 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleSubmit}
-          disabled={isLoading}
-          className="absolute bottom-6 right-6 w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-2xl flex items-center justify-center transition-all disabled:opacity-50 shadow-lg"
-          aria-label="Generate poster"
-        >
-          {isLoading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <ArrowUp size={20} />
-          )}
-        </motion.button>
-      </motion.div>
-    </div>
+    <motion.section
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+      viewport={{ once: true }}
+      className="space-y-6"
+    >
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center">
+        Describe your poster idea
+      </h2>
+      
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-6">
+          <div className="space-y-4">
+            <div className="relative">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Describe your poster idea... (e.g., 'A motivational quote about success with mountain backdrop')"
+                className="w-full p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none transition-all duration-200"
+                rows={3}
+                disabled={isGenerating}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                {selectedTemplate ? (
+                  <span>Template: <strong>{getTemplateName(selectedTemplate)}</strong></span>
+                ) : (
+                  <span className="text-orange-600">⚠️ Please select a template first</span>
+                )}
+              </div>
+              
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerating || !prompt.trim() || !selectedTemplate}
+                className="px-6 py-3 bg-indigo-500 text-white font-medium rounded-lg hover:bg-indigo-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Generating...
+                  </>
+                ) : (
+                  'Generate Posters'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.section>
   );
 };
 

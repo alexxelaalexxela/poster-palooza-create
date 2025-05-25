@@ -9,7 +9,69 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      generated_posters: {
+        Row: {
+          created_at: string
+          id: string
+          image_urls: string[]
+          prompt_text: string
+          prompts_used: string[]
+          template_name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_urls: string[]
+          prompt_text: string
+          prompts_used: string[]
+          template_name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_urls?: string[]
+          prompt_text?: string
+          prompts_used?: string[]
+          template_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      poster_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          has_image: boolean | null
+          id: string
+          prompt_text: string
+          status: string | null
+          template_name: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          has_image?: boolean | null
+          id?: string
+          prompt_text: string
+          status?: string | null
+          template_name: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          has_image?: boolean | null
+          id?: string
+          prompt_text?: string
+          status?: string | null
+          template_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

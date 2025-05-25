@@ -8,8 +8,10 @@ export interface Template {
 }
 
 export interface PosterResult {
-  id: number;
+  id: string;
   url: string;
+  prompt: string;
+  originalPrompt: string;
 }
 
 export type Format = 'A2' | 'A3' | 'A4' | 'A5';
