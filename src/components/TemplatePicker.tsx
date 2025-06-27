@@ -7,7 +7,7 @@ const templates = [
   { id: 1, name: 'Minimalist', image: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=300&h=400&fit=crop' },
   { id: 2, name: 'Vintage', image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=300&h=400&fit=crop' },
   { id: 3, name: 'Modern', image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=300&h=400&fit=crop' },
-  { id: 4, name: 'Abstract', image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=300&h=400&fit=crop' },
+  { id: 4, name: 'Abs', image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=300&h=400&fit=crop' },
   { id: 5, name: 'Colorful', image: 'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=300&h=400&fit=crop' },
   { id: 6, name: 'Classic', image: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=300&h=400&fit=crop' },
 ];
@@ -25,7 +25,7 @@ const TemplatePicker = () => {
       >
         Choose among these templates
       </motion.h2>
-      
+
       {/* Desktop Grid */}
       <div className="hidden md:grid grid-cols-4 gap-6">
         {templates.map((template) => (
@@ -37,7 +37,7 @@ const TemplatePicker = () => {
           />
         ))}
       </div>
-      
+
       {/* Mobile Horizontal Scroll */}
       <div className="md:hidden overflow-x-auto">
         <div className="flex space-x-4 pb-4" style={{ width: 'max-content' }}>

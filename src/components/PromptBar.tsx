@@ -1,88 +1,121 @@
-
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { usePosterStore } from '@/store/usePosterStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
+//import { useQueryClient } from '@tanstack/react-query';
+
+/**
+ * Mapping of template IDs to both a user‑friendly name (used in the UI)
+ * and a richer description (sent to the backend so the generation function
+ * receives a clear style guide).
+ */
+const templates: Record<number, { name: string; description: string }> = {
+  1: {
+    name: 'Minimalist',
+    description:
+      'Ultra realistic poster like picture !',
+  },
+  2: {
+    name: 'Vintage',
+    description:
+      'Illustration vectorielle minimaliste au style rétro façon affiche touristique vintage. Scène naturelle épurée, composée de larges aplats de couleurs chaudes et douces (sable, ocre, orange, vert doux), sans contours ni détails superflus. Perspective simple sur une plage avec la mer à l’horizon et un soleil couchant. Silhouettes humaines stylisées, sans traits du visage. Mise en page équilibrée avec un titre en haut, en majuscules, utilisant une typographie sans-serif épaisse, arrondie, bien espacée, dans une couleur contrastant harmonieusement avec le fond. L’ambiance est calme, chaleureuse, intemporelle et invite à la détente.',
+  },
+  3: {
+    name: 'Modern',
+    description:
+      'Bold geometric shapes, gradient backgrounds and sleek sans‑serif headlines.',
+  },
+  4: {
+    name: 'Abstract',
+    description:
+      'Vibrant contrasting colours with free‑form geometric or organic patterns.',
+  },
+};
+
+const getTemplate = (id: number | null) =>
+  id && templates[id] ? templates[id] : { name: 'Unknown', description: '' };
 
 const PromptBar = () => {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const { selectedTemplate } = usePosterStore();
+  const { selectedTemplate, setGeneratedUrls } = usePosterStore();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const getTemplateName = (templateId: number | null) => {
-    const templates = {
-      1: 'Minimalist',
-      2: 'Vintage', 
-      3: 'Modern',
-      4: 'Abstract'
-    };
-    return templateId ? templates[templateId as keyof typeof templates] : 'Unknown';
-  };
+  //const queryClient = useQueryClient();
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       toast({
-        title: "Please enter a prompt",
+        title: 'Please enter a prompt',
         description: "Describe what kind of poster you'd like to create.",
-        variant: "destructive",
+        variant: 'destructive',
       });
       return;
     }
 
     if (!selectedTemplate) {
       toast({
-        title: "Please select a template",
-        description: "Choose a template style before generating posters.",
-        variant: "destructive",
+        title: 'Please select a template',
+        description: 'Choose a template style before generating posters.',
+        variant: 'destructive',
       });
       return;
     }
 
     setIsGenerating(true);
-    
+
     try {
       console.log('Starting poster generation...');
-      
+
+      const { name: templateName, description: templateDescription } =
+        getTemplate(selectedTemplate);
+
+      setGeneratedUrls([]);
+      console.log('Invoking generate-posters function with:', {
+        prompt: prompt.trim(),
+        templateName,
+        templateDescription,
+        hasImage: false,
+      });
       const { data, error } = await supabase.functions.invoke('generate-posters', {
         body: {
           prompt: prompt.trim(),
-          templateName: getTemplateName(selectedTemplate),
-          hasImage: false
-        }
+          templateName,
+          templateDescription, // <-- send the description instead of the name
+          hasImage: false,
+        },
       });
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
+      console.log('Poster generation response:', data, error);
 
-      if (!data.success) {
-        throw new Error(data.error || 'Generation failed');
-      }
 
-      console.log('Generation successful:', data);
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Generation failed');
+      //setGeneratedUrls(data.imageUrls);
+      //setGeneratedUrls(Array.isArray(data.imageUrls) ? data.imageUrls : []);
+      const urls =
+        Array.isArray(data.imageUrls) ? data.imageUrls :
+          Array.isArray(data.poster?.image_urls) ? data.poster.image_urls :
+            [];
+
+      setGeneratedUrls(urls);
+
+      console.log('data urls', urls);
 
       toast({
-        title: "Posters generated successfully!",
-        description: "Your custom posters are ready. Check them out below!",
+        title: 'Posters generated successfully!',
+        description: 'Your custom posters are ready. Check them out below!',
       });
 
       // Refresh the posters query
-      queryClient.invalidateQueries({ queryKey: ['generated-posters'] });
-      
-      // Clear the prompt
+      //queryClient.invalidateQueries({ queryKey: ['generated-posters'] });
       setPrompt('');
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating posters:', error);
       toast({
-        title: "Generation failed",
-        description: error.message || "Failed to generate posters. Please try again.",
-        variant: "destructive",
+        title: 'Generation failed',
+        description: error.message || 'Failed to generate posters. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsGenerating(false);
@@ -96,6 +129,8 @@ const PromptBar = () => {
     }
   };
 
+  const currentTemplate = getTemplate(selectedTemplate);
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 40 }}
@@ -107,7 +142,7 @@ const PromptBar = () => {
       <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center">
         Describe your poster idea
       </h2>
-      
+
       <div className="max-w-2xl mx-auto">
         <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-6">
           <div className="space-y-4">
@@ -122,16 +157,18 @@ const PromptBar = () => {
                 disabled={isGenerating}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
                 {selectedTemplate ? (
-                  <span>Template: <strong>{getTemplateName(selectedTemplate)}</strong></span>
+                  <span>
+                    Template: <strong>{currentTemplate.name}</strong>
+                  </span>
                 ) : (
                   <span className="text-orange-600">⚠️ Please select a template first</span>
                 )}
               </div>
-              
+
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating || !prompt.trim() || !selectedTemplate}

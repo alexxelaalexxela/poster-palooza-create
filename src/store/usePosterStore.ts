@@ -23,13 +23,15 @@ interface PosterStore {
   selectedFormat: Format | null;
   selectedQuality: Quality | null;
   price: number;
-  
+  generatedUrls: string[];
+
   setSelectedTemplate: (id: number | null) => void;
   setSelectedPoster: (id: number | null) => void;
   setSelectedFormat: (format: Format | null) => void;
   setSelectedQuality: (quality: Quality | null) => void;
   calculatePrice: () => void;
   canOrder: () => boolean;
+  setGeneratedUrls: (urls: string[]) => void;
 }
 
 export const usePosterStore = create<PosterStore>((set, get) => ({
@@ -38,11 +40,13 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
   selectedFormat: null,
   selectedQuality: null,
   price: 60,
+  generatedUrls: [],
 
   setSelectedTemplate: (id) => {
     set({ selectedTemplate: id });
     get().calculatePrice();
   },
+  setGeneratedUrls: (urls) => set({ generatedUrls: urls }),
 
   setSelectedPoster: (id) => {
     set({ selectedPoster: id });
@@ -62,10 +66,10 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
   calculatePrice: () => {
     const { selectedFormat, selectedQuality } = get();
     let price = 60; // base price
-    
+
     if (selectedFormat === 'A2') price += 10;
     if (selectedQuality === 'paper2') price += 5;
-    
+
     set({ price });
   },
 

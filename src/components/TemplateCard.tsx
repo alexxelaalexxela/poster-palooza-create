@@ -15,24 +15,23 @@ const TemplateCard = ({ template, isSelected, onSelect }: TemplateCardProps) => 
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.98 }}
       onClick={onSelect}
-      className={`relative cursor-pointer w-24 h-36 md:w-28 md:h-40 rounded-2xl overflow-hidden transition-all duration-300 shadow-lg ${
-        isSelected 
-          ? 'bg-emerald-50 ring-2 ring-emerald-400 shadow-emerald-200/50' 
-          : 'bg-white hover:shadow-xl hover:shadow-indigo-100/30'
-      }`}
-      aria-label={`Select ${template.name} template`}
+      className={`relative cursor-pointer w-24 h-36 md:w-28 md:h-40 rounded-2xl overflow-hidden transition-all duration-300 shadow-lg ${isSelected
+        ? 'bg-emerald-50 ring-2 ring-emerald-400 shadow-emerald-200/50'
+        : 'bg-white hover:shadow-xl hover:shadow-indigo-100/30'
+        }`}
+      aria-label={`Select template`}
     >
       <img
         src={template.image}
         alt={template.name}
         className="w-full h-full object-cover"
       />
-      
+
       {/* Template name overlay */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
         <span className="text-white text-xs font-medium">{template.name}</span>
       </div>
-      
+
       {isSelected && (
         <>
           <div className="absolute inset-0 bg-emerald-400/20" />

@@ -15,6 +15,7 @@ const corsHeaders = {
 interface GenerateRequest {
   prompt: string;
   templateName: string;
+  templateDescription: string;
   hasImage?: boolean;
 }
 
@@ -24,18 +25,19 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, templateName, hasImage = false }: GenerateRequest = await req.json();
-    
+    const { prompt, templateName, templateDescription, hasImage = false }: GenerateRequest = await req.json();
+
     console.log('Starting poster generation for prompt:', prompt);
-    
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
+
     // Create a request record
     const { data: requestData, error: requestError } = await supabase
       .from('poster_requests')
       .insert({
         prompt_text: prompt,
-        template_name: templateName,
+        template_name: templateName,              // 🟢 ENUM ok
+        template_description: templateDescription,
         has_image: hasImage,
         status: 'processing'
       })
@@ -48,7 +50,7 @@ serve(async (req) => {
     }
 
     // Generate 4 different prompts using GPT-4
-    const promptVariations = await generatePromptVariations(prompt, templateName);
+    const promptVariations = await generatePromptVariations(prompt, templateDescription);
     console.log('Generated prompt variations:', promptVariations);
 
     // Generate images using DALL-E 3
@@ -58,12 +60,13 @@ serve(async (req) => {
 
     console.log('Generated image URLs:', imageUrls);
 
-    // Store the results
+    /*// Store the results
     const { data: posterData, error: posterError } = await supabase
       .from('generated_posters')
       .insert({
         prompt_text: prompt,
-        template_name: templateName,
+        template_name: templateName,              // ✅ ENUM / nom
+        template_description: templateDescription,
         image_urls: imageUrls,
         prompts_used: promptVariations
       })
@@ -73,27 +76,34 @@ serve(async (req) => {
     if (posterError) {
       console.error('Error storing poster:', posterError);
       throw new Error('Failed to store poster');
-    }
+    }*/
 
     // Update request status
     await supabase
       .from('poster_requests')
-      .update({ 
+      .update({
         status: 'completed',
         completed_at: new Date().toISOString()
       })
       .eq('id', requestData.id);
 
-    return new Response(JSON.stringify({
-      success: true,
-      poster: posterData
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    //return new Response(JSON.stringify({
+    //  success: true,
+    //  poster: posterData
+    //}), {
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        imageUrls: imageUrls ?? [],      // ← garanti tableau
+        promptVariations: promptVariations ?? [],
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('Error in generate-posters function:', error);
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: error.message || 'Failed to generate posters'
     }), {
       status: 500,
@@ -102,17 +112,17 @@ serve(async (req) => {
   }
 });
 
-async function generatePromptVariations(originalPrompt: string, templateName: string): Promise<string[]> {
-  const systemPrompt = `You are a creative poster design expert. Given a user's prompt and template style, create 4 different detailed prompts for DALL-E 3 to generate posters in the "${templateName}" style.
+async function generatePromptVariations(originalPrompt: string, templateDescription: string): Promise<string[]> {
+  const systemPrompt = `You are a creative poster design expert. Given a user's prompt and template style, create 4 prompts for gpt-image to generate posters in the "${templateDescription}" style.
 
 Each prompt should:
-- Be specific and detailed for poster design
+- Be specific and detailed for the poster design
 - Include composition, colors, typography hints
-- Maintain the "${templateName}" aesthetic
+- Maintain the "${templateDescription}" aesthetic !
 - Be unique and creative variations of the original idea
-- Be optimized for DALL-E 3 poster generation
-
-Return exactly 4 prompts, one per line, no numbering or formatting.`;
+- Use the prompt that will follow
+The objective is to take the following idea and make it in the aesthetic of "${templateDescription}".
+Return 4 slightly different from each other prompts, one prompt per line so that i can separate after, no numbering or formatting.`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -132,10 +142,23 @@ Return exactly 4 prompts, one per line, no numbering or formatting.`;
   });
 
   const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message || `OpenAI returned ${response.status}`
+    );
+  }
+  // double garde au cas où
+  if (!data.choices?.length) {
+    throw new Error('OpenAI response missing choices');
+  }
+
   const variations = data.choices[0].message.content.trim().split('\n').filter((line: string) => line.trim());
-  
+
   return variations.slice(0, 4);
 }
+
+
 
 async function generateImage(prompt: string): Promise<string> {
   const response = await fetch('https://api.openai.com/v1/images/generations', {
@@ -145,10 +168,10 @@ async function generateImage(prompt: string): Promise<string> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'dall-e-3',
+      model: 'gpt-image-1',
       prompt: prompt,
       n: 1,
-      size: '1024x1024',
+      size: '1536x1024',
       quality: 'standard'
     }),
   });

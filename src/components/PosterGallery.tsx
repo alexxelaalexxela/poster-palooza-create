@@ -1,4 +1,90 @@
 
+
+/* ──────────────────────────────────────────────────────────────
+   PosterGallery.tsx
+   Affiche UNIQUEMENT les posters générés lors du prompt courant :
+   aucune lecture dans Supabase, aucune requête React-Query.
+   ────────────────────────────────────────────────────────────── */
+
+import { motion } from 'framer-motion';
+import { usePosterStore } from '@/store/usePosterStore';
+import { useToast } from '@/hooks/use-toast';
+
+const PosterGallery = () => {
+  /* Zustand : images en mémoire + sélection courante */
+  //const { generatedUrls, selectedPoster, setSelectedPoster } = usePosterStore();
+  const { generatedUrls = [], selectedPoster, setSelectedPoster } = usePosterStore();
+  const { toast } = useToast();
+
+  /* Rien à afficher ? */
+  if (!generatedUrls.length) {
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+        className="space-y-6"
+      >
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center">
+          No posters generated yet
+        </h2>
+        <p className="text-center text-gray-600">
+          Generate your first poster using the prompt input above!
+        </p>
+      </motion.section>
+    );
+  }
+
+  /* Transforme le tableau d’URL en objets uniformes */
+  const allImages = generatedUrls.map((url, index) => ({
+    id: `gen-${index}`,
+    url,
+  }));
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+      viewport={{ once: true }}
+      className="space-y-6"
+    >
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center">
+        Generated Posters
+      </h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {allImages.map((image, index) => (
+          <motion.div
+            key={image.id}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: index * 0.1 }}
+            className={`bg-white/80 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-4 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg ${selectedPoster === index ? 'ring-2 ring-indigo-500 bg-indigo-50/80' : ''
+              }`}
+            onClick={() => setSelectedPoster(index)}
+          >
+            <div className="aspect-[3/4] mb-3 overflow-hidden rounded-lg">
+              <img
+                src={image.url}
+                alt={`Generated poster ${index + 1}`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.section>
+  );
+};
+
+export default PosterGallery;
+
+
+
+/*
 import { motion } from 'framer-motion';
 import { usePosterStore } from '@/store/usePosterStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -148,3 +234,4 @@ const PosterGallery = () => {
 };
 
 export default PosterGallery;
+*/
