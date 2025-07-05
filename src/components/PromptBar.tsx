@@ -12,19 +12,29 @@ import { useToast } from '@/hooks/use-toast';
  */
 const templates: Record<number, { name: string; description: string }> = {
   1: {
-    name: 'Minimalist',
-    description:
-      'Ultra realistic poster like picture !',
+    name: 'Manga',
+    description: `
+    Illustration au trait monochrome façon affiche rétro-vintage mêlant esthétique manga et voyage. 
+    Scène épurée composée uniquement de noirs et d’un fond crème clair, sans dégradés ni couleurs superflues, 
+    où de fines hachures croisées et quelques aplats pleins suggèrent ombres et textures. 
+    Composition en format portrait avec :
+      • Sujet central : une silhouette manga stylisée en trois-quarts arrière, traits minimalistes…
+      • Arrière-plan graphique : monument iconique dessiné à la plume…
+      • Lettrage vintage : un cartouche rectangulaire en haut porte le titre…
+      • Éléments d’accent : quelques idéogrammes ou symboles graphiques…
+    
+    Le style global reste sobre et intemporel, jouant sur l’alternance de traits nets…
+  `.trim(),
   },
   2: {
     name: 'Vintage',
     description:
-      'Illustration vectorielle minimaliste au style rétro façon affiche touristique vintage. Scène naturelle épurée, composée de larges aplats de couleurs chaudes et douces (sable, ocre, orange, vert doux), sans contours ni détails superflus. Perspective simple sur une plage avec la mer à l’horizon et un soleil couchant. Silhouettes humaines stylisées, sans traits du visage. Mise en page équilibrée avec un titre en haut, en majuscules, utilisant une typographie sans-serif épaisse, arrondie, bien espacée, dans une couleur contrastant harmonieusement avec le fond. L’ambiance est calme, chaleureuse, intemporelle et invite à la détente.',
+      'Illustration vectorielle minimaliste au style rétro façon affiche touristique vintage. Scène naturelle épurée, composée de larges aplats de couleurs chaudes et douces (sable, ocre, orange, vert doux pour la plage, ou autre pour etre adapté au theme), sans contours ni détails superflus. Perspective simple sur une plage avec la mer à l’horizon et un soleil couchant. Silhouettes humaines stylisées, sans traits du visage. Mise en page équilibrée avec un titre en haut, en majuscules, utilisant une typographie sans-serif épaisse, arrondie, bien espacée, dans une couleur contrastant harmonieusement avec le fond. L’ambiance est calme, chaleureuse, intemporelle et invite à la détente.',
   },
   3: {
     name: 'Modern',
     description:
-      'Bold geometric shapes, gradient backgrounds and sleek sans‑serif headlines.',
+      'New version Bold geometric shapes, gradient backgrounds and sleek sans‑serif headlines.',
   },
   4: {
     name: 'Abstract',
