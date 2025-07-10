@@ -14,13 +14,13 @@ export interface PosterResult {
   originalPrompt: string;
 }
 
-export type Format = 'A2' | 'A3' | 'A4' | 'A5';
-export type Quality = 'paper1' | 'paper2';
+export type Format = 'A0' | 'A1' | 'A2' | 'A3' | 'A4';
+export type Quality = 'classic' | 'premium' | 'museum' | 'paper2';
 
 interface PosterStore {
   selectedTemplate: number | null;
   selectedPoster: number | null;
-  selectedFormat: Format | null;
+  selectedFormat: Format | 'A2';
   selectedQuality: Quality | null;
   price: number;
   generatedUrls: string[];

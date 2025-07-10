@@ -32,9 +32,9 @@ const Index = () => {
             transition={{ duration: 0.8 }}
             className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight"
           >
-            Build your own poster and receive it in{' '}
+            Fait ton propre {' '}
             <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              perfect quality
+              Poster
             </span>
           </motion.h1>
 
@@ -44,7 +44,7 @@ const Index = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed"
           >
-            Describe your idea, pick a style, get beautiful prints in seconds
+            Decrit ton idée de poster et laisse l'IA faire le reste.
           </motion.p>
 
           {/* Gradient divider */}
@@ -80,8 +80,16 @@ const Index = () => {
                 onSelect={() => setSelectedTemplate(template.id)}
               />
             ))}
+
           </div>
+
         </motion.section>
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ duration: 1, delay: 0.4 }}
+          className="h-px w-full max-w-4xl mx-auto bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
+        />
 
         {/* Prompt Input */}
         <motion.section
@@ -95,6 +103,7 @@ const Index = () => {
 
         {/* Poster Gallery */}
         <PosterGallery />
+
 
         {/* Format Picker */}
         <FormatPicker />

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
 const Order = () => {
-  const { selectedPoster, selectedFormat, selectedQuality, price } = usePosterStore();
+  const { selectedPoster, selectedFormat, selectedQuality, price, generatedUrls } = usePosterStore();
   const { toast } = useToast();
 
   const handleSubmitOrder = (e: React.FormEvent) => {
@@ -22,7 +22,7 @@ const Order = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         {/* Back button */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -30,7 +30,7 @@ const Order = () => {
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
-          <Link 
+          <Link
             to="/"
             className="inline-flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
           >
@@ -40,7 +40,7 @@ const Order = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
+
           {/* Order Summary */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -49,13 +49,25 @@ const Order = () => {
             className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg"
           >
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">Order Summary</h2>
-            
+
             {/* Selected poster preview */}
+
             <div className="mb-6">
-              <div className="aspect-[3/4] w-32 bg-gray-200 rounded-lg mb-4 mx-auto">
-                <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center">
-                  <span className="text-gray-500 text-sm">Poster #{selectedPoster}</span>
-                </div>
+              <div className="aspect-[3/4] w-32 rounded-lg mb-4 mx-auto overflow-hidden">
+                {generatedUrls[selectedPoster] ? (
+                  <img
+                    src={generatedUrls[selectedPoster]}
+                    alt={`Poster ${selectedPoster}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  /* graceful fallback if no URL yet */
+                  <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                    <span className="text-gray-500 text-sm">
+                      Poster #{selectedPoster}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -68,7 +80,11 @@ const Order = () => {
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-gray-600">Quality:</span>
                 <span className="font-medium">
-                  {selectedQuality === 'paper1' ? 'Paper 1' : 'Paper 2'}
+                  {selectedQuality === 'classic'
+                    ? 'Classic'
+                    : selectedQuality === 'premium'
+                      ? 'Premium'
+                      : 'Museum'}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-t border-gray-200">
@@ -105,9 +121,9 @@ const Order = () => {
             className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg"
           >
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">Checkout</h2>
-            
+
             <form onSubmit={handleSubmitOrder} className="space-y-6">
-              
+
               {/* Personal Information */}
               <div>
                 <h3 className="flex items-center text-lg font-medium text-gray-800 mb-4">
@@ -156,8 +172,8 @@ const Order = () => {
               </div>
 
               {/* Submit button */}
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full py-3 text-lg font-medium bg-indigo-500 hover:bg-indigo-600"
               >
                 Complete Order - {price} AUD

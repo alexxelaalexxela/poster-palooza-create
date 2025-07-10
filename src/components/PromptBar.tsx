@@ -29,7 +29,11 @@ const templates: Record<number, { name: string; description: string }> = {
   2: {
     name: 'Vintage',
     description:
-      'Illustration vectorielle minimaliste au style rétro façon affiche touristique vintage. Scène naturelle épurée, composée de larges aplats de couleurs chaudes et douces (sable, ocre, orange, vert doux pour la plage, ou autre pour etre adapté au theme), sans contours ni détails superflus. Perspective simple sur une plage avec la mer à l’horizon et un soleil couchant. Silhouettes humaines stylisées, sans traits du visage. Mise en page équilibrée avec un titre en haut, en majuscules, utilisant une typographie sans-serif épaisse, arrondie, bien espacée, dans une couleur contrastant harmonieusement avec le fond. L’ambiance est calme, chaleureuse, intemporelle et invite à la détente.',
+      `Illustration vectorielle minimaliste au style rétro, inspirée des affiches touristiques vintage. La scène représente un paysage naturel épuré, avec de larges aplats de couleurs chaudes et douces (sable, ocre, orange, verts doux ou teintes adaptées au thème), sans contours ni détails superflus. Perspective simple avec un horizon visible (ex. : plage et mer sous un soleil couchant). 
+      
+      Les personnages, s’ils sont présents, sont stylisés de manière minimaliste mais colorée : pas de silhouettes sombres ou noires, mais des corps représentés avec des aplats de couleurs variées et harmonieuses. Ils n’ont PAS de traits du visage, mais des postures expressives et naturelles. Les vêtements et accessoires sont également représentés sans ombres ni textures, avec des couleurs unies. L’objectif est de garder un style vivant mais épuré, sans tomber dans un effet “ombre chinoise”.
+
+      La composition est équilibrée, avec un titre centré en haut de l’image, écrit en lettres majuscules, utilisant une typographie sans-serif épaisse, arrondie et bien espacée, dans une couleur qui contraste agréablement avec le fond.`,
   },
   3: {
     name: 'Modern',
