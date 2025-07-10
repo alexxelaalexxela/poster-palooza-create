@@ -67,14 +67,19 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
     const { selectedFormat, selectedQuality } = get();
     let price = 60; // base price
 
+    if (selectedFormat === 'A0') price += 30;
+    if (selectedFormat === 'A1') price += 20;
     if (selectedFormat === 'A2') price += 10;
-    if (selectedQuality === 'paper2') price += 5;
+    if (selectedFormat === 'A4') price -= 10;
+
+    if (selectedQuality === 'premium') price += 10;
+    if (selectedQuality === 'museum') price += 20;
 
     set({ price });
   },
 
   canOrder: () => {
     const { selectedPoster, selectedFormat, selectedQuality } = get();
-    return selectedPoster !== null && selectedFormat !== null && selectedQuality !== null;
+    return selectedPoster !== null && selectedFormat !== null;
   },
 }));

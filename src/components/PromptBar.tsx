@@ -153,12 +153,12 @@ const PromptBar = () => {
       viewport={{ once: true }}
       className="space-y-6"
     >
-      <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center">
+      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 text-center">
         Describe your poster idea
       </h2>
 
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-6">
+      <div className="max-w-full sm:max-w-lg md:max-w-2xl mx-auto">
+        <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-4 sm:p-6">
           <div className="space-y-4">
             <div className="relative">
               <textarea
@@ -166,13 +166,14 @@ const PromptBar = () => {
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Describe your poster idea... (e.g., 'A motivational quote about success with mountain backdrop')"
-                className="w-full p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none transition-all duration-200"
+                className="w-full p-3 sm:p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none transition-all duration-200"
                 rows={3}
                 disabled={isGenerating}
               />
             </div>
 
-            <div className="flex items-center justify-between">
+
+            <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3">
               <div className="text-sm text-gray-600">
                 {selectedTemplate ? (
                   <span>
@@ -186,7 +187,7 @@ const PromptBar = () => {
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating || !prompt.trim() || !selectedTemplate}
-                className="px-6 py-3 bg-indigo-500 text-white font-medium rounded-lg hover:bg-indigo-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-3 bg-indigo-500 text-white font-medium rounded-lg hover:bg-indigo-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
               >
                 {isGenerating ? (
                   <>
@@ -201,7 +202,7 @@ const PromptBar = () => {
           </div>
         </div>
       </div>
-    </motion.section>
+    </motion.section >
   );
 };
 

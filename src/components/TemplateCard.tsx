@@ -1,4 +1,3 @@
-
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Template } from '@/store/usePosterStore';
@@ -9,17 +8,27 @@ interface TemplateCardProps {
   onSelect: () => void;
 }
 
-const TemplateCard = ({ template, isSelected, onSelect }: TemplateCardProps) => {
+export default function TemplateCard({
+  template,
+  isSelected,
+  onSelect,
+}: TemplateCardProps) {
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.98 }}
       onClick={onSelect}
-      className={`relative cursor-pointer w-24 h-36 md:w-28 md:h-40 rounded-2xl overflow-hidden transition-all duration-300 shadow-lg ${isSelected
-        ? 'bg-emerald-50 ring-2 ring-emerald-400 shadow-emerald-200/50'
-        : 'bg-white hover:shadow-xl hover:shadow-indigo-100/30'
+      /* 🠖 largeur/hauteur : plus grand mobile, inchangé ≥ md */
+      className={`relative cursor-pointer
+        shrink-0 snap-start
+        w-28 h-40                       /* mobile */
+        md:w-28 md:h-40                 /* desktop inchangé */
+        rounded-2xl overflow-hidden transition-all duration-300 shadow-lg
+        ${isSelected
+          ? 'bg-emerald-50 ring-2 ring-emerald-400 shadow-emerald-200/50'
+          : 'bg-white hover:shadow-xl hover:shadow-indigo-100/30'
         }`}
-      aria-label={`Select template`}
+      aria-label="Select template"
     >
       <img
         src={template.image}
@@ -27,9 +36,13 @@ const TemplateCard = ({ template, isSelected, onSelect }: TemplateCardProps) => 
         className="w-full h-full object-cover"
       />
 
-      {/* Template name overlay */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-        <span className="text-white text-xs font-medium">{template.name}</span>
+      {/* overlay : plus haut & texte + grand sur mobile */}
+      <div className="absolute bottom-0 left-0 right-0
+                      bg-gradient-to-t from-black/60 to-transparent
+                      p-3 sm:p-2">
+        <span className="text-sm sm:text-xs text-white font-medium">
+          {template.name}
+        </span>
       </div>
 
       {isSelected && (
@@ -42,6 +55,4 @@ const TemplateCard = ({ template, isSelected, onSelect }: TemplateCardProps) => 
       )}
     </motion.div>
   );
-};
-
-export default TemplateCard;
+}

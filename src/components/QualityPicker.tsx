@@ -1,5 +1,7 @@
+
+
 /****************************************************************
- * QualityPicker.tsx – design sobre, titre « Format », ring doux
+ * QualityPicker.tsx – desktop inchangé, mobile optimisé
  ****************************************************************/
 
 import { motion } from 'framer-motion';
@@ -38,13 +40,13 @@ export default function QualityPicker() {
       viewport={{ once: true }}
       className="mt-6"
     >
-      {/* Titre conservé comme avant */}
-      <h2 className="text-center font-bold text-3xl text-gray-900 mb-8">
+      {/* Titre : même taille desktop, plus petit mobile */}
+      <h2 className="text-center text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
         Quality
       </h2>
 
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-3xl mx-auto">
+      {/* Grille : 1 colonne mobile, 3 colonnes dès sm (≥640 px) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-sm sm:max-w-3xl mx-auto">
         {qualityOptions.map((opt, idx) => {
           const active = selectedQuality === opt.id;
           return (
@@ -56,26 +58,30 @@ export default function QualityPicker() {
               variants={cardVariants}
               type="button"
               onClick={() => setSelectedQuality(opt.id)}
-              className={`relative w-full py-8 px-6 rounded-2xl border bg-white/70 backdrop-blur-2xl shadow-sm transition
+              className={`relative w-full
+                py-6 px-4 md:py-8 md:px-6           /* padding réduit mobile */
+                rounded-2xl border bg-white/70 backdrop-blur-2xl shadow-sm transition
                 ${active
-                  ? `scale-105 border-transparent ring-2 ring-transparent bg-clip-padding bg-gradient-to-br ${opt.ring}`
-                  : 'hover:scale-103 hover:shadow-md border-gray-200'}
+                  ? `md:scale-105 border-transparent ring-2 ring-transparent
+                     bg-clip-padding bg-gradient-to-br ${opt.ring}`
+                  : 'md:hover:scale-103 md:hover:shadow-md border-gray-200'}
               `}
             >
-              <span className="block text-2xl font-semibold text-gray-800">
+              {/* Nom : plus petit mobile, comme avant desktop */}
+              <span className="block text-xl md:text-2xl font-semibold text-gray-800">
                 {opt.name}
               </span>
 
-              {/* filet de séparation */}
-              <span className="block w-10 h-px bg-gray-300/60 mx-auto my-3" />
+              <span className="block w-8 md:w-10 h-px bg-gray-300/60 mx-auto my-2 md:my-3" />
 
-              <span className="block text-sm italic text-gray-600">
+              <span className="block text-xs md:text-sm italic text-gray-600">
                 {opt.subtitle}
               </span>
 
               {active && (
-                <span className="pointer-events-none absolute top-3 right-3 bg-white rounded-full p-1 shadow-sm">
-                  <Check size={18} className="text-indigo-600" />
+                <span className="pointer-events-none absolute top-2 md:top-3 right-2 md:right-3
+                                   bg-white rounded-full p-1 shadow-sm">
+                  <Check size={16} className="text-indigo-600" />
                 </span>
               )}
             </motion.button>

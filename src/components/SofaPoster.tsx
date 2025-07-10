@@ -33,6 +33,7 @@ const PosterWall: React.FC<PosterWallProps> = ({ posterUrl }) => {
 
     /* Conteneur cliquable pour chaque format */
     const PosterSlot = (fmt: Format, style: React.CSSProperties) => (
+
         <div
             role="button"
             tabIndex={0}
@@ -53,16 +54,18 @@ const PosterWall: React.FC<PosterWallProps> = ({ posterUrl }) => {
     );
 
     return (
+
         <div className="w-full flex justify-center">
+
             <div
-                className="relative mx-auto"
-                style={{
-                    width: '85%',
-                    transform: 'scale(0.75)',
-                    transformOrigin: 'top center',
-                    marginTop: '-4rem',
-                    marginBottom: '-10rem',
-                }}
+                className="
+                            relative mx-auto
+                            w-full sm:max-w-[420px]      /* limite la largeur jusqu’à 640 px */
+                            md:max-w-none               /* supprime toute limite dès 768 px */
+                            md:w-[85%] 
+                            md:origin-top md:origin-top md:transform md:scale-[.75] md:-translate-y-10
+                            md:-mb-32
+                        "
             >
                 {/* Image de fond sans coins arrondis */}
                 <img src="./images/Sofa8.jpg" alt="Poster wall" className="w-full " />
@@ -74,7 +77,7 @@ const PosterWall: React.FC<PosterWallProps> = ({ posterUrl }) => {
                 {PosterSlot('A3', { bottom: '55.3%', left: '69.7%', width: '12.4%' })}
                 {PosterSlot('A4', { bottom: '55.3%', left: '88.1%', width: '9.83%' })}
             </div>
-        </div>
+        </div >
     );
 };
 

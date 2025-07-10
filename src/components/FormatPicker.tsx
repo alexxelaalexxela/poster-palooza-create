@@ -27,11 +27,11 @@ const FormatPicker = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="mt-12"
+      className="mt-4 md:mt-0"
     >
 
-      <div className="w-full flex flex-col items-center pt-10">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+      <div className="w-full flex flex-col items-center pt-6 md:pt-2">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-0">
           Format
         </h2>
         <div className="overflow-hidden">

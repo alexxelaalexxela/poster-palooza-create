@@ -22,20 +22,27 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Hero Section */}
       <section className="relative pt-16 pb-12">
-        {/* Background with subtle gradient overlay */}
+
         <div className="absolute inset-0 bg-gradient-to-br from-blue-100/40 via-purple-50/40 to-pink-50/40" />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight"
+            transition={{ duration: .8, ease: [.16, 1, .3, 1] }}
+            className="
+    mx-auto max-w-3xl text-center font-semibold tracking-wide leading-snug
+    text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-gray-800
+    mb-6 
+  "
           >
-            Fait ton propre {' '}
-            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Poster
+            L’affiche dont&nbsp;
+            <span className="relative inline-block px-1">
+              {/* accent pastel : surlignage arrière */}
+              <span className="absolute inset-0 -skew-y-1 bg-amber-200/60 rounded-sm" />
+              <span className="relative">vous</span>
             </span>
+            &nbsp;êtes l’auteur
           </motion.h1>
 
           <motion.p
@@ -47,7 +54,7 @@ const Index = () => {
             Decrit ton idée de poster et laisse l'IA faire le reste.
           </motion.p>
 
-          {/* Gradient divider */}
+
           <motion.div
             initial={{ opacity: 0, scaleX: 0 }}
             animate={{ opacity: 1, scaleX: 1 }}
@@ -68,16 +75,34 @@ const Index = () => {
           viewport={{ once: true }}
           className="space-y-6"
         >
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-8">
-            Choose among these templates
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 text-center mb-8">
+            {/* Mobile (< md) */}
+            <span className="inline md:hidden">
+              Slide and choose among these templates
+            </span>
+
+            {/* Desktop (≥ md) */}
+            <span className="hidden md:inline">
+              Choose among these template
+            </span>
           </h2>
-          <div className="grid grid-cols-4 gap-4 md:gap-6">
+          <div
+            className="
+              flex gap-4 overflow-x-auto px-1          /* mobile : carrousel */
+              scroll-smooth snap-x snap-mandatory      /* snapping iOS/Android */
+              no-scrollbar
+              md:grid md:grid-cols-4 md:gap-6          /* desktop : grille */
+              md:overflow-visible md:px-0
+              
+            "
+          >
             {templates.map((template) => (
               <TemplateCard
                 key={template.id}
                 template={template}
                 isSelected={selectedTemplate === template.id}
                 onSelect={() => setSelectedTemplate(template.id)}
+
               />
             ))}
 
@@ -97,6 +122,7 @@ const Index = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
           viewport={{ once: true }}
+
         >
           <PromptBar />
         </motion.section>
@@ -104,12 +130,29 @@ const Index = () => {
         {/* Poster Gallery */}
         <PosterGallery />
 
-
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ duration: 1, delay: 0.4 }}
+          className="h-px w-full max-w-4xl mx-auto bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
+        />
         {/* Format Picker */}
         <FormatPicker />
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ duration: 1, delay: 0.4 }}
+          className="h-px w-full max-w-4xl mx-auto bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
+        />
 
         {/* Quality Picker */}
         <QualityPicker />
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ duration: 1, delay: 0.4 }}
+          className="h-px w-full max-w-4xl mx-auto bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
+        />
 
         {/* Order Bar */}
         <OrderBar />
