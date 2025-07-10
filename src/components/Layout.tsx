@@ -50,8 +50,11 @@ export default function Layout({ children }: LayoutProps) {
           <div className="flex h-14 md:h-16 items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
-              <span className="text-2xl">🎨</span>
-              <span className="text-xl font-semibold text-gray-900">Postfilio</span>
+              <img
+                src="/logoo.png"
+                alt="Neoma logo"
+                className="h-8 w-auto md:h-10"
+              />
             </Link>
 
             {/* Desktop links */}
@@ -98,8 +101,8 @@ export default function Layout({ children }: LayoutProps) {
                     key={item.name}
                     to={item.href}
                     className={`block px-4 py-3 text-lg font-medium transition-colors ${isActive(item.href)
-                        ? "bg-gray-50 text-gray-900"
-                        : "text-gray-600"
+                      ? "bg-gray-50 text-gray-900"
+                      : "text-gray-600"
                       }`}
                   >
                     {item.name}

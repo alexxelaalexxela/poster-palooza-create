@@ -36,13 +36,7 @@ const Index = () => {
     mb-6 
   "
           >
-            L’affiche dont&nbsp;
-            <span className="relative inline-block px-1">
-              {/* accent pastel : surlignage arrière */}
-              <span className="absolute inset-0 -skew-y-1 bg-amber-200/60 rounded-sm" />
-              <span className="relative">vous</span>
-            </span>
-            &nbsp;êtes l’auteur
+            Neoma Poster Creator
           </motion.h1>
 
           <motion.p
@@ -51,7 +45,13 @@ const Index = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed"
           >
-            Decrit ton idée de poster et laisse l'IA faire le reste.
+            L’affiche dont&nbsp;
+            <span className="relative inline-block px-1">
+              {/* accent pastel : surlignage arrière */}
+              <span className="absolute inset-0 -skew-y-1 bg-amber-200/60 rounded-sm" />
+              <span className="relative">vous</span>
+            </span>
+            &nbsp;êtes l’auteur
           </motion.p>
 
 
