@@ -7,6 +7,10 @@ import FormatPicker from '@/components/FormatPicker';
 import QualityPicker from '@/components/QualityPicker';
 import OrderBar from '@/components/OrderBar';
 import { usePosterStore } from '@/store/usePosterStore';
+import { useRef, useState } from 'react';
+import { ChevronRight } from 'lucide-react';
+
+
 
 const templates = [
   { id: 1, name: 'City', image: '/images/poster6.png' },
@@ -17,6 +21,14 @@ const templates = [
 
 const Index = () => {
   const { selectedTemplate, setSelectedTemplate } = usePosterStore();
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showHint, setShowHint] = useState(true);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (el && el.scrollLeft > 12 && showHint) setShowHint(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -76,38 +88,54 @@ const Index = () => {
           className="space-y-6"
         >
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 text-center mb-8">
-            {/* Mobile (< md) */}
-            <span className="inline md:hidden">
-              Slide and choose among these templates
-            </span>
-
-            {/* Desktop (≥ md) */}
-            <span className="hidden md:inline">
-              Choose among these template
-            </span>
+            <span className="inline md:hidden">Slide and choose among these templates</span>
+            <span className="hidden md:inline">Choose among these templates</span>
           </h2>
-          <div
-            className="
-              flex gap-4 overflow-x-auto px-1          /* mobile : carrousel */
-              scroll-smooth snap-x snap-mandatory      /* snapping iOS/Android */
-              no-scrollbar
-              md:grid md:grid-cols-4 md:gap-6          /* desktop : grille */
-              md:overflow-visible md:px-0
-              
-            "
-          >
-            {templates.map((template) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                isSelected={selectedTemplate === template.id}
-                onSelect={() => setSelectedTemplate(template.id)}
 
-              />
-            ))}
+          {/* ─────────── Nouveau wrapper relatif ─────────── */}
+          <div className="relative">
+            {/* ❶ Carrousel (inchangé, on ajoute juste ref + onScroll) */}
+            <div
+              ref={scrollRef}               /* ← ajoute cette ref */
+              onScroll={handleScroll}       /* ← ajoute cette fonction */
+              className="
+        flex gap-4 overflow-x-auto px-1
+        scroll-smooth snap-x snap-mandatory no-scrollbar
+        md:grid md:grid-cols-4 md:gap-6
+        md:overflow-visible md:px-0
+      "
+            >
+              {templates.map((t) => (
+                <TemplateCard
+                  key={t.id}
+                  template={t}
+                  isSelected={selectedTemplate === t.id}
+                  onSelect={() => setSelectedTemplate(t.id)}
+                />
+              ))}
+            </div>
 
+            {/* ❷ Indice visuel (gradient + flèche), mobile seulement */}
+            {showHint && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="pointer-events-none md:hidden
+                   absolute inset-y-0 right-0 w-16
+                   bg-gradient-to-l from-white via-white/70 to-transparent"
+              >
+                <motion.div
+                  initial={{ x: 0 }}
+                  animate={{ x: [0, 6, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+                  className="absolute top-1/2 -translate-y-1/2 right-3 text-gray-500"
+                >
+                  <ChevronRight size={22} />
+                </motion.div>
+              </motion.div>
+            )}
           </div>
-
         </motion.section>
         <motion.div
           initial={{ opacity: 0, scaleX: 0 }}
