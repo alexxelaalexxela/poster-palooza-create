@@ -9,10 +9,10 @@ import OrderBar from '@/components/OrderBar';
 import { usePosterStore } from '@/store/usePosterStore';
 
 const templates = [
-  { id: 1, name: 'Manga', image: '/images/poster1.jpg' },
+  { id: 1, name: 'City', image: '/images/poster6.png' },
   { id: 2, name: 'Vintage', image: '/images/poster2.jpg' },
-  { id: 3, name: 'Modern', image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=300&h=400&fit=crop' },
-  { id: 4, name: 'Abstract', image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=300&h=400&fit=crop' },
+  { id: 3, name: 'Modern', image: '/images/poster3.png' },
+  { id: 4, name: 'Abstract', image: '/images/poster4.png' },
 ];
 
 const Index = () => {
