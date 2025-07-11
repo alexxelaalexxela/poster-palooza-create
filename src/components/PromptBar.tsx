@@ -166,7 +166,7 @@ const PromptBar = () => {
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Describe your poster idea... (e.g., 'A motivational quote about success with mountain backdrop')"
-                className="w-full p-3 sm:p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none transition-all duration-200"
+                className="w-full p-3 sm:p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none transition-all duration-200 text-base sm:text-base"
                 rows={3}
                 disabled={isGenerating}
               />
