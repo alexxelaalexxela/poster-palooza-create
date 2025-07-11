@@ -13,10 +13,12 @@ import { ChevronRight } from 'lucide-react';
 
 
 const templates = [
-  { id: 1, name: 'City', image: '/images/poster6.png' },
-  { id: 2, name: 'Vintage', image: '/images/poster2.jpg' },
-  { id: 3, name: 'Modern', image: '/images/poster3.png' },
   { id: 4, name: 'Abstract', image: '/images/poster4.png' },
+  { id: 2, name: 'Vintage', image: '/images/poster2.jpg' },
+  { id: 1, name: 'City', image: '/images/poster6.png' },
+
+  { id: 3, name: 'Affiche de Film', image: '/images/poster3.png' },
+  { id: 5, name: 'Painting Vintage', image: '/images/poster7.png' },
 ];
 
 const Index = () => {
@@ -101,7 +103,7 @@ const Index = () => {
               className="
         flex gap-4 overflow-x-auto px-1
         scroll-smooth snap-x snap-mandatory no-scrollbar
-        md:grid md:grid-cols-4 md:gap-6
+        md:grid md:grid-cols-5 md:gap-6
         md:overflow-visible md:px-0
       "
             >

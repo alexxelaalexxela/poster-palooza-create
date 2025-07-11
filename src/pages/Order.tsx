@@ -53,16 +53,21 @@ const Order = () => {
             {/* Selected poster preview */}
 
             <div className="mb-6">
-              <div className="aspect-[3/4] w-32 rounded-lg mb-4 mx-auto overflow-hidden">
+              {/* conteneur du poster */}
+              <div
+                className="aspect-[3/4] w-32 mx-auto mb-4 rounded-lg
+               flex items-center justify-center     /* centre l’image */
+               bg-black p-0.5"                       /* bordure noire fine */
+              >
                 {generatedUrls[selectedPoster] ? (
                   <img
                     src={generatedUrls[selectedPoster]}
                     alt={`Poster ${selectedPoster}`}
-                    className="w-full h-full object-cover"
+                    className="max-w-full max-h-full object-contain" /* plus de crop */
                   />
                 ) : (
-                  /* graceful fallback if no URL yet */
-                  <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                  /* fallback */
+                  <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center rounded-md">
                     <span className="text-gray-500 text-sm">
                       Poster #{selectedPoster}
                     </span>
