@@ -4,10 +4,10 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 /*───────────────────────────*
  * Configuration CORS
  *───────────────────────────*/
-const ALLOWED_ORIGIN = "http://localhost:8080";          // ← remplace par ton domaine en prod
+const ALLOWED_ORIGIN = "https://poster-palooza-create.lovable.app" // "http://localhost:8080";          // ← remplace par ton domaine en prod
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "http://localhost:8080",          // ton front
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,          // ton front
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, apikey",   // ← ajoute Authorization + apikey
