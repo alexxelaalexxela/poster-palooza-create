@@ -1,5 +1,5 @@
 
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import TemplateCard from '@/components/TemplateCard';
 import PromptBar from '@/components/PromptBar';
 import PosterGallery from '@/components/PosterGallery';
@@ -8,7 +8,7 @@ import QualityPicker from '@/components/QualityPicker';
 import OrderBar from '@/components/OrderBar';
 import { usePosterStore } from '@/store/usePosterStore';
 import { useRef, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronUp } from 'lucide-react';
 
 
 
@@ -24,8 +24,12 @@ const templates = [
 const Index = () => {
   const { selectedTemplate, setSelectedTemplate } = usePosterStore();
 
+  const [showTemplates, setShowTemplates] = useState(false);
+
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showHint, setShowHint] = useState(true);
+
 
   const handleScroll = () => {
     const el = scrollRef.current;
@@ -35,54 +39,87 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Hero Section */}
-      <section className="relative pt-16 pb-12">
 
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-100/40 via-purple-50/40 to-pink-50/40" />
+      <section className="relative pt-24 pb-20">
+        {/* Image de fond + overlay, bornés à cette section  */}
+        <div
+          className="absolute inset-0 -z-10 bg-cover bg-center z-0"
+          style={{ backgroundImage: "url('/images/hero-background.png')" }}
+        />
+        <div className="absolute inset-0 bg-white/10 backdrop-blur-sm z-10" />
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: .8, ease: [.16, 1, .3, 1] }}
+        {/* Contenu de la hero */}
+        <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          {/* Barre de prompt → premier élément visible */}
+          <PromptBar />
+
+          {/* Bouton toggle templates */}
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             className="
-    mx-auto max-w-3xl text-center font-semibold tracking-wide leading-snug
-    text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-gray-800
-    mb-6 
-  "
+              mx-auto flex items-center gap-2
+              bg-indigo-600 hover:bg-indigo-700 text-white
+              font-medium px-6 py-3 rounded-full shadow-lg
+            "
+            onClick={() => setShowTemplates((p) => !p)}
           >
-            Neoma Poster Creator
-          </motion.h1>
+            {showTemplates ? 'Masquer les templates' : 'Choisir un style'}
+            {showTemplates ? <ChevronUp size={20} /> : <ChevronRight size={20} />}
+          </motion.button>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed"
-          >
-            L’affiche dont&nbsp;
-            <span className="relative inline-block px-1">
-              {/* accent pastel : surlignage arrière */}
-              <span className="absolute inset-0 -skew-y-1 bg-amber-200/60 rounded-sm" />
-              <span className="relative">vous</span>
-            </span>
-            &nbsp;êtes l’auteur
-          </motion.p>
+          {/* Picker de templates (collapsible) */}
+          <AnimatePresence initial={false}>
+            {showTemplates && (
+              <motion.div
+                key="templates"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.45, ease: [.4, 0, .2, 1] }}
+                className="overflow-hidden"
+              >
+                <h2
+                  className="
+                    relative z-20
+                    text-xl sm:text-xl md:text-2xl font-extrabold
+                    text-white
+                    drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]
+                    text-center mb-8
+                  "
+                >
+                  Choisis ton template
+                </h2>
 
-
-          <motion.div
-            initial={{ opacity: 0, scaleX: 0 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            transition={{ duration: 1, delay: 0.4 }}
-            className="h-px w-full max-w-4xl mx-auto bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
-          />
+                <div
+                  className="
+                    flex gap-4 overflow-x-auto px-1
+                    scroll-smooth snap-x snap-mandatory no-scrollbar
+                    md:grid md:grid-cols-5 md:gap-6 md:overflow-visible md:px-0
+                  "
+                >
+                  {templates.map((t) => (
+                    <TemplateCard
+                      key={t.id}
+                      template={t}
+                      isSelected={selectedTemplate === t.id}
+                      onSelect={() => setSelectedTemplate(t.id)}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </section>
+
+
+
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 space-y-16">
 
         {/* Template Picker */}
-        <motion.section
+        {/*<motion.section
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
@@ -94,12 +131,10 @@ const Index = () => {
             <span className="hidden md:inline">Choose among these templates</span>
           </h2>
 
-          {/* ─────────── Nouveau wrapper relatif ─────────── */}
           <div className="relative">
-            {/* ❶ Carrousel (inchangé, on ajoute juste ref + onScroll) */}
             <div
-              ref={scrollRef}               /* ← ajoute cette ref */
-              onScroll={handleScroll}       /* ← ajoute cette fonction */
+              ref={scrollRef}               
+              onScroll={handleScroll}       
               className="
         flex gap-4 overflow-x-auto px-1
         scroll-smooth snap-x snap-mandatory no-scrollbar
@@ -117,7 +152,6 @@ const Index = () => {
               ))}
             </div>
 
-            {/* ❷ Indice visuel (gradient + flèche), mobile seulement */}
             {showHint && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -138,7 +172,7 @@ const Index = () => {
               </motion.div>
             )}
           </div>
-        </motion.section>
+        </motion.section>*/}
         <motion.div
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
@@ -147,7 +181,7 @@ const Index = () => {
         />
 
         {/* Prompt Input */}
-        <motion.section
+        {/*<motion.section
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -155,7 +189,7 @@ const Index = () => {
 
         >
           <PromptBar />
-        </motion.section>
+        </motion.section>*/}
 
         {/* Poster Gallery */}
         <PosterGallery />

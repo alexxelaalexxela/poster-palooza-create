@@ -153,13 +153,22 @@ const PromptBar = () => {
       viewport={{ once: true }}
       className="space-y-6"
     >
-      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 text-center">
-        Describe your poster idea
+
+      <h2
+        className="
+    relative z-20
+    text-2xl sm:text-3xl md:text-4xl font-extrabold
+    text-white
+    drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]
+    text-center mb-6
+  "
+      >        Describe your poster idea
       </h2>
 
       <div className="max-w-full sm:max-w-lg md:max-w-2xl mx-auto">
         <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-4 sm:p-6">
           <div className="space-y-4">
+
             <div className="relative">
               <textarea
                 value={prompt}
