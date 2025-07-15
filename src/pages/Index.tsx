@@ -119,6 +119,9 @@ const Index = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 space-y-16">
 
         {/* Template Picker */}
+        {/* Template Picker */}
+
+
         {/*<motion.section
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
