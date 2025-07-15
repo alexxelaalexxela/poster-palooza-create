@@ -36,7 +36,7 @@ const templates: Record<number, { name: string; description: string }> = {
       La composition est équilibrée, avec un titre centré en haut de l’image, écrit en lettres majuscules, utilisant une typographie sans-serif épaisse, arrondie et bien espacée, dans une couleur qui contraste agréablement avec le fond.`,
   },
   3: {
-    name: 'Modern',
+    name: 'Affiche de Film',
     description:
       'New version Bold geometric shapes, gradient backgrounds and sleek sans‑serif headlines.',
   },

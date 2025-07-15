@@ -11,12 +11,42 @@ const Order = () => {
   const { selectedPoster, selectedFormat, selectedQuality, price, generatedUrls } = usePosterStore();
   const { toast } = useToast();
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Order placed successfully!",
-      description: `Your poster order for ${price} AUD has been submitted and will be processed shortly.`,
-    });
+
+    try {
+      const res = await fetch(
+        import.meta.env.VITE_SUPABASE_FUNCTION_URL,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // 🔑 on envoie l'API key dans deux entêtes comme le veut Supabase Edge
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            poster: selectedPoster,
+            format: selectedFormat,
+            quality: selectedQuality,
+            price: Number(price),          // ← toujours numérique
+          }),
+        }
+      );
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;   // redirection Stripe Checkout
+      } else {
+        throw new Error(data.error || 'Pas de lien de paiement reçu');
+      }
+    } catch (err) {
+      toast({
+        title: 'Erreur',
+        description: String(err),
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -116,10 +146,17 @@ const Order = () => {
                 </li>
               </ul>
             </div>
+
+            <Button
+              onClick={handleSubmitOrder}
+              className="w-full py-3 text-lg font-medium bg-indigo-500 hover:bg-indigo-600 mt-6"
+            >
+              Complete Order - {price} AUD
+            </Button>
           </motion.div>
 
           {/* Checkout Form */}
-          <motion.div
+          {/*<motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -129,7 +166,7 @@ const Order = () => {
 
             <form onSubmit={handleSubmitOrder} className="space-y-6">
 
-              {/* Personal Information */}
+              
               <div>
                 <h3 className="flex items-center text-lg font-medium text-gray-800 mb-4">
                   <User className="w-5 h-5 mr-2" />
@@ -143,7 +180,7 @@ const Order = () => {
                 </div>
               </div>
 
-              {/* Shipping Address */}
+             
               <div>
                 <h3 className="flex items-center text-lg font-medium text-gray-800 mb-4">
                   <MapPin className="w-5 h-5 mr-2" />
@@ -160,7 +197,7 @@ const Order = () => {
                 </div>
               </div>
 
-              {/* Payment Method */}
+              
               <div>
                 <h3 className="flex items-center text-lg font-medium text-gray-800 mb-4">
                   <CreditCard className="w-5 h-5 mr-2" />
@@ -176,15 +213,21 @@ const Order = () => {
                 </div>
               </div>
 
-              {/* Submit button */}
+              
               <Button
-                type="submit"
+                onClick={handleSubmitOrder}
                 className="w-full py-3 text-lg font-medium bg-indigo-500 hover:bg-indigo-600"
               >
                 Complete Order - {price} AUD
               </Button>
             </form>
-          </motion.div>
+            <Button
+              onClick={handleSubmitOrder}
+              className="w-full py-3 text-lg font-medium bg-indigo-500 hover:bg-indigo-600"
+            >
+              Complete Order - {price} AUD
+            </Button>
+          </motion.div>*/}
         </div>
       </div>
     </div>
