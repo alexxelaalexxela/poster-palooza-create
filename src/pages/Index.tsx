@@ -64,6 +64,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-white/10 backdrop-blur-sm z-10" />
 
         {/* Contenu de la hero */}
+        {/* Contenu de la hero */}
 
         <div
           className="
