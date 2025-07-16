@@ -37,10 +37,25 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-[#E1D7CA]">
+      {/*<div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">*/}
       {/* Hero Section */}
 
-      <section className="relative pt-24 pb-20">
+      {/*<section className="relative pt-24 pb-20">*/}
+
+
+      <section
+        className="
+          relative
+          /* 1️⃣ Pleine hauteur visible – svh/dvh évite le saut mobile */
+          min-h-[100dvh]           /* Tailwind ≥ 3.4 → ok ; sinon reste sur min-h-screen */
+          /* 2️⃣ Mise en page */
+          flex flex-col items-center justify-center
+          /* 3️⃣ On garde le spacing seulement sur desktop */
+          lg:pt-24 lg:pb-20 px-4
+        "
+      >
+
         {/* Image de fond + overlay, bornés à cette section  */}
         <div
           className="absolute inset-0 -z-10 bg-cover bg-center z-0"
@@ -49,7 +64,14 @@ const Index = () => {
         <div className="absolute inset-0 bg-white/10 backdrop-blur-sm z-10" />
 
         {/* Contenu de la hero */}
-        <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+
+        <div
+          className="
+            relative z-20
+            w-full max-w-6xl    /* ❗ w-full assure qu’on ne rétrécit jamais */
+            mx-auto px-4 sm:px-6 lg:px-8
+            text-center space-y-6
+        ">
           {/* Barre de prompt → premier élément visible */}
           <PromptBar />
 
@@ -63,7 +85,7 @@ const Index = () => {
             "
             onClick={() => setShowTemplates((p) => !p)}
           >
-            {showTemplates ? 'Masquer les templates' : 'Choisir un style'}
+            {showTemplates ? 'Masquer les templates' : 'Changer de style'}
             {showTemplates ? <ChevronUp size={20} /> : <ChevronRight size={20} />}
           </motion.button>
 
@@ -176,12 +198,7 @@ const Index = () => {
             )}
           </div>
         </motion.section>*/}
-        <motion.div
-          initial={{ opacity: 0, scaleX: 0 }}
-          animate={{ opacity: 1, scaleX: 1 }}
-          transition={{ duration: 1, delay: 0.4 }}
-          className="h-px w-full max-w-4xl mx-auto bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
-        />
+
 
         {/* Prompt Input */}
         {/*<motion.section
@@ -225,7 +242,7 @@ const Index = () => {
         <OrderBar />
 
       </div>
-    </div>
+    </div >
   );
 };
 

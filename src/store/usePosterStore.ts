@@ -35,7 +35,7 @@ interface PosterStore {
 }
 
 export const usePosterStore = create<PosterStore>((set, get) => ({
-  selectedTemplate: null,
+  selectedTemplate: 2,
   selectedPoster: null,
   selectedFormat: null,
   selectedQuality: null,

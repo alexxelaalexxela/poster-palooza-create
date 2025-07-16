@@ -34,7 +34,7 @@ export default function PosterGallery() {
         transition={{ duration: 0.8 }}
         className="space-y-5 md:space-y-6"
       >
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center text-gray-900">
+        <h2 className="mt-8 text-xl sm:text-2xl md:text-3xl font-bold text-center text-gray-900">
           No posters generated yet
         </h2>
         <p className="text-center text-sm md:text-base text-gray-600">
@@ -53,7 +53,7 @@ export default function PosterGallery() {
       transition={{ duration: 0.8 }}
       className="space-y-5 md:space-y-6"
     >
-      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center text-gray-900">
+      <h2 className="mt-4 text-xl sm:text-2xl md:text-3xl font-bold text-center text-gray-900">
         Generated Posters
       </h2>
 
