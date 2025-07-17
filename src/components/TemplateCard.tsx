@@ -1,58 +1,95 @@
-import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
-import { Template } from '@/store/usePosterStore';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { RotateCw } from "lucide-react";
+
+interface Template {
+  id: number;
+  name: string;
+  image: string;
+  description: string;  // prompt utilisé
+}
 
 interface TemplateCardProps {
   template: Template;
-  isSelected: boolean;
-  onSelect: () => void;
 }
 
-export default function TemplateCard({
-  template,
-  isSelected,
-  onSelect,
-}: TemplateCardProps) {
+const TemplateCard = ({ template }: TemplateCardProps) => {
+  const [flipped, setFlipped] = useState(false);
+
   return (
-    <motion.div
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onSelect}
-      /* 🠖 largeur/hauteur : plus grand mobile, inchangé ≥ md */
-      className={`relative cursor-pointer
-        shrink-0 snap-start
-        w-28 h-40                       /* mobile */
-        md:w-28 md:h-40                 /* desktop inchangé */
-        rounded-2xl overflow-hidden transition-all duration-300 shadow-lg
-        ${isSelected
-          ? 'bg-emerald-50 ring-2 ring-emerald-400 shadow-emerald-200/50'
-          : 'bg-white hover:shadow-xl hover:shadow-indigo-100/30'
-        }`}
-      aria-label="Select template"
+    <button
+      type="button"
+      onClick={() => setFlipped(!flipped)}
+      className="
+        w-32 aspect-[2/3] shrink-0 relative overflow-hidden
+        transition-transform duration-300 hover:-translate-y-0.5
+        snap-start focus:outline-none
+        border-[4px] border-black
+      "
+      style={{ perspective: "1000px" }}
     >
-      <img
-        src={template.image}
-        alt={template.name}
-        className="w-full h-full object-cover"
-      />
+      <motion.div
+        animate={{ rotateY: flipped ? 180 : 0 }}
+        transition={{ duration: 0.6 }}
+        className="absolute inset-0"
+        style={{ transformStyle: "preserve-3d" }}
+      >
+        {/* ---------- Face avant ---------- */}
+        <div
+          className="absolute inset-0"
+          style={{ backfaceVisibility: "hidden", backgroundColor: "black" }}
+        >
+          <img
+            src={template.image}
+            alt={template.name}
+            className="object-cover w-full h-full"
+          />
 
-      {/* overlay : plus haut & texte + grand sur mobile */}
-      <div className="absolute bottom-0 left-0 right-0
-                      bg-gradient-to-t from-black/60 to-transparent
-                      p-3 sm:p-2">
-        <span className="text-sm sm:text-xs text-white font-medium">
-          {template.name}
-        </span>
-      </div>
+          {/* Indice « Cliquer » – fixe */}
+          {!flipped && (
+            <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 text-[0.8rem] font-semibold text-white pointer-events-none">
+              <RotateCw className="w-4 h-4" />
+              Cliquer
+            </div>
+          )}
+        </div>
 
-      {isSelected && (
-        <>
-          <div className="absolute inset-0 bg-emerald-400/20" />
-          <div className="absolute top-2 right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
-            <Check size={14} className="text-white" />
+        {/* ---------- Face arrière ---------- */}
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{
+            backfaceVisibility: "hidden",
+            transform: "rotateY(180deg)",
+          }}
+        >
+          {/* Image floutée */}
+          <img
+            src={template.image}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover blur-md scale-110"
+          />
+
+          {/* Texte – plus petit, scroll vertical possible */}
+          <div
+            className="
+              relative z-10 w-full h-full px-3 py-2 overflow-y-auto
+              flex flex-col gap-2 text-left text-[0.7rem] leading-tight
+              text-white 
+            "
+          >
+            <div>
+              <strong>Template&nbsp;:</strong>&nbsp;{template.name}
+            </div>
+            <div>
+              <strong>Prompt&nbsp;:</strong>
+              <span className="block mt-0.5">{template.description}</span>
+
+            </div>
           </div>
-        </>
-      )}
-    </motion.div>
+        </div>
+      </motion.div>
+    </button>
   );
-}
+};
+
+export default TemplateCard;

@@ -4,7 +4,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 /*───────────────────────────*
  * Configuration CORS
  *───────────────────────────*/
-const ALLOWED_ORIGIN = "http://localhost:8080"; //"https://poster-palooza-create.lovable.app" // ;          // ← remplace par ton domaine en prod
+const ALLOWED_ORIGIN = "https://poster-palooza-create.lovable.app"//"http://localhost:8080"; //"https://poster-palooza-create.lovable.app" // ;          // ← remplace par ton domaine en prod
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,          // ton front
@@ -68,8 +68,8 @@ serve(async (req) => {
 
   const bodyParams = new URLSearchParams({
     mode: "payment",
-    success_url: "http://localhost:8080/success",
-    cancel_url: "http://localhost:8080/cancel",
+    success_url: ALLOWED_ORIGIN,//"http://localhost:8080/success",
+    cancel_url: ALLOWED_ORIGIN,//"http://localhost:8080",
     "line_items[0][price_data][currency]": "eur",
     "line_items[0][price_data][product_data][name]":
       `Poster ${poster} – ${format} – ${quality}`,
@@ -77,6 +77,10 @@ serve(async (req) => {
     "line_items[0][quantity]": "1",
     "payment_method_types[0]": "card",
   });
+  bodyParams.append(
+    "shipping_address_collection[allowed_countries][]",
+    "FR",        // France
+  );
 
   /*---------- 5) Appel Stripe ----------*/
   let stripeRes: Response;

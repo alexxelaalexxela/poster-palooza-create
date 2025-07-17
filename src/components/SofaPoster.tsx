@@ -68,7 +68,7 @@ const PosterWall: React.FC<PosterWallProps> = ({ posterUrl }) => {
                         "
             >
                 {/* Image de fond sans coins arrondis */}
-                <img src="./images/Sofa8.jpg" alt="Poster wall" className="w-full " />
+                <img src="./images/Sofa9.png" alt="Poster wall" className="w-full " />
 
                 {/* Vignettes */}
                 {PosterSlot('A0', { bottom: '55.3%', left: '3%', width: '18.5%' })}

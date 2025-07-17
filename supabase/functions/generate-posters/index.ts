@@ -28,6 +28,8 @@ serve(async (req) => {
     const { prompt, templateName, templateDescription, hasImage = false }: GenerateRequest = await req.json();
 
     console.log('Starting poster generation for prompt:', prompt);
+    console.log('descrpiptoon2 : ');
+    console.log('descrpiptoon:', templateDescription);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -119,10 +121,10 @@ async function generatePromptVariations(originalPrompt: string, templateDescript
 Each prompt should:
 - Be specific and detailed for the poster design
 - Include composition, colors, typography hints
-- Maintain the "${templateDescription}" aesthetic !
+- Maintain the "${templateDescription}" aesthetic !!!
 - Be unique and creative variations of the original idea
 - Use the prompt that will follow
-The objective is to take the following idea and make it in the aesthetic of "${templateDescription}".
+The objective is to take the following idea and very importantly to make it in the aesthetic of "${templateDescription}" !
 Return 4 slightly different from each other prompts, one prompt per line so that i can separate after, no numbering or formatting.`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {

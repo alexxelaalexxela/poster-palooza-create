@@ -24,6 +24,15 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  /* Rotation prête à l’emploi pour la face arrière */
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
 }
 
 @keyframes logo-spin {
@@ -41,6 +50,7 @@
     animation: logo-spin infinite 20s linear;
   }
 }
+
 
 .card {
   padding: 2em;

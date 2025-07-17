@@ -13,12 +13,36 @@ import { ChevronRight, ChevronUp } from 'lucide-react';
 
 
 const templates = [
-  { id: 4, name: 'Abstract', image: '/images/poster4.png' },
-  { id: 2, name: 'Vintage', image: '/images/poster2.jpg' },
-  { id: 1, name: 'City', image: '/images/poster6.png' },
-
-  { id: 3, name: 'Affiche de Film', image: '/images/poster3.png' },
-  { id: 5, name: 'Painting Vintage', image: '/images/poster7.png' },
+  {
+    id: 4,
+    name: "Abstract",
+    image: "/images/poster4.png",
+    description: "1 personne qui regarde la mer a Nice en France au coucher de soleil",
+  },
+  {
+    id: 2,
+    name: "Vintage",
+    image: "/images/poster2.jpg",
+    description: "Paysage rétro minimaliste inspiré des affiches touristiques des années 60.Paysage rétro minimaliste inspiré des affiches touristiques des années 60.",
+  },
+  {
+    id: 1,
+    name: "City",
+    image: "/images/poster6.png",
+    description: "Illustration monochrome façon manga rétro-futuriste d’une métropole animée.",
+  },
+  {
+    id: 3,
+    name: "Affiche de Film",
+    image: "/images/poster3.png",
+    description: "Composition cinématographique avec formes géométriques et dégradés.",
+  },
+  {
+    id: 5,
+    name: "Painting Vintage",
+    image: "/images/poster7.png",
+    description: "Palette chaleureuse évoquant la peinture publicitaire des années 30.",
+  },
 ];
 
 const Index = () => {
@@ -86,7 +110,7 @@ const Index = () => {
             "
             onClick={() => setShowTemplates((p) => !p)}
           >
-            {showTemplates ? 'Masquer les templates' : 'Changer de style'}
+            {showTemplates ? 'Masquer les exemples' : 'Voir des exemples'}
             {showTemplates ? <ChevronUp size={20} /> : <ChevronRight size={20} />}
           </motion.button>
 
@@ -101,7 +125,7 @@ const Index = () => {
                 transition={{ duration: 0.45, ease: [.4, 0, .2, 1] }}
                 className="overflow-hidden"
               >
-                <h2
+                {/*<h2
                   className="
                     relative z-20
                     text-xl sm:text-xl md:text-2xl font-extrabold
@@ -111,7 +135,7 @@ const Index = () => {
                   "
                 >
                   Choisis ton template
-                </h2>
+                </h2>*/}
 
                 <div
                   className="
@@ -121,13 +145,13 @@ const Index = () => {
                   "
                 >
                   {templates.map((t) => (
-                    <TemplateCard
+                    <TemplateCard          /* ← garde le même nom de fichier */
                       key={t.id}
-                      template={t}
-                      isSelected={selectedTemplate === t.id}
-                      onSelect={() => setSelectedTemplate(t.id)}
+                      template={t}         /* image - name - description */
                     />
+
                   ))}
+
                 </div>
               </motion.div>
             )}

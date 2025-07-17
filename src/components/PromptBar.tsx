@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronDown, ChevronRight } from "lucide-react";
+import { useTypingPlaceholder } from "./useTypingPlaceholder";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -21,21 +22,39 @@ interface TemplateMeta {
 const templates: Record<number, TemplateMeta> = {
   1: {
     name: "City",
-    description: `Illustration au trait monochrome façon affiche rétro-vintage mêlant esthétique manga et voyage…`,
+    description: `Illustration vectorielle minimaliste, style affiche touristique vintage des années 50. 
+Scène : [décris ici le lieu ou l’action, ex. « plage de Biarritz au coucher du soleil »].
+Palette : aplats doux et chauds (sable, ocre, orange brûlé, vert d’eau, turquoise), sans dégradés ni textures.
+Composition : horizon clair, perspective simple, larges formes géométriques nettes.
+Personnages : 1-4 figures stylisées, corps en aplats de couleurs harmonieuses, postures naturelles. 
+IMPORTANT → AUCUN trait du visage, AUCUN contour noir, AUCune ombre portée ; vêtements et accessoires en couleurs unies.
+Typo : titre centré en haut, majuscules sans-serif épaisses et arrondies, couleur contrastante.
+Rendu : bords francs, arrière-plan épuré, effet sérigraphie propre, 4K.
+
+--négatif-- silhouettes noires, ombrage réaliste, détails fins, lignes de croquis, texture photo, grain, visages détaillés, gradients`,
     thumbnail: "/images/poster6.png",
   },
   2: {
     name: "Vintage",
-    description: `Illustration vectorielle minimaliste au style rétro, inspirée des affiches touristiques vintage. La scène représente un paysage naturel épuré, avec de larges aplats de couleurs chaudes et douces (sable, ocre, orange, verts doux ou teintes adaptées au thème), sans contours ni détails superflus. Perspective simple avec un horizon visible (ex. : plage et mer sous un soleil couchant). 
+    description: `Illustration vectorielle minimaliste au style rétro, inspirée des affiches touristiques vintage. La scène représente un paysage naturel épuré, avec de larges aplats de couleurs chaudes et douces (sable, ocre, orange, verts doux ou teintes adaptées au thème), sans contours ni détails superflus ! Perspective simple avec un horizon visible (ex. : plage et mer sous un soleil couchant). 
       
-      Les personnages, s’ils sont présents, sont stylisés de manière minimaliste mais colorée : pas de silhouettes sombres ou noires, mais des corps représentés avec des aplats de couleurs variées et harmonieuses. Ils n’ont PAS de traits du visage, mais des postures expressives et naturelles. Les vêtements et accessoires sont également représentés sans ombres ni textures, avec des couleurs unies. L’objectif est de garder un style vivant mais épuré, sans tomber dans un effet “ombre chinoise”.
+      Les personnages, s’ils sont présents, sont stylisés de manière minimaliste mais colorée : pas de silhouettes sombres ou noires, mais des corps représentés avec des aplats de couleurs variées et harmonieuses. Ils n’ont PAS de traits du visage ! mais des postures expressives et naturelles. Les vêtements et accessoires sont également représentés sans ombres ni textures, avec des couleurs unies. L’objectif est de garder un style vivant mais épuré, sans tomber dans un effet “ombre chinoise”.
 
-      La composition est équilibrée, avec un titre centré en haut de l’image, écrit en lettres majuscules, utilisant une typographie sans-serif épaisse, arrondie et bien espacée, dans une couleur qui contraste agréablement avec le fond.`,
+      La composition est équilibrée, avec un titre centré en haut de l’image, écrit en lettres majuscules, utilisant une typographie sans-serif épaisse, arrondie et bien espacée, dans une couleur qui contraste agréablement avec le fond.
+      Il faut absulument que le prompt dise qu'on veut un paysage naturel épuré avec des forme et large aplat et que les personnage soit minimaliste coloré et sans traits de visage .
+      `,
     thumbnail: "/images/poster2.jpg",
   },
   3: {
     name: "Affiche de Film",
-    description: "New version • Bold geometric shapes, gradient backgrounds and sleek sans-serif headlines.",
+    description: `Illustration vectorielle minimaliste, style affiche touristique vintage des années 50. 
+Scène : [décris ici le lieu ou l’action, ex. « plage de Biarritz au coucher du soleil »].
+Palette : aplats doux et chauds (sable, ocre, orange brûlé, vert d’eau, turquoise), sans dégradés ni textures.
+Composition : horizon clair, perspective simple, larges formes géométriques nettes.
+Personnages : 1-4 figures stylisées, corps en aplats de couleurs harmonieuses, postures naturelles. 
+IMPORTANT → AUCUN trait du visage, AUCUN contour noir, AUCune ombre portée ; vêtements et accessoires en couleurs unies.
+Typo : titre centré en haut, majuscules sans-serif épaisses et arrondies, couleur contrastante.
+Rendu : bords francs, arrière-plan épuré, effet sérigraphie propre, 4K.`,
     thumbnail: "/images/poster3.png",
   },
   4: {
@@ -49,6 +68,23 @@ const templates: Record<number, TemplateMeta> = {
     thumbnail: "/images/poster7.png",
   },
 };
+const examples = [
+  // Exemples existants
+  "2 personnes surfant à Biarritz au coucher du soleil",
+  "Des amis partant faire un tour de moto au Maroc",
+  "Un couple qui ski à Serre Chevalier dans les Alpes",
+  "4 personnes faisant du beach volley au couché du soleil à Bondi en Australie",
+  "Une famille pique-niquant sous les cerisiers en fleurs à Kyoto",
+  "Une équipe faisant de la plongée avec tuba sur la Grande Barrière de corail",
+  "Deux randonneuses admirant le lever du soleil au sommet du Kilimandjaro",
+  "Un groupe d'amis faisant du kayak sur le lac Louise au Canada",
+  "Un photographe capturant les aurores boréales en Islande",
+  "Des enfants construisant un château de sable à Copacabana, Brésil",
+  "Un couple dégustant un café sur une terrasse à Rome",
+  "Trois amis explorant un marché de nuit à Bangkok",
+  "Des cyclistes traversant les champs de tulipes aux Pays-Bas",
+  "Un musicien jouant de la guitare dans les rues de La Havane"
+];
 
 const getTemplate = (id: number | null) =>
   id && templates[id] ? templates[id] : { name: "Unknown", description: "", thumbnail: "" };
@@ -63,7 +99,7 @@ const TemplateDropdown = () => {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [atEnd, setAtEnd] = useState(false);
 
-  const PREVIEW_WIDTH = "w-32"; // 128 px – back to larger size
+  const PREVIEW_WIDTH = "w-24"; // 128 px – back to larger size
 
   const handleSelect = (id: number) => {
     setSelectedTemplate(id);
@@ -155,6 +191,10 @@ const PromptBar = () => {
   const { selectedTemplate, setGeneratedUrls } = usePosterStore();
   const { toast } = useToast();
 
+  const typingPlaceholder = useTypingPlaceholder(examples, prompt !== "");
+
+
+
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       toast({ title: "Saisissez un prompt", description: "Décrivez le poster.", variant: "destructive" });
@@ -215,7 +255,7 @@ const PromptBar = () => {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Décrivez votre idée… (ex. : Une citation motivante avec fond de montagne)"
+              placeholder={typingPlaceholder}
               className="w-full p-3 sm:p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none transition-all text-base"
               rows={3}
               disabled={isGenerating}
