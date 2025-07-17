@@ -15,34 +15,66 @@ import { ChevronRight, ChevronUp } from 'lucide-react';
 const templates = [
   {
     id: 4,
-    name: "Abstract",
-    image: "/images/poster4.png",
+    name: "Vintage",
+    image: "/images/1.png",
     description: "1 personne qui regarde la mer a Nice en France au coucher de soleil",
   },
   {
     id: 2,
     name: "Vintage",
-    image: "/images/poster2.jpg",
+    image: "/images/2.png",
     description: "Paysage rétro minimaliste inspiré des affiches touristiques des années 60.Paysage rétro minimaliste inspiré des affiches touristiques des années 60.",
   },
   {
     id: 1,
     name: "City",
-    image: "/images/poster6.png",
+    image: "/images/3.png",
     description: "Illustration monochrome façon manga rétro-futuriste d’une métropole animée.",
   },
   {
     id: 3,
-    name: "Affiche de Film",
-    image: "/images/poster3.png",
+    name: "Vintage",
+    image: "/images/4.png",
     description: "Composition cinématographique avec formes géométriques et dégradés.",
   },
   {
     id: 5,
-    name: "Painting Vintage",
-    image: "/images/poster7.png",
+    name: "Vintage",
+    image: "/images/5.png",
     description: "Palette chaleureuse évoquant la peinture publicitaire des années 30.",
   },
+  {
+    id: 6,
+    name: "Vintage",
+    image: "/images/6.png",
+    description: "Palette chaleureuse évoquant la peinture publicitaire des années 30.",
+  },
+  {
+    id: 7,
+    name: "Vintage",
+    image: "/images/7.png",
+    description: "Palette chaleureuse évoquant la peinture publicitaire des années 30.",
+  },
+  {
+    id: 8,
+    name: "Vintage",
+    image: "/images/8.png",
+    description: "Palette chaleureuse évoquant la peinture publicitaire des années 30.",
+  },
+  {
+    id: 9,
+    name: "Vintage",
+    image: "/images/9.png",
+    description: "Palette chaleureuse évoquant la peinture publicitaire des années 30.",
+  },
+
+  {
+    id: 11,
+    name: "Vintage",
+    image: "/images/11.png",
+    description: "Palette chaleureuse évoquant la peinture publicitaire des années 30.",
+  },
+
 ];
 
 const Index = () => {

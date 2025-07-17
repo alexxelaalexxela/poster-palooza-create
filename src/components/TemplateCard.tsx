@@ -49,7 +49,7 @@ const TemplateCard = ({ template }: TemplateCardProps) => {
           {!flipped && (
             <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 text-[0.8rem] font-semibold text-white pointer-events-none">
               <RotateCw className="w-4 h-4" />
-              Cliquer
+              Voir Prompt
             </div>
           )}
         </div>
