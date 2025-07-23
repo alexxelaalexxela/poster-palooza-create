@@ -155,36 +155,56 @@ const Index = () => {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.45, ease: [.4, 0, .2, 1] }}
-                className="overflow-hidden"
+                className="relative overflow-hidden" // ← ajouté 'relative' pour flèche
               >
                 {/*<h2
-                  className="
-                    relative z-20
-                    text-xl sm:text-xl md:text-2xl font-extrabold
-                    text-white
-                    drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]
-                    text-center mb-8
-                  "
-                >
-                  Choisis ton template
-                </h2>*/}
+        className="
+          relative z-20
+          text-xl sm:text-xl md:text-2xl font-extrabold
+          text-white
+          drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]
+          text-center mb-8
+        "
+      >
+        Choisis ton template
+      </h2>*/}
 
                 <div
+                  ref={scrollRef}                      // ← ajouté ici
+                  onScroll={handleScroll}              // ← ajouté ici
                   className="
-                    flex gap-4 overflow-x-auto px-1
-                    scroll-smooth snap-x snap-mandatory no-scrollbar
-                    md:grid md:grid-cols-5 md:gap-6 md:overflow-visible md:px-0
-                  "
+          flex gap-4 overflow-x-auto px-1
+          scroll-smooth snap-x snap-mandatory no-scrollbar
+          md:grid md:grid-cols-5 md:gap-6 md:overflow-visible md:px-0
+        "
                 >
                   {templates.map((t) => (
-                    <TemplateCard          /* ← garde le même nom de fichier */
+                    <TemplateCard
                       key={t.id}
-                      template={t}         /* image - name - description */
+                      template={t}
                     />
-
                   ))}
-
                 </div>
+
+                {showHint && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="pointer-events-none sm:hidden
+            absolute inset-y-0 right-0 w-16
+            bg-gradient-to-l from-white via-white/70 to-transparent"
+                  >
+                    <motion.div
+                      initial={{ x: 0 }}
+                      animate={{ x: [0, 6, 0] }}
+                      transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+                      className="absolute top-1/2 -translate-y-1/2 right-3 text-gray-500"
+                    >
+                      <ChevronRight size={22} />
+                    </motion.div>
+                  </motion.div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

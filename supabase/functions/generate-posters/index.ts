@@ -28,7 +28,7 @@ serve(async (req) => {
     const { prompt, templateName, templateDescription, hasImage = false }: GenerateRequest = await req.json();
 
     console.log('Starting poster generation for prompt:', prompt);
-    console.log('descrpiptoon2 : ');
+
     console.log('descrpiptoon:', templateDescription);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -116,7 +116,7 @@ serve(async (req) => {
 });
 
 async function generatePromptVariations(originalPrompt: string, templateDescription: string): Promise<string[]> {
-  const systemPrompt = `You are a creative poster design expert. Given a user's prompt and template style, create 4 prompts for gpt-image to generate posters in the "${templateDescription}" style.
+  const systemPromptOld = `You are a creative poster design expert. Given a user's prompt and template style, create 4 prompts for gpt-image to generate posters in the "${templateDescription}" style.
 
 Each prompt should:
 - Be specific and detailed for the poster design
@@ -126,6 +126,18 @@ Each prompt should:
 - Use the prompt that will follow
 The objective is to take the following idea and very importantly to make it in the aesthetic of "${templateDescription}" !
 Return 4 slightly different from each other prompts, one prompt per line so that i can separate after, no numbering or formatting.`;
+
+  const systemPrompt = `You are a creative poster-design expert. Given a user’s prompt and the template style, create 4 prompts for GPT-Image that will generate posters in the “${templateDescription}” style.
+
+  Each prompt must:
+    •	Be specific and detailed for the poster design (composition, colour palette, typography hints).
+    •	Rigorously maintain the “${templateDescription}” aesthetic.
+    •	Include a short title—just one or two words, never a full sentence, that captures the place or activity (like the city, the country, the activity etc.. ). If possible, add a one- or two-word subtitle directly below. 
+    •	Offer unique, creative variations of the original idea.
+    •	Incorporate the user’s prompt that will follow.
+    The most important is to take the aesthetic described “${templateDescription}” !!
+  
+   Return 4 slightly different, complete prompts that each describe the entire poster. Output them in a table formatted exactly like ["prompt1", "prompt2", "prompt3", "prompt4"], with one prompt per line and no numbering or extra formatting.`
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -156,7 +168,20 @@ Return 4 slightly different from each other prompts, one prompt per line so that
     throw new Error('OpenAI response missing choices');
   }
 
-  const variations = data.choices[0].message.content.trim().split('\n').filter((line: string) => line.trim());
+  //const variations = data.choices[0].message.content.trim().split('\n').filter((line: string) => line.trim());
+
+  const rawContent = data.choices[0].message.content;
+
+  // 1) Table finder : extrait la chaîne allant du premier '[' au dernier ']'
+  const tableSlice = rawContent.slice(
+    rawContent.indexOf('['),
+    rawContent.lastIndexOf(']') + 1
+  );
+
+  // 2) Conversion en tableau de chaînes
+  const variations: string[] = JSON.parse(tableSlice);
+
+  console.log(variations);
 
   return variations.slice(0, 4);
 }
