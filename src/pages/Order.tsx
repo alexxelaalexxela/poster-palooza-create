@@ -8,8 +8,11 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
 const Order = () => {
-  const { selectedPoster, selectedFormat, selectedQuality, price, generatedUrls } = usePosterStore();
+  const { selectedPoster, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
   const { toast } = useToast();
+  const primaryUrl = generatedUrls[selectedPoster];
+  const fallbackUrl = cachedUrls[selectedPoster];   // ← nouvel accès
+  const finalUrl = primaryUrl ?? fallbackUrl;
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,9 +92,10 @@ const Order = () => {
                flex items-center justify-center     /* centre l’image */
                bg-black p-0.5"                       /* bordure noire fine */
               >
-                {generatedUrls[selectedPoster] ? (
+
+                {finalUrl ? (
                   <img
-                    src={generatedUrls[selectedPoster]}
+                    src={finalUrl}
                     alt={`Poster ${selectedPoster}`}
                     className="max-w-full max-h-full object-contain" /* plus de crop */
                   />

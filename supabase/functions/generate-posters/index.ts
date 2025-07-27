@@ -17,6 +17,7 @@ interface GenerateRequest {
   templateName: string;
   templateDescription: string;
   hasImage?: boolean;
+  visitorId?: string;
 }
 
 serve(async (req) => {
@@ -25,7 +26,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, templateName, templateDescription, hasImage = false }: GenerateRequest = await req.json();
+    const { prompt, templateName, templateDescription, hasImage = false, visitorId }: GenerateRequest = await req.json();
 
     console.log('Starting poster generation for prompt:', prompt);
 
@@ -33,6 +34,25 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    //////////////// verification si visitor deja généré un poster/ a modifier quand on ajoutera le login////////////:
+
+    const { data: existing } = await supabase
+      .from('visitor_limits')
+      .select('last_generated_at')
+      .eq('visitor_id', visitorId)
+      .single();
+
+    if (existing) {
+      // si une ligne existe, refusez la génération
+      return new Response(JSON.stringify({ success: false, error: 'Limite atteinte : un seul poster par visiteur.' }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    // sinon, insérez ou mettez à jour la ligne
+
+
+    ////////////////////////////////////////////////:
     // Create a request record
     const { data: requestData, error: requestError } = await supabase
       .from('poster_requests')
@@ -81,6 +101,9 @@ serve(async (req) => {
       throw new Error('Failed to store poster');
     }*/
 
+
+    await supabase.from('visitor_limits').upsert({ visitor_id: visitorId, last_generated_at: new Date().toISOString() });
+
     // Update request status
     await supabase
       .from('poster_requests')
@@ -94,6 +117,11 @@ serve(async (req) => {
     //  success: true,
     //  poster: posterData
     //}), {
+    if (visitorId) {
+      // insère chaque url
+      const rows = imageUrls.map((url) => ({ visitor_id: visitorId, url }));
+      await supabase.from('visitor_posters').insert(rows);
+    }
 
     return new Response(
       JSON.stringify({

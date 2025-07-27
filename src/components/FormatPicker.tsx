@@ -6,12 +6,16 @@ import PosterWall from './SofaPoster';
 
 const FormatPicker = () => {
   //const { selectedFormat, setSelectedFormat, selectedPoster } = usePosterStore();
-  const { selectedFormat, setSelectedFormat, selectedPoster, generatedUrls } = usePosterStore();
+  const { selectedFormat, setSelectedFormat, selectedPoster, generatedUrls, cachedUrls } = usePosterStore();
 
-  const posterUrl = selectedPoster !== null && generatedUrls[selectedPoster]
-    ? generatedUrls[selectedPoster]
-    : null;
+  //const posterUrl = selectedPoster !== null && generatedUrls[selectedPoster]
+  //  ? generatedUrls[selectedPoster]
+  //  : null;
 
+  const posterUrl =
+    selectedPoster !== null
+      ? generatedUrls[selectedPoster] ?? cachedUrls[selectedPoster] ?? null
+      : null;
 
   if (selectedPoster === null || selectedPoster === undefined) return null;
 

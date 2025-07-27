@@ -8,7 +8,11 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Check, ChevronDown, ChevronRight } from "lucide-react";
 import { useTypingPlaceholder } from "./useTypingPlaceholder";
+import { useFingerprint } from "@/hooks/useFingerprint";
 
+import { UpgradeModal } from "@/components/UpgradeModal";
+
+import { FunctionsHttpError } from "@supabase/supabase-js";
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
 /* -------------------------------------------------------------------------- */
@@ -18,6 +22,7 @@ interface TemplateMeta {
   description: string;
   thumbnail: string;
 }
+
 
 const templates: Record<number, TemplateMeta> = {
   1: {
@@ -186,10 +191,12 @@ const TemplateDropdown = () => {
 /* -------------------------------------------------------------------------- */
 
 const PromptBar = () => {
+  const visitorId = useFingerprint();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const { selectedTemplate, setGeneratedUrls } = usePosterStore();
+  const { selectedTemplate, setGeneratedUrls, setCachedUrls } = usePosterStore();
   const { toast } = useToast();
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const typingPlaceholder = useTypingPlaceholder(examples, prompt !== "");
 
@@ -204,22 +211,66 @@ const PromptBar = () => {
       toast({ title: "Choisissez un template", description: "Sélectionnez un style.", variant: "destructive" });
       return;
     }
+    if (!visitorId) {
+      toast({ title: "Chargement…", description: "Identifiant visiteur en cours.", variant: "destructive" });
+      return;
+    }
 
+
+    setGeneratedUrls([]);           // ← ok, on part de zéro
     setIsGenerating(true);
+
     try {
-      const { name: templateName, description: templateDescription } = getTemplate(selectedTemplate);
-      setGeneratedUrls([]);
-      const { data, error } = await supabase.functions.invoke("generate-posters", {
-        body: { prompt: prompt.trim(), templateName, templateDescription, hasImage: false },
+      const { name, description } = getTemplate(selectedTemplate);
+
+      /* ②  appel Supabase */
+      const { data } = await supabase.functions.invoke("generate-posters", {
+        body: {
+          prompt: prompt.trim(),
+          templateName: name,
+          templateDescription: description,
+          hasImage: false,
+          visitorId,
+        },
       });
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || "Generation failed");
-      const urls = Array.isArray(data.imageUrls) ? data.imageUrls : Array.isArray(data.poster?.image_urls) ? data.poster.image_urls : [];
+
+      /* ↘︎ Si on arrive ici, le HTTP = 200 */
+      if (!data?.success) {
+        // le back renvoie success:false (ex. limite) → modale
+        setShowUpgrade(true);
+        return;
+      }
+
+      const urls = Array.isArray(data.imageUrls)
+        ? data.imageUrls
+        : Array.isArray(data.poster?.image_urls)
+          ? data.poster.image_urls
+          : [];
+
+      if (!urls.length) {
+        // défense : pas d’URL => on considère que c’est un échec logique
+        setShowUpgrade(true);
+        return;
+      }
+
+      /* ③  succès réel -> affiche les posters */
       setGeneratedUrls(urls);
       toast({ title: "Posters générés !", description: "Vos posters sont prêts." });
       setPrompt("");
-    } catch (err: any) {
-      toast({ title: "Erreur", description: err.message || "La génération a échoué.", variant: "destructive" });
+
+    } catch (err) {
+      /* ④  attrape les codes != 200 */
+      if (err instanceof FunctionsHttpError && err.context?.status === 429) {
+        setShowUpgrade(true);          // ouvre la fenêtre d’upgrade
+        return;                        // surtout ne pas aller au toast « Erreur »
+      }
+
+      toast({
+        title: "Erreur",
+        description: (err as Error).message ?? "La génération a échoué.",
+        variant: "destructive",
+      });
+
     } finally {
       setIsGenerating(false);
     }
@@ -235,63 +286,72 @@ const PromptBar = () => {
   const currentTemplate = getTemplate(selectedTemplate);
 
   return (
-    <motion.section initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className="space-y-6">
-      <h2
-        className="
+    <>
+      <motion.section initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className="space-y-6">
+        <h2
+          className="
           relative z-20
           text-2xl sm:text-3xl md:text-4xl font-extrabold
           text-white
           drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]
           text-center mb-6
         "
-      >
-        Describe your poster idea
-      </h2>
+        >
+          Describe your poster idea
+        </h2>
 
-      <div className="max-w-full sm:max-w-lg md:max-w-2xl mx-auto">
-        <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-4 sm:p-6">
-          <div className="space-y-4">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={typingPlaceholder}
-              className="w-full p-3 sm:p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none transition-all text-base"
-              rows={3}
-              disabled={isGenerating}
-            />
+        <div className="max-w-full sm:max-w-lg md:max-w-2xl mx-auto">
+          <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-4 sm:p-6">
+            <div className="space-y-4">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={typingPlaceholder}
+                className="w-full p-3 sm:p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none transition-all text-base"
+                rows={3}
+                disabled={isGenerating}
+              />
 
-            <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-1 text-sm text-gray-800">
-                {selectedTemplate ? (
-                  <>
-                    Template : <strong className="font-semibold text-gray-900">{currentTemplate.name}</strong>
-                  </>
-                ) : (
-                  <span className="text-orange-600">⚠️ Sélectionnez un template</span>
-                )}
-                <TemplateDropdown />
+              <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-1 text-sm text-gray-800">
+                  {selectedTemplate ? (
+                    <>
+                      Template : <strong className="font-semibold text-gray-900">{currentTemplate.name}</strong>
+                    </>
+                  ) : (
+                    <span className="text-orange-600">⚠️ Sélectionnez un template</span>
+                  )}
+                  <TemplateDropdown />
+                </div>
+
+                <Button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !prompt.trim() || !selectedTemplate}
+                  className="w-full sm:w-auto px-6 py-3 font-medium bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:text-white/70 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Génération…
+                    </div>
+                  ) : (
+                    "Générer les posters"
+                  )}
+                </Button>
               </div>
-
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim() || !selectedTemplate}
-                className="w-full sm:w-auto px-6 py-3 font-medium bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:text-white/70 disabled:cursor-not-allowed"
-              >
-                {isGenerating ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Génération…
-                  </div>
-                ) : (
-                  "Générer les posters"
-                )}
-              </Button>
             </div>
           </div>
         </div>
-      </div>
-    </motion.section>
+      </motion.section>
+
+
+      <UpgradeModal
+        open={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        onSignup={() => navigate('/signup')}   /* ou router.push() */
+      />
+    </>
   );
 };
 

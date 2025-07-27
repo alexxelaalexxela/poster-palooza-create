@@ -9,10 +9,15 @@ import { usePosterStore } from "@/store/usePosterStore";
 
 export default function PosterGallery() {
   const {
+    cachedUrls = [],
     generatedUrls = [],
     selectedPoster,
     setSelectedPoster,
   } = usePosterStore();
+
+  const cachedUrlsFiltered = cachedUrls.filter((url) => !generatedUrls.includes(url));
+
+  const noPosters = cachedUrlsFiltered.length === 0 && generatedUrls.length === 0;
 
   /* Lightbox state (mobile only) */
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
@@ -26,7 +31,7 @@ export default function PosterGallery() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (!generatedUrls.length) {
+  if (noPosters) {
     return (
       <motion.section
         initial={{ opacity: 0, y: 40 }}
@@ -44,7 +49,10 @@ export default function PosterGallery() {
     );
   }
 
+
+
   const posters = generatedUrls.map((url, i) => ({ id: `poster-${i}`, url }));
+  const postersOld = cachedUrlsFiltered.map((url, i) => ({ id: `poster-old-${i}`, url }));
 
   return (
     <motion.section
@@ -53,49 +61,104 @@ export default function PosterGallery() {
       transition={{ duration: 0.8 }}
       className="space-y-5 md:space-y-6"
     >
-      <h2 className="mt-4 text-xl sm:text-2xl md:text-3xl font-bold text-center text-gray-900">
-        Generated Posters
-      </h2>
 
-      {/* Grid: 2 cols mobile, 2 ≥ md, 4 ≥ lg */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        {posters.map((p, idx) => {
-          const isSelected = selectedPoster === idx;
-          return (
-            <motion.div
-              key={p.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: isSelected ? 1.08 : 1 }}
-              whileHover={{ scale: isSelected ? 1.08 : 1.06 }}
-              transition={{ duration: 0.4, delay: idx * 0.05 }}
-              className={`bg-white/80 backdrop-blur rounded-2xl select-none cursor-pointer
+      {generatedUrls.length > 0 && (
+        <div>
+          <h2 className="mt-8 text-xl sm:text-2xl md:text-3xl font-bold text-center text-gray-900">
+            Generated Posters
+          </h2>
+
+          {/* Grid: 2 cols mobile, 2 ≥ md, 4 ≥ lg */}
+          <div className="mt-12 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            {posters.map((p, idx) => {
+              const isSelected = selectedPoster === idx;
+              return (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: isSelected ? 1.08 : 1 }}
+                  whileHover={{ scale: isSelected ? 1.08 : 1.06 }}
+                  transition={{ duration: 0.4, delay: idx * 0.05 }}
+                  className={`bg-white/80 backdrop-blur rounded-2xl select-none cursor-pointer
                    p-3 md:p-4 transition-transform duration-200 ease-out
                    ${isSelected
-                  ? "border-2 border-indigo-500 bg-indigo-50/80 shadow-lg"
-                  : "border border-[#c8d9f2] shadow-md"}
+                      ? "border-2 border-indigo-500 bg-indigo-50/80 shadow-lg"
+                      : "border border-[#c8d9f2] shadow-md"}
                  `}
-              onClick={() => {
-                const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-                // Toujours sélectionner
-                setSelectedPoster(idx);
-                // Ouvrir l'aperçu plein écran uniquement sur mobile
-                if (!isDesktop) {
-                  setLightboxIdx(idx);
-                }
-              }}
-            >
-              <div className="aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-50 flex items-center justify-center">
-                <img
-                  src={p.url}
-                  alt={`Generated poster ${idx + 1}`}
-                  className="w-full h-full object-contain"
-                  loading="lazy"
-                />
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+                  onClick={() => {
+                    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+                    // Toujours sélectionner
+                    setSelectedPoster(idx);
+                    // Ouvrir l'aperçu plein écran uniquement sur mobile
+                    if (!isDesktop) {
+                      setLightboxIdx(idx);
+                    }
+                  }}
+                >
+                  <div className="aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-50 flex items-center justify-center">
+                    <img
+                      src={p.url}
+                      alt={`Generated poster ${idx + 1}`}
+                      className="w-full h-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {cachedUrlsFiltered.length > 0 && (
+        <div>
+          <h2 className="mt-12 text-xl sm:text-2xl md:text-3xl font-bold text-center text-gray-900">
+            Anciens Posters
+          </h2>
+
+          {/* Grid: 2 cols mobile, 2 ≥ md, 4 ≥ lg */}
+          <div className="mt-12 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            {postersOld.map((p, idx) => {
+              const isSelected = selectedPoster === idx;
+              return (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: isSelected ? 1.08 : 1 }}
+                  whileHover={{ scale: isSelected ? 1.08 : 1.06 }}
+                  transition={{ duration: 0.4, delay: idx * 0.05 }}
+                  className={`bg-white/80 backdrop-blur rounded-2xl select-none cursor-pointer
+                   p-3 md:p-4 transition-transform duration-200 ease-out
+                   ${isSelected
+                      ? "border-2 border-indigo-500 bg-indigo-50/80 shadow-lg"
+                      : "border border-[#c8d9f2] shadow-md"}
+                 `}
+                  onClick={() => {
+                    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+                    // Toujours sélectionner
+                    setSelectedPoster(idx);
+                    // Ouvrir l'aperçu plein écran uniquement sur mobile
+                    if (!isDesktop) {
+                      setLightboxIdx(idx);
+                    }
+                  }}
+                >
+                  <div className="aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-50 flex items-center justify-center">
+                    <img
+                      src={p.url}
+                      alt={`Generated poster ${idx + 1}`}
+                      className="w-full h-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
 
       {/* Lightbox: mobile only */}
       <AnimatePresence>
@@ -122,7 +185,7 @@ export default function PosterGallery() {
                 <X size={20} />
               </button>
               <img
-                src={generatedUrls[lightboxIdx!]}
+                src={(generatedUrls.length > 0 ? generatedUrls : cachedUrlsFiltered)[lightboxIdx!]}
                 alt="Large preview"
                 className="w-full h-auto object-contain"
               />

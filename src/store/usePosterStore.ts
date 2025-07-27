@@ -7,6 +7,7 @@ export interface Template {
   image: string;
 }
 
+
 export interface PosterResult {
   id: string;
   url: string;
@@ -24,6 +25,7 @@ interface PosterStore {
   selectedQuality: Quality | null;
   price: number;
   generatedUrls: string[];
+  cachedUrls: string[];
 
   setSelectedTemplate: (id: number | null) => void;
   setSelectedPoster: (id: number | null) => void;
@@ -32,20 +34,25 @@ interface PosterStore {
   calculatePrice: () => void;
   canOrder: () => boolean;
   setGeneratedUrls: (urls: string[]) => void;
+  setCachedUrls: (urls: string[]) => void;
 }
 
 export const usePosterStore = create<PosterStore>((set, get) => ({
+
   selectedTemplate: 2,
   selectedPoster: null,
   selectedFormat: null,
   selectedQuality: null,
   price: 60,
   generatedUrls: [],
+  cachedUrls: [],
 
   setSelectedTemplate: (id) => {
     set({ selectedTemplate: id });
     get().calculatePrice();
   },
+
+  setCachedUrls: (urls) => set({ cachedUrls: urls }),
   setGeneratedUrls: (urls) => set({ generatedUrls: urls }),
 
   setSelectedPoster: (id) => {
