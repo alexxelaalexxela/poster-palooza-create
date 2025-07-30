@@ -9,10 +9,12 @@ import { useToast } from '@/hooks/use-toast';
 
 const Order = () => {
   const { selectedPoster, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
+  const mergedUrls = [...generatedUrls, ...cachedUrls];
   const { toast } = useToast();
-  const primaryUrl = generatedUrls[selectedPoster];
-  const fallbackUrl = cachedUrls[selectedPoster];   // ← nouvel accès
-  const finalUrl = primaryUrl ?? fallbackUrl;
+  //const primaryUrl = generatedUrls[selectedPoster];
+  //const fallbackUrl = cachedUrls[selectedPoster];   // ← nouvel accès
+  //const finalUrl = primaryUrl ?? fallbackUrl;
+  const finalUrl = mergedUrls[selectedPoster] ?? null;
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();

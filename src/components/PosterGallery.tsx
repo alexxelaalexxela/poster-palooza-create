@@ -17,7 +17,11 @@ export default function PosterGallery() {
 
   const cachedUrlsFiltered = cachedUrls.filter((url) => !generatedUrls.includes(url));
 
+  const mergedUrls = [...generatedUrls, ...cachedUrlsFiltered];
+
   const noPosters = cachedUrlsFiltered.length === 0 && generatedUrls.length === 0;
+
+  const offsetOld = generatedUrls.length;
 
   /* Lightbox state (mobile only) */
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
@@ -51,8 +55,8 @@ export default function PosterGallery() {
 
 
 
-  const posters = generatedUrls.map((url, i) => ({ id: `poster-${i}`, url }));
-  const postersOld = cachedUrlsFiltered.map((url, i) => ({ id: `poster-old-${i}`, url }));
+  //const posters = generatedUrls.map((url, i) => ({ id: `poster-${i}`, url }));
+  //const postersOld = cachedUrlsFiltered.map((url, i) => ({ id: `poster-old-${i}`, url }));
 
   return (
     <motion.section
@@ -68,13 +72,14 @@ export default function PosterGallery() {
             Generated Posters
           </h2>
 
+
           {/* Grid: 2 cols mobile, 2 ≥ md, 4 ≥ lg */}
           <div className="mt-12 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {posters.map((p, idx) => {
+            {generatedUrls.map((url, idx) => {
               const isSelected = selectedPoster === idx;
               return (
                 <motion.div
-                  key={p.id}
+                  key={`poster-${idx}`}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: isSelected ? 1.08 : 1 }}
                   whileHover={{ scale: isSelected ? 1.08 : 1.06 }}
@@ -97,7 +102,7 @@ export default function PosterGallery() {
                 >
                   <div className="aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-50 flex items-center justify-center">
                     <img
-                      src={p.url}
+                      src={url}
                       alt={`Generated poster ${idx + 1}`}
                       className="w-full h-full object-contain"
                       loading="lazy"
@@ -118,11 +123,12 @@ export default function PosterGallery() {
 
           {/* Grid: 2 cols mobile, 2 ≥ md, 4 ≥ lg */}
           <div className="mt-12 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {postersOld.map((p, idx) => {
-              const isSelected = selectedPoster === idx;
+            {cachedUrlsFiltered.map((url, idx) => {
+              const globalIdx = offsetOld + idx;
+              const isSelected = selectedPoster === globalIdx;
               return (
                 <motion.div
-                  key={p.id}
+                  key={`poster-old-${idx}`}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: isSelected ? 1.08 : 1 }}
                   whileHover={{ scale: isSelected ? 1.08 : 1.06 }}
@@ -136,16 +142,16 @@ export default function PosterGallery() {
                   onClick={() => {
                     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
                     // Toujours sélectionner
-                    setSelectedPoster(idx);
+                    setSelectedPoster(globalIdx);
                     // Ouvrir l'aperçu plein écran uniquement sur mobile
                     if (!isDesktop) {
-                      setLightboxIdx(idx);
+                      setLightboxIdx(globalIdx);
                     }
                   }}
                 >
                   <div className="aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-50 flex items-center justify-center">
                     <img
-                      src={p.url}
+                      src={url}
                       alt={`Generated poster ${idx + 1}`}
                       className="w-full h-full object-contain"
                       loading="lazy"
@@ -185,7 +191,7 @@ export default function PosterGallery() {
                 <X size={20} />
               </button>
               <img
-                src={(generatedUrls.length > 0 ? generatedUrls : cachedUrlsFiltered)[lightboxIdx!]}
+                src={mergedUrls[lightboxIdx!]}
                 alt="Large preview"
                 className="w-full h-auto object-contain"
               />
