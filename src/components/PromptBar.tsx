@@ -349,7 +349,7 @@ const PromptBar = () => {
       <UpgradeModal
         open={showUpgrade}
         onClose={() => setShowUpgrade(false)}
-        onSignup={() => navigate('/signup')}   /* ou router.push() */
+        onSignup={() => navigate('/register')}   /* ou router.push() */
       />
     </>
   );

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from '@/hooks/useAuth';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ const navigation = [
 ];
 
 export default function Layout({ children }: LayoutProps) {
+  const { user, loading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -69,6 +71,27 @@ export default function Layout({ children }: LayoutProps) {
                   {item.name}
                 </Link>
               ))}
+
+              <div className="w-px h-6 bg-gray-200" /> {/* Séparateur visuel */}
+              {loading ? (
+                <div className="w-20 h-6 bg-gray-200 rounded-md animate-pulse" />
+              ) : user ? (
+                <Link
+                  to="/account"
+                  className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+                >
+                  Mon Compte
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  className="text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-800"
+                >
+                  Login
+                </Link>
+              )}
+              {/* ===================== FIN NOUVEAU BLOC DESKTOP ===================== */}
+
             </div>
 
             {/* Burger */}
@@ -108,6 +131,27 @@ export default function Layout({ children }: LayoutProps) {
                     {item.name}
                   </Link>
                 ))}
+
+                {/* ======================== NOUVEAU BLOC MOBILE ======================= */}
+                <div className="border-t border-gray-100 my-2" />
+                {loading ? (
+                  <div className="w-full h-12 bg-gray-100 rounded-md animate-pulse" />
+                ) : user ? (
+                  <Link
+                    to="/account"
+                    className="block px-4 py-3 text-lg font-medium text-gray-600"
+                  >
+                    Mon Compte
+                  </Link>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="block px-4 py-3 text-lg font-medium text-indigo-600"
+                  >
+                    Login / Register
+                  </Link>
+                )}
+                {/* ====================== FIN NOUVEAU BLOC MOBILE ===================== */}
               </div>
             </motion.div>
           )}

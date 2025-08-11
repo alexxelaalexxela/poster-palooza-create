@@ -2,6 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { FunctionsHttpError } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -26,49 +27,50 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, templateName, templateDescription, hasImage = false, visitorId }: GenerateRequest = await req.json();
-
-    console.log('Starting poster generation for prompt:', prompt);
-
-    console.log('descrpiptoon:', templateDescription);
+    const { prompt, templateName, templateDescription, hasImage, visitorId }: GenerateRequest = await req.json();
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const authHeader = req.headers.get('Authorization')!;
+    const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
 
-    //////////////// verification si visitor deja généré un poster/ a modifier quand on ajoutera le login////////////:
+    let canGenerate = false;
+    let userId = user?.id;
 
-    const { data: existing } = await supabase
-      .from('visitor_limits')
-      .select('last_generated_at')
-      .eq('visitor_id', visitorId)
-      .single();
+    if (user) {
+      // Utilisateur authentifié
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('is_paid, generations_remaining')
+        .eq('id', user.id)
+        .single();
 
-    if (existing) {
-      // si une ligne existe, refusez la génération
-      return new Response(JSON.stringify({ success: false, error: 'Limite atteinte : un seul poster par visiteur.' }), {
+      if (error) throw error;
+
+      if (profile && profile.is_paid && profile.generations_remaining > 0) {
+        canGenerate = true;
+        // On décrémentera le quota après la génération
+      } else if (profile && profile.generations_remaining > 0) {
+        // C'est sa génération gratuite en tant qu'utilisateur loggué
+        canGenerate = true;
+      }
+    } else if (visitorId) {
+      // Utilisateur anonyme
+      const { data: existingVisitor } = await supabase
+        .from('visitor_user_links')
+        .select('visitor_id')
+        .eq('visitor_id', visitorId)
+        .single();
+
+      if (!existingVisitor) {
+        canGenerate = true; // C'est sa génération gratuite en tant que visiteur
+      }
+    }
+
+    if (!canGenerate) {
+      return new Response(JSON.stringify({ success: false, error: 'Limit reached.' }), {
         status: 429,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-    }
-    // sinon, insérez ou mettez à jour la ligne
-
-
-    ////////////////////////////////////////////////:
-    // Create a request record
-    const { data: requestData, error: requestError } = await supabase
-      .from('poster_requests')
-      .insert({
-        prompt_text: prompt,
-        template_name: templateName,              // 🟢 ENUM ok
-        template_description: templateDescription,
-        has_image: hasImage,
-        status: 'processing'
-      })
-      .select()
-      .single();
-
-    if (requestError) {
-      console.error('Error creating request:', requestError);
-      throw new Error('Failed to create request');
     }
 
     // Generate 4 different prompts using GPT-4
@@ -102,33 +104,22 @@ serve(async (req) => {
     }*/
 
 
-    await supabase.from('visitor_limits').upsert({ visitor_id: visitorId, last_generated_at: new Date().toISOString() });
-
-    // Update request status
-    await supabase
-      .from('poster_requests')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString()
-      })
-      .eq('id', requestData.id);
-
-    //return new Response(JSON.stringify({
-    //  success: true,
-    //  poster: posterData
-    //}), {
-    if (visitorId) {
-      // insère chaque url
-      const rows = imageUrls.map((url) => ({ visitor_id: visitorId, url }));
-      await supabase.from('visitor_posters').insert(rows);
+    if (user) {
+      await supabase.rpc('decrement_generations', { user_id_param: user.id });
+      // Associer les posters générés à l'utilisateur
+      const posterRows = imageUrls.map(url => ({ visitor_id: visitorId, url, user_id: user.id }));
+      await supabase.from('visitor_posters').insert(posterRows);
+    } else if (visitorId) {
+      // Marquer le visiteur comme ayant utilisé sa génération gratuite
+      await supabase.from('visitor_user_links').insert({ visitor_id: visitorId });
+      // Enregistrer les posters comme anonymes
+      const posterRows = imageUrls.map(url => ({ visitor_id: visitorId, url }));
+      await supabase.from('visitor_posters').insert(posterRows);
     }
 
+
     return new Response(
-      JSON.stringify({
-        success: true,
-        imageUrls: imageUrls ?? [],      // ← garanti tableau
-        promptVariations: promptVariations ?? [],
-      }),
+      JSON.stringify({ success: true, imageUrls: imageUrls ?? [] }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

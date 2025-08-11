@@ -13,30 +13,37 @@ import Order from "@/pages/Order";
 import NotFound from "@/pages/NotFound";
 import { useLoadVisitorPosters } from "./hooks/useLoadVisitorPosters";
 
+
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import Account from "@/pages/Account";
+import { AuthProvider } from "@/hooks/useAuth"; // On va créer ce hook
+
 const queryClient = new QueryClient();
 
-/* ─────────────────────────────────────────────── */
-/*                App Component                    */
-/* ─────────────────────────────────────────────── */
 const App = () => {
   useLoadVisitorPosters();
 
-  /* rendu identique à l’original */
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
         <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/order" element={<Order />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Layout>
+          <AuthProvider> {/* Enveloppez avec le fournisseur d'auth */}
+            <Toaster />
+            <Sonner />
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/order" element={<Order />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/account" element={<Account />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Layout>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
@@ -44,7 +51,3 @@ const App = () => {
 };
 
 export default App;
-
-
-
-
