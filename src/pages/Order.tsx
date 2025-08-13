@@ -6,6 +6,7 @@ import { usePosterStore } from '@/store/usePosterStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Order = () => {
   const { selectedPoster, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
@@ -20,30 +21,47 @@ const Order = () => {
     e.preventDefault();
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: 'Connexion requise',
+          description: 'Veuillez vous connecter pour procéder au paiement.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (!finalUrl) {
+        toast({
+          title: 'Image manquante',
+          description: 'Aucune URL de poster disponible.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const res = await fetch(
         import.meta.env.VITE_SUPABASE_FUNCTION_URL,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            // 🔑 on envoie l'API key dans deux entêtes comme le veut Supabase Edge
             apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            poster: selectedPoster,
             format: selectedFormat,
             quality: selectedQuality,
-            price: Number(price),          // ← toujours numérique
+            posterUrl: finalUrl,
           }),
         }
       );
 
       const data = await res.json();
-      if (data.url) {
+      if (res.ok && data.url) {
         window.location.href = data.url;   // redirection Stripe Checkout
       } else {
-        throw new Error(data.error || 'Pas de lien de paiement reçu');
+        throw new Error(data.error || 'Erreur lors de la création de la session de paiement');
       }
     } catch (err) {
       toast({
