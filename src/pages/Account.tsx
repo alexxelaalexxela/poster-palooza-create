@@ -5,6 +5,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { usePosterStore } from '@/store/usePosterStore';
+import { AttemptsCounter } from '@/components/AttemptsCounter';
+import { motion } from 'framer-motion';
+import { Sparkles, AlertCircle, CreditCard } from 'lucide-react';
 
 const POSTERS_PER_PAGE = 8; // On charge 8 posters à la fois
 
@@ -17,6 +20,25 @@ export default function Account() {
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
+    const [profile, setProfile] = useState<{ is_paid: boolean; generations_remaining: number } | null>(null);
+
+    const fetchProfile = useCallback(async () => {
+        if (!user) return;
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('is_paid, generations_remaining')
+            .eq('id', user.id)
+            .single();
+
+        if (!error && data) {
+            setProfile(data);
+        }
+    }, [user]);
+
+    useEffect(() => {
+        fetchProfile();
+    }, [fetchProfile]);
 
     const fetchPosters = useCallback(async (currentPage: number) => {
         if (!user || loading) return;
@@ -76,6 +98,51 @@ export default function Account() {
                 </div>
                 <Button onClick={handleLogout} variant="outline">Logout</Button>
             </div>
+
+            {/* Informations du compte */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="mt-8 p-6 bg-white rounded-xl shadow-sm border border-gray-200"
+            >
+                <h2 className="text-xl font-semibold mb-4">Account Status</h2>
+                
+                {/* Compteur de tentatives */}
+                <div className="mb-4">
+                    <AttemptsCounter />
+                </div>
+
+                {/* Statut de paiement */}
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    {profile?.is_paid ? (
+                        <>
+                            <Sparkles size={20} className="text-yellow-500" />
+                            <span className="text-green-700 font-medium">Premium Account</span>
+                            <span className="text-sm text-gray-600">15 générations par mois</span>
+                        </>
+                    ) : (
+                        <>
+                            <AlertCircle size={20} className="text-blue-500" />
+                            <span className="text-blue-700 font-medium">Free Account</span>
+                            <span className="text-sm text-gray-600">3 générations gratuites</span>
+                        </>
+                    )}
+                </div>
+
+                {/* Bouton d'upgrade si non payé */}
+                {profile && !profile.is_paid && (
+                    <div className="mt-4">
+                        <Button 
+                            onClick={() => navigate('/pricing')}
+                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                        >
+                            <CreditCard size={16} className="mr-2" />
+                            Upgrade to Premium
+                        </Button>
+                    </div>
+                )}
+            </motion.div>
 
             <h2 className="text-2xl font-bold mt-8">My Posters</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">

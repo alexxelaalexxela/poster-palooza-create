@@ -9,7 +9,7 @@ const plans = [
     period: '/month',
     description: 'Perfect for trying out Postfilio',
     features: [
-      '5 poster generations per month',
+      '3 poster generations',
       'Basic templates',
       'Standard quality (1080p)',
       'Email support',
@@ -23,7 +23,7 @@ const plans = [
     period: '/month',
     description: 'Best for regular creators',
     features: [
-      '100 poster generations per month',
+      '15 poster generations per month',
       'All premium templates',
       'High quality (4K)',
       'Priority support',

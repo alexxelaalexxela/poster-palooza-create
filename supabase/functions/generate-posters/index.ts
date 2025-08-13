@@ -46,23 +46,28 @@ serve(async (req) => {
 
       if (error) throw error;
 
-      if (profile && profile.is_paid && profile.generations_remaining > 0) {
+      if (profile && profile.generations_remaining > 0) {
         canGenerate = true;
         // On décrémentera le quota après la génération
-      } else if (profile && profile.generations_remaining > 0) {
-        // C'est sa génération gratuite en tant qu'utilisateur loggué
-        canGenerate = true;
       }
     } else if (visitorId) {
-      // Utilisateur anonyme
-      const { data: existingVisitor } = await supabase
+      // Utilisateur anonyme - vérifier s'il a encore des tentatives
+      const { data: visitorData, error } = await supabase
         .from('visitor_user_links')
-        .select('visitor_id')
+        .select('generation_count')
         .eq('visitor_id', visitorId)
         .single();
 
-      if (!existingVisitor) {
-        canGenerate = true; // C'est sa génération gratuite en tant que visiteur
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 = no rows returned, ce qui est normal pour un nouveau visiteur
+        throw error;
+      }
+
+      const usedAttempts = visitorData?.generation_count || 0;
+      const maxAttempts = 3; // Limite pour les visiteurs anonymes
+      
+      if (usedAttempts < maxAttempts) {
+        canGenerate = true;
       }
     }
 
@@ -105,13 +110,37 @@ serve(async (req) => {
 
 
     if (user) {
+      // Utilisateur connecté - décrémenter ses tentatives
       await supabase.rpc('decrement_generations', { user_id_param: user.id });
       // Associer les posters générés à l'utilisateur
       const posterRows = imageUrls.map(url => ({ visitor_id: visitorId, url, user_id: user.id }));
       await supabase.from('visitor_posters').insert(posterRows);
     } else if (visitorId) {
-      // Marquer le visiteur comme ayant utilisé sa génération gratuite
-      await supabase.from('visitor_user_links').insert({ visitor_id: visitorId });
+      // Visiteur anonyme - incrémenter le compteur de tentatives
+      const { data: existingVisitor } = await supabase
+        .from('visitor_user_links')
+        .select('visitor_id, generation_count')
+        .eq('visitor_id', visitorId)
+        .single();
+
+      if (existingVisitor) {
+        // Mettre à jour le compteur existant
+        await supabase
+          .from('visitor_user_links')
+          .update({ 
+            generation_count: (existingVisitor.generation_count || 0) + 1,
+            last_generated_at: new Date().toISOString()
+          })
+          .eq('visitor_id', visitorId);
+      } else {
+        // Créer une nouvelle entrée
+        await supabase.from('visitor_user_links').insert({ 
+          visitor_id: visitorId, 
+          generation_count: 1,
+          last_generated_at: new Date().toISOString()
+        });
+      }
+      
       // Enregistrer les posters comme anonymes
       const posterRows = imageUrls.map(url => ({ visitor_id: visitorId, url }));
       await supabase.from('visitor_posters').insert(posterRows);
@@ -126,7 +155,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in generate-posters function:', error);
     return new Response(JSON.stringify({
-      error: error.message || 'Failed to generate posters'
+      error: (error as any).message || 'Failed to generate posters'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

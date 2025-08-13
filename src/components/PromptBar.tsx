@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { usePosterStore } from "@/store/usePosterStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +12,7 @@ import { useTypingPlaceholder } from "./useTypingPlaceholder";
 import { useFingerprint } from "@/hooks/useFingerprint";
 
 import { UpgradeModal } from "@/components/UpgradeModal";
+import { AttemptsCounter } from "@/components/AttemptsCounter";
 
 import { FunctionsHttpError } from "@supabase/supabase-js";
 /* -------------------------------------------------------------------------- */
@@ -191,6 +193,7 @@ const TemplateDropdown = () => {
 /* -------------------------------------------------------------------------- */
 
 const PromptBar = () => {
+  const navigate = useNavigate();
   const visitorId = useFingerprint();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -257,6 +260,9 @@ const PromptBar = () => {
       setGeneratedUrls(urls);
       toast({ title: "Posters générés !", description: "Vos posters sont prêts." });
       setPrompt("");
+      
+      // Demande aux composants d'actualiser les compteurs (profils/visiteur)
+      try { window.dispatchEvent(new CustomEvent('attempts:refresh')); } catch {}
 
     } catch (err) {
       /* ④  attrape les codes != 200 */
@@ -299,6 +305,11 @@ const PromptBar = () => {
         >
           Describe your poster idea
         </h2>
+
+        {/* Compteur de tentatives */}
+        <div className="max-w-full sm:max-w-lg md:max-w-2xl mx-auto">
+          <AttemptsCounter />
+        </div>
 
         <div className="max-w-full sm:max-w-lg md:max-w-2xl mx-auto">
           <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-4 sm:p-6">
