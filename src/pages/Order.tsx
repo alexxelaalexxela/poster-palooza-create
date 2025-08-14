@@ -22,14 +22,7 @@ const Order = () => {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: 'Connexion requise',
-          description: 'Veuillez vous connecter pour procéder au paiement.',
-          variant: 'destructive',
-        });
-        return;
-      }
+      const token = session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       if (!finalUrl) {
         toast({
@@ -47,12 +40,16 @@ const Order = () => {
           headers: {
             'Content-Type': 'application/json',
             apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${session.access_token}`,
+            // Authorization doit rester l'anon key pour passer verify_jwt côté Edge
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            // On envoie le JWT utilisateur séparément (si dispo)
+            'X-Client-Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
             format: selectedFormat,
             quality: selectedQuality,
-            posterUrl: finalUrl,
+            // Evite d'envoyer une data URL géante
+            posterUrl: typeof finalUrl === 'string' && finalUrl.startsWith('data:') ? undefined : finalUrl,
           }),
         }
       );

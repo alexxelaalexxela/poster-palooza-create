@@ -5,9 +5,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Assure
 /*───────────────────────────*
  * Configuration CORS
  *───────────────────────────*/
-const ALLOWED_ORIGIN = "https://poster-palooza-create.lovable.app"//"http://localhost:8080"; //"https://poster-palooza-create.lovable.app" // ;          // ← remplace par ton domaine en prod
+const ALLOWED_ORIGINS = [
+  "https://poster-palooza-create.lovable.app",
+  "https://preview--poster-palooza-create.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
 const prices = {
   // A4
@@ -36,18 +41,20 @@ const prices = {
   'A0-museum': 6800,
 };
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,          // ton front
+const baseCorsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, apikey",   // ← ajoute Authorization + apikey
-};
+    "Content-Type, Authorization, apikey, X-Client-Authorization, x-client-authorization",
+} as const;
 
 /*───────────────────────────*
  * Fonction Edge
  *───────────────────────────*/
 serve(async (req) => {
   /*---------- 1) Pré-requête CORS ----------*/
+  const origin = req.headers.get("Origin") || "";
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const corsHeaders = { ...baseCorsHeaders, "Access-Control-Allow-Origin": allowOrigin } as Record<string, string>;
   if (req.method === "OPTIONS") {
     return new Response("ok", { status: 200, headers: corsHeaders });
   }
@@ -84,16 +91,22 @@ serve(async (req) => {
     });
   }
 
-  // Récupérer l'utilisateur via JWT
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  const authHeader = req.headers.get('Authorization')!;
-  const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-
-  if (!user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+  // Récupérer l'utilisateur via JWT (optionnel pour paiement invité)
+  // Attention: `verify_jwt = true` exige que Authorization soit un JWT projet (anon/service)
+  // On lit donc le token utilisateur (GoTrue) via un en-tête séparé.
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const clientAuthHeader = req.headers.get('X-Client-Authorization') || req.headers.get('x-client-authorization') || '';
+  let userId = 'anonymous';
+  if (clientAuthHeader.startsWith('Bearer ')) {
+    try {
+      const token = clientAuthHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user?.id) {
+        userId = user.id;
+      }
+    } catch (_e) {
+      // ignore, reste en "anonymous"
+    }
   }
 
 
@@ -110,16 +123,31 @@ serve(async (req) => {
 
   const bodyParams = new URLSearchParams({
     mode: "payment",
-    success_url: ALLOWED_ORIGIN,//"http://localhost:8080/success",
-    cancel_url: ALLOWED_ORIGIN,//"http://localhost:8080",
-    "line_items[0][price_data][currency]": "eur",
+    success_url: allowOrigin,
+    cancel_url: allowOrigin,
+    "line_items[0][price_data][currency]": "aud",
     "line_items[0][price_data][product_data][name]":
       `Poster $${format} – ${quality}`,
     "line_items[0][price_data][unit_amount]": `${unit_amount}`, "line_items[0][quantity]": "1",
     "payment_method_types[0]": "card",
   });
-  bodyParams.append("metadata[user_id]", user.id);
-  bodyParams.append("metadata[poster_url]", posterUrl);
+  // Ajoute une image d'aperçu si l'URL est courte et publique
+  if (
+    typeof posterUrl === 'string' &&
+    !posterUrl.startsWith('data:') &&
+    posterUrl.length <= 200
+  ) {
+    bodyParams.append("line_items[0][price_data][product_data][images][0]", posterUrl);
+  }
+  bodyParams.append("metadata[user_id]", userId);
+  // N'ajoute pas d'énormes data URLs en metadata Stripe (limites ~500 chars)
+  if (
+    typeof posterUrl === 'string' &&
+    !posterUrl.startsWith('data:') &&
+    posterUrl.length <= 500
+  ) {
+    bodyParams.append("metadata[poster_url]", posterUrl);
+  }
   bodyParams.append(
     "shipping_address_collection[allowed_countries][]",
     "FR",        // France

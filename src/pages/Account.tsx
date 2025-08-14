@@ -12,14 +12,14 @@ import { Sparkles, AlertCircle, CreditCard } from 'lucide-react';
 const POSTERS_PER_PAGE = 8; // On charge 8 posters à la fois
 
 export default function Account() {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
     const navigate = useNavigate();
     const { setSelectedPoster } = usePosterStore();
 
     const [posters, setPosters] = useState<{ url: string }[]>([]);
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
-    const [loading, setLoading] = useState(false);
+    const [postersLoading, setPostersLoading] = useState(false);
     const [profile, setProfile] = useState<{ is_paid: boolean; generations_remaining: number } | null>(null);
 
     const fetchProfile = useCallback(async () => {
@@ -40,10 +40,17 @@ export default function Account() {
         fetchProfile();
     }, [fetchProfile]);
 
-    const fetchPosters = useCallback(async (currentPage: number) => {
-        if (!user || loading) return;
+    // Redirige vers /login si déconnecté (après que l'état d'auth soit connu)
+    useEffect(() => {
+        if (!loading && !user) {
+            navigate('/login', { replace: true });
+        }
+    }, [loading, user, navigate]);
 
-        setLoading(true);
+    const fetchPosters = useCallback(async (currentPage: number) => {
+        if (!user || postersLoading) return;
+
+        setPostersLoading(true);
 
         const from = currentPage * POSTERS_PER_PAGE;
         const to = from + POSTERS_PER_PAGE - 1;
@@ -65,8 +72,8 @@ export default function Account() {
             // On ajoute les nouveaux posters à la liste existante
             setPosters(prev => [...prev, ...data]);
         }
-        setLoading(false);
-    }, [user, loading]);
+        setPostersLoading(false);
+    }, [user, postersLoading]);
 
     // Effet pour charger la première page
     useEffect(() => {
@@ -88,6 +95,18 @@ export default function Account() {
         await supabase.auth.signOut();
         navigate('/');
     };
+
+    if (loading) {
+        return (
+            <div className="max-w-4xl mx-auto p-4">
+                <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" />
+            </div>
+        );
+    }
+
+    if (!user) {
+        return null; // redirection en cours
+    }
 
     return (
         <div className="max-w-4xl mx-auto p-4">
@@ -164,9 +183,9 @@ export default function Account() {
             </div>
 
             {hasMore && (
-                <div className="text-center mt-8">
-                    <Button onClick={handleLoadMore} disabled={loading}>
-                        {loading ? 'Loading...' : 'Load More'}
+            <div className="text-center mt-8">
+                    <Button onClick={handleLoadMore} disabled={postersLoading}>
+                        {postersLoading ? 'Loading...' : 'Load More'}
                     </Button>
                 </div>
             )}

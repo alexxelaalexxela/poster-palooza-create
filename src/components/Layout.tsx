@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from '@/hooks/useAuth';
+import Footer from '@/components/Footer';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -43,7 +44,7 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="min-h-screen font-inter">
+    <div className="min-h-screen font-inter flex flex-col">
       {/* --------------------------------------------------------
        * Header (fixed)
        * ------------------------------------------------------ */}
@@ -161,7 +162,8 @@ export default function Layout({ children }: LayoutProps) {
       {/* --------------------------------------------------------
        * Main content (compensate fixed header)
        * ------------------------------------------------------ */}
-      <main className="pt-14 md:pt-16">{children}</main>
+      <main className="pt-14 md:pt-16 flex-1">{children}</main>
+      <Footer />
     </div>
   );
 }

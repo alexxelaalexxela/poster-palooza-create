@@ -87,6 +87,6 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
 
   canOrder: () => {
     const { selectedPoster, selectedFormat, selectedQuality } = get();
-    return selectedPoster !== null && selectedFormat !== null;
+    return selectedPoster !== null && selectedFormat !== null && selectedQuality !== null;
   },
 }));

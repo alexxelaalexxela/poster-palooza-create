@@ -10,7 +10,7 @@ interface AttemptsCounterProps {
 }
 
 export const AttemptsCounter = ({ className = '' }: AttemptsCounterProps) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const visitorId = useFingerprint();
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
   const [isPaid, setIsPaid] = useState<boolean | null>(null);
@@ -20,16 +20,40 @@ export const AttemptsCounter = ({ className = '' }: AttemptsCounterProps) => {
     if (!user && !visitorId) return;
 
     try {
-      const { data, error } = await supabase.rpc('get_attempts', {
-        p_visitor_id: user ? null : visitorId,
-        p_user_id: user ? user.id : null,
+      // Appel prioritaire à la fonction Edge get-attempts (fiable)
+      const resp = await supabase.functions.invoke('get-attempts', {
+        body: { visitorId },
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : undefined,
       });
-      if (error) throw error;
 
-      const row = Array.isArray(data) ? data[0] : data;
-      if (row) {
-        setAttemptsRemaining(row.attempts_remaining ?? 0);
-        setIsPaid(!!row.is_paid);
+      if (resp.data?.success) {
+        setAttemptsRemaining(resp.data.attemptsRemaining ?? 0);
+        setIsPaid(!!resp.data.isPaid);
+        return;
+      }
+
+      // Fallback direct DB au cas où la fonction n'est pas dispo
+      if (user) {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('is_paid, generations_remaining')
+          .eq('id', user.id)
+          .single();
+        if (error) throw error;
+        setAttemptsRemaining(profile?.generations_remaining ?? 0);
+        setIsPaid(!!profile?.is_paid);
+      } else if (visitorId) {
+        const { data: visitorData, error } = await supabase
+          .from('visitor_user_links')
+          .select('generation_count')
+          .eq('visitor_id', visitorId)
+          .single();
+        if (error && (error as any).code !== 'PGRST116') throw error;
+        const used = visitorData?.generation_count ?? 0;
+        setAttemptsRemaining(Math.max(0, 3 - used));
+        setIsPaid(false);
       }
     } catch (e) {
       console.error('get_attempts error', e);

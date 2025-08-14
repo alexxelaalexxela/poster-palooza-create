@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { usePosterStore } from "@/store/usePosterStore";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { useNavigate } from "react-router-dom";
 
 export default function PosterGallery() {
   const {
@@ -14,6 +16,9 @@ export default function PosterGallery() {
     selectedPoster,
     setSelectedPoster,
   } = usePosterStore();
+
+  const navigate = useNavigate();
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const cachedUrlsFiltered = cachedUrls.filter((url) => !generatedUrls.includes(url));
 
@@ -25,6 +30,13 @@ export default function PosterGallery() {
 
   /* Lightbox state (mobile only) */
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  /* Pagination for old posters */
+  const [visibleOldCount, setVisibleOldCount] = useState<number>(4);
+
+  useEffect(() => {
+    // Reset visible count when the cached list changes
+    setVisibleOldCount(4);
+  }, [cachedUrlsFiltered.length]);
 
   /* Close on ESC */
   useEffect(() => {
@@ -73,8 +85,12 @@ export default function PosterGallery() {
           </h2>
 
 
-          {/* Grid: 2 cols mobile, 2 ≥ md, 4 ≥ lg */}
-          <div className="mt-12 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {/* Grid: 2 cols mobile, 2 ≥ md, 4 ≥ lg (if single on mobile → center and enlarge a bit) */}
+          <div
+            className={
+              `mt-12 grid ${generatedUrls.length === 1 ? 'grid-cols-1 place-items-center md:grid-cols-2' : 'grid-cols-2 md:grid-cols-2'} lg:grid-cols-4 gap-4 md:gap-6`
+            }
+          >
             {generatedUrls.map((url, idx) => {
               const isSelected = selectedPoster === idx;
               return (
@@ -89,7 +105,7 @@ export default function PosterGallery() {
                    ${isSelected
                       ? "border-2 border-indigo-500 bg-indigo-50/80 shadow-lg"
                       : "border border-[#c8d9f2] shadow-md"}
-                 `}
+                 ${generatedUrls.length === 1 ? 'w-[65%] sm:w-[55%] md:w-auto' : ''}`}
                   onClick={() => {
                     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
                     // Toujours sélectionner
@@ -111,6 +127,34 @@ export default function PosterGallery() {
                 </motion.div>
               );
             })}
+
+            {/* Desktop-only blurred placeholders when only one image is present (unpaid flow) */}
+            {generatedUrls.length === 1 && (
+              Array.from({ length: 3 }).map((_, i) => (
+                <motion.div
+                  key={`placeholder-${i}`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: (generatedUrls.length + i) * 0.05 }}
+                  className="hidden md:block bg-white/80 backdrop-blur rounded-2xl p-3 md:p-4 border border-[#c8d9f2] shadow-md cursor-pointer"
+                  onClick={() => setShowUpgrade(true)}
+                  title="Passer Premium"
+                >
+                  <div className="relative aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center">
+                    <img
+                      src="/placeholder.svg"
+                      alt="Placeholder"
+                      className="w-full h-full object-contain filter blur-sm opacity-70"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="px-3 py-1.5 rounded-full bg-indigo-600 text-white text-sm font-semibold shadow">Voir plus • Upgrade</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -123,7 +167,7 @@ export default function PosterGallery() {
 
           {/* Grid: 2 cols mobile, 2 ≥ md, 4 ≥ lg */}
           <div className="mt-12 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {cachedUrlsFiltered.map((url, idx) => {
+            {cachedUrlsFiltered.slice(0, visibleOldCount).map((url, idx) => {
               const globalIdx = offsetOld + idx;
               const isSelected = selectedPoster === globalIdx;
               return (
@@ -161,6 +205,20 @@ export default function PosterGallery() {
               );
             })}
           </div>
+          {visibleOldCount < cachedUrlsFiltered.length && (
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() =>
+                  setVisibleOldCount((c) =>
+                    Math.min(c + 4, cachedUrlsFiltered.length)
+                  )
+                }
+                className="px-5 py-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition"
+              >
+                Voir plus
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -199,6 +257,13 @@ export default function PosterGallery() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Upgrade modal, same as when limit reached during generation */}
+      <UpgradeModal
+        open={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        onSignup={() => navigate('/register')}
+      />
     </motion.section>
   );
 }
