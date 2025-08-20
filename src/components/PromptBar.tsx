@@ -13,6 +13,7 @@ import { useFingerprint } from "@/hooks/useFingerprint";
 
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { AttemptsCounter } from "@/components/AttemptsCounter";
+// import OfferModal from "@/components/OfferModal"; // switched to full page route
 
 import { FunctionsHttpError } from "@supabase/supabase-js";
 /* -------------------------------------------------------------------------- */
@@ -200,6 +201,7 @@ const PromptBar = () => {
   const { selectedTemplate, setGeneratedUrls, setCachedUrls } = usePosterStore();
   const { toast } = useToast();
   const [showUpgrade, setShowUpgrade] = useState(false);
+  // const [showOffer, setShowOffer] = useState(false);
 
   const typingPlaceholder = useTypingPlaceholder(examples, prompt !== "");
 
@@ -335,22 +337,22 @@ const PromptBar = () => {
                   )}
                   <TemplateDropdown />
                 </div>
-
-                <Button
-                  onClick={handleGenerate}
-                  disabled={isGenerating || !prompt.trim() || !selectedTemplate}
-                  className="w-full sm:w-auto px-6 py-3 font-medium bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:text-white/70 disabled:cursor-not-allowed"
-                >
-                  {isGenerating ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Génération…
-                    </div>
-                  ) : (
-                    "Générer les posters"
-                  )}
-                </Button>
+                {!isGenerating && (
+                  <Button
+                    onClick={handleGenerate}
+                    disabled={!prompt.trim() || !selectedTemplate}
+                    className="w-full sm:w-auto px-6 py-3 font-medium bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:text-white/70 disabled:cursor-not-allowed"
+                  >
+                    {"Générer les posters"}
+                  </Button>
+                )}
               </div>
+              {isGenerating && (
+                <div className="flex items-center gap-2 text-sm text-indigo-900 bg-indigo-50/80 border border-indigo-100 rounded-xl px-3 py-2">
+                  <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Génération en cours. Cela peut prendre quelques minutes…</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -360,7 +362,7 @@ const PromptBar = () => {
       <UpgradeModal
         open={showUpgrade}
         onClose={() => setShowUpgrade(false)}
-        onSignup={() => navigate('/register')}   /* ou router.push() */
+        onSignup={() => { setShowUpgrade(false); navigate('/subscribe'); }}
       />
     </>
   );

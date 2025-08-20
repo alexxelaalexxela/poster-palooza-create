@@ -1,3 +1,33 @@
+## Database migration (profiles additions)
+
+Add these columns to `public.profiles`:
+
+```sql
+alter table public.profiles add column if not exists subscription_format text;
+alter table public.profiles add column if not exists subscription_quality text;
+alter table public.profiles add column if not exists included_poster_selected_url text;
+
+create table if not exists public.pending_signups (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  password_ciphertext text not null,
+  password_iv text not null,
+  created_at timestamp with time zone default now()
+);
+
+alter table public.pending_signups enable row level security;
+create policy "allow anon insert pending_signups" on public.pending_signups for insert to anon with check (true);
+-- No select/update/delete for anon; service role bypasses RLS
+
+-- Add secret key for encryption in Edge Functions
+-- SIGNUP_ENC_KEY: 32 bytes base64 (e.g., `openssl rand -base64 32`)
+```
+
+Deploy updated Edge Functions:
+
+- `supabase/functions/create-checkout-session`
+- `supabase/functions/stripe-webhook`
+
 # Welcome to your Lovable project
 
 ## Project info

@@ -13,10 +13,12 @@ const ALLOWED_ORIGINS = [
 ];
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const signupEncKeyB64 = Deno.env.get('SIGNUP_ENC_KEY')!; // 32 bytes base64
 
 const prices = {
   // A4
-  'A4-classic': 1500,
+  'A4-classic': 50,
   'A4-premium': 2500,
   'A4-museum': 2800,
 
@@ -69,7 +71,7 @@ serve(async (req) => {
 
   /*---------- 3) Lecture & validation du JSON ----------*/
 
-  let body: { format: string; quality: string; posterUrl: string };
+  let body: { format: string; quality: string; posterUrl?: string; purchaseType?: 'poster' | 'plan'; email?: string; password?: string };
 
   try {
     body = await req.json();
@@ -80,7 +82,7 @@ serve(async (req) => {
     );
   }
 
-  const { format, quality, posterUrl } = body;
+  const { format, quality, posterUrl, purchaseType = 'poster', email, password } = body;
   const priceId = `${format}-${quality}`;
   const unit_amount = prices[priceId];
 
@@ -94,13 +96,14 @@ serve(async (req) => {
   // Récupérer l'utilisateur via JWT (optionnel pour paiement invité)
   // Attention: `verify_jwt = true` exige que Authorization soit un JWT projet (anon/service)
   // On lit donc le token utilisateur (GoTrue) via un en-tête séparé.
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
   const clientAuthHeader = req.headers.get('X-Client-Authorization') || req.headers.get('x-client-authorization') || '';
   let userId = 'anonymous';
   if (clientAuthHeader.startsWith('Bearer ')) {
     try {
       const token = clientAuthHeader.replace('Bearer ', '');
-      const { data: { user } } = await supabase.auth.getUser(token);
+      const { data: { user } } = await supabaseAuth.auth.getUser(token);
       if (user?.id) {
         userId = user.id;
       }
@@ -125,23 +128,78 @@ serve(async (req) => {
     mode: "payment",
     success_url: allowOrigin,
     cancel_url: allowOrigin,
-    "line_items[0][price_data][currency]": "aud",
+    "line_items[0][price_data][currency]": "eur",
     "line_items[0][price_data][product_data][name]":
-      `Poster $${format} – ${quality}`,
+      purchaseType === 'plan'
+        ? `Forfait 1 poster ${format} – ${quality} (15 générations incluses)`
+        : `Poster ${format} – ${quality} + frais de livraison`,
     "line_items[0][price_data][unit_amount]": `${unit_amount}`, "line_items[0][quantity]": "1",
     "payment_method_types[0]": "card",
   });
-  // Ajoute une image d'aperçu si l'URL est courte et publique
+  // Ajoute une image d'aperçu si l'URL est courte et publique (uniquement pour achat poster)
   if (
+    purchaseType === 'poster' &&
     typeof posterUrl === 'string' &&
     !posterUrl.startsWith('data:') &&
     posterUrl.length <= 200
   ) {
     bodyParams.append("line_items[0][price_data][product_data][images][0]", posterUrl);
   }
+  bodyParams.append("metadata[purchase_type]", purchaseType);
   bodyParams.append("metadata[user_id]", userId);
+  if (purchaseType === 'plan') {
+    bodyParams.append("metadata[plan_format]", String(format));
+    bodyParams.append("metadata[plan_quality]", String(quality));
+    if (!userId || userId === 'anonymous') {
+      // Create a pending signup record securely server-side with AES-GCM
+      if (!email || !password) {
+        return new Response(JSON.stringify({ error: 'Email and password required for plan purchase' }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      try {
+        const encKey = await crypto.subtle.importKey(
+          'raw',
+          Uint8Array.from(atob(signupEncKeyB64), c => c.charCodeAt(0)),
+          { name: 'AES-GCM' },
+          false,
+          ['encrypt']
+        );
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const cipherBuf = await crypto.subtle.encrypt(
+          { name: 'AES-GCM', iv },
+          encKey,
+          new TextEncoder().encode(password)
+        );
+        const password_ciphertext = btoa(String.fromCharCode(...new Uint8Array(cipherBuf)));
+        const password_iv = btoa(String.fromCharCode(...iv));
+
+        const { data: pending, error: errPending } = await supabaseAdmin
+          .from('pending_signups')
+          .insert({ email, password_ciphertext, password_iv })
+          .select('id')
+          .single();
+        if (errPending || !pending?.id) {
+          console.error('Could not prepare pending signup', errPending);
+          return new Response(JSON.stringify({ error: 'Could not prepare pending signup' }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        bodyParams.append("metadata[signup_id]", pending.id);
+      } catch (e) {
+        console.error('Encryption error', e);
+        return new Response(JSON.stringify({ error: 'Encryption failed' }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
+  }
   // N'ajoute pas d'énormes data URLs en metadata Stripe (limites ~500 chars)
   if (
+    purchaseType === 'poster' &&
     typeof posterUrl === 'string' &&
     !posterUrl.startsWith('data:') &&
     posterUrl.length <= 500

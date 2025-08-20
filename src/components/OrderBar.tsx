@@ -4,10 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { usePosterStore } from '@/store/usePosterStore';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/components/ui/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 const OrderBar = () => {
   const { price, canOrder, selectedFormat, selectedQuality } = usePosterStore();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { profile } = useProfile();
+
+  const hasIncludedPlanActive = !!(user && profile?.is_paid && profile?.subscription_format && profile?.subscription_quality && !profile?.included_poster_selected_url);
 
   const handleOrder = () => {
     if (canOrder()) {
@@ -33,7 +39,7 @@ const OrderBar = () => {
       <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2]
                   flex justify-between items-center gap-4 p-4">
         <span className="text-lg md:text-xl font-semibold">
-          Price : {price} Euros
+          Price : {hasIncludedPlanActive ? 0 : price} Euros
         </span>
 
         <div className="relative">
@@ -43,7 +49,7 @@ const OrderBar = () => {
             className="px-6 md:px-8 py-3 bg-indigo-500 text-white font-medium
                    rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-500"
           >
-            Order
+            {hasIncludedPlanActive ? 'Use included poster' : 'Order'}
           </button>
           {selectedQuality === null && (
             <Tooltip>

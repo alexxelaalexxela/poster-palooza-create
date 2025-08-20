@@ -11,7 +11,7 @@ interface LayoutProps {
 
 const navigation = [
   { name: "What we propose", href: "/" },
-  { name: "Pricing", href: "/pricing" },
+  { name: "Pricing", href: "/subscribe" },
   { name: "About Us", href: "/about" },
 ];
 

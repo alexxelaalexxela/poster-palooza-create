@@ -7,9 +7,8 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Sparkles, X, UserPlus, Crown } from "lucide-react";
+import { Crown, Gem, Layers, Sparkles, Truck, User, X } from "lucide-react";
 import { motion } from "framer-motion";
-import { useAuth } from "@/hooks/useAuth";
 
 interface UpgradeModalProps {
     open: boolean;
@@ -17,115 +16,121 @@ interface UpgradeModalProps {
     onSignup: () => void;
 }
 
-const features = [
-    "Générations illimitées",
-    "Historique cloud",
-    "Export HD 4K",
-    "Priorité de rendu",
+const premiumFeatures = [
+    {
+        icon: <Sparkles className="h-5 w-5 text-fuchsia-500" />,
+        text: "15 générations premium",
+    },
+    {
+        icon: <Layers className="h-5 w-5 text-fuchsia-500" />,
+        text: "4 propositions par prompt",
+    },
+    {
+        icon: <User className="h-5 w-5 text-fuchsia-500" />,
+        text: "Photo de tête et lieu inclus pour la personnalisation",
+    },
+    {
+        icon: <Gem className="h-5 w-5 text-fuchsia-500" />,
+        text: "Meilleure qualité d’impression",
+    },
+    {
+        icon: <Truck className="h-5 w-5 text-fuchsia-500" />,
+        text: "Livraison rapide de votre poster préféré",
+    },
 ];
 
-const freeFeatures = [
-    "3 générations gratuites",
-    "Templates de base",
-    "Qualité standard",
-    "Support email",
-];
 
 /* ---------------------------------------------------------------------- */
 /*                            UpgradeModal                                */
 /* ---------------------------------------------------------------------- */
 export const UpgradeModal = ({ open, onClose, onSignup }: UpgradeModalProps) => {
-    const { user } = useAuth();
-    const isAnonymous = !user;
+
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent
-                className="w-[92vw] sm:max-w-lg p-0 overflow-hidden
-                     bg-gradient-to-br from-white/70 to-indigo-50/60
-                     backdrop-blur-xl shadow-2xl rounded-3xl ring-1 ring-indigo-100"
-            >
-                {/* bannière / illustration */}
-                <div className="relative h-40 md:h-48 bg-gradient-to-tr from-indigo-500 via-fuchsia-500 to-pink-500">
+            <DialogContent className="w-[95vw] sm:max-w-2xl p-0 bg-gray-900 text-white shadow-2xl rounded-2xl border-fuchsia-500/20 border max-h-[90vh] overflow-y-auto">
+                <div className="relative">
                     <img
-                        src="/images/upgrade-banner.webp"
-                        alt=""
-                        className="w-full h-full object-cover opacity-50 mix-blend-overlay"
-                        loading="lazy"
+                        src="/images/hero-background2.png" // A nice background
+                        alt="Premium background"
+                        className="absolute inset-0 w-full h-full object-cover opacity-10"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-b from-gray-900/50 to-gray-900" />
+                    
                     <button
                         onClick={onClose}
-                        className="absolute top-3 right-3 bg-white/70 hover:bg-white text-gray-700 rounded-full p-1 shadow"
+                        className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"
                     >
-                        <X size={20} />
+                        <X size={24} />
                     </button>
-                </div>
 
-                {/* contenu */}
-                <div className="px-6 py-8 md:p-10 space-y-6 text-gray-800">
-                    <DialogHeader className="items-center space-y-2">
-                        {isAnonymous ? (
-                            <UserPlus size={28} className="text-blue-600" />
-                        ) : (
-                            <Crown size={28} className="text-yellow-600" />
-                        )}
-                        <DialogTitle className="text-2xl font-extrabold text-indigo-800">
-                            {isAnonymous ? "Créez votre compte !" : "Passez Premium !"}
-                        </DialogTitle>
-                        <DialogDescription className="text-center text-sm md:text-base text-gray-600">
-                            {isAnonymous ? (
-                                <>
-                                    Vous avez utilisé vos 3 tentatives gratuites.<br />
-                                    Créez un compte pour continuer à créer des posters :
-                                </>
-                            ) : (
-                                <>
-                                    Vous avez utilisé vos 3 tentatives gratuites.<br />
-                                    Passez Premium pour 15 générations par mois :
-                                </>
-                            )}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {/* liste des avantages */}
-                    <div>
-                        <h3 className="text-lg font-semibold mb-3 text-gray-800">
-                            {isAnonymous ? "Avantages du compte gratuit :" : "Avantages Premium :"}
-                        </h3>
-                        <ul className="grid gap-2 sm:grid-cols-2">
-                            {(isAnonymous ? freeFeatures : features).map((f) => (
-                                <li key={f} className="flex items-start gap-2">
-                                    <CheckCircle size={18} className="text-emerald-600 shrink-0 mt-0.5" />
-                                    <span className="text-sm md:text-base">{f}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* CTA */}
-                    <motion.div
-                        initial={{ scale: 0.95, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                    >
-                        <Button
-                            onClick={onSignup}
-                            className="w-full py-3 text-base font-semibold
-                           bg-gradient-to-r from-indigo-600 to-fuchsia-600
-                           hover:from-indigo-700 hover:to-fuchsia-700
-                           focus:ring-2 focus:ring-offset-2 focus:ring-fuchsia-500
-                           animate-pulse"
+                    <div className="relative p-8 md:p-12 text-center">
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
                         >
-                            {isAnonymous ? "Créer mon compte" : "Passer Premium"}
-                        </Button>
-                    </motion.div>
+                            <Crown className="mx-auto h-16 w-16 text-yellow-400" />
+                        </motion.div>
+                        
+                        <DialogHeader className="mt-4">
+                            <DialogTitle className="text-3xl font-extrabold tracking-tight text-center">
+                                De l'Idée au Poster Livré
+                            </DialogTitle>
+                            <DialogDescription className="mt-2 text-lg text-gray-300 max-w-md mx-auto text-center">
+                                Générez plusieurs posters uniques avec l'IA, choisissez votre favori, et recevez une impression de qualité galerie directement chez vous.
+                            </DialogDescription>
+                        </DialogHeader>
 
-                    <button
-                        onClick={onClose}
-                        className="block mx-auto text-sm text-gray-500 hover:text-gray-700 underline"
-                    >
-                        Plus tard
-                    </button>
+                        <div className="my-10 text-left">
+                            <ul className="space-y-4">
+                                {premiumFeatures.map((feature, index) => (
+                                    <motion.li 
+                                        key={index}
+                                        className="flex items-center gap-4"
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.4 + index * 0.1 }}
+                                    >
+                                        <div className="bg-fuchsia-500/10 rounded-full p-2">
+                                            {feature.icon}
+                                        </div>
+                                        <span className="text-base">{feature.text}</span>
+                                    </motion.li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="p-6 bg-white/5 rounded-lg border border-white/10">
+                            <p className="text-sm uppercase tracking-widest text-gray-400">
+                                À partir de
+                            </p>
+                            <p className="mt-2 text-5xl font-bold tracking-tight">
+                                45€
+                            </p>
+                            <p className="mt-1 text-sm text-gray-400">
+                                Jusqu'à 65€ (format A0)
+                            </p>
+                        </div>
+
+                        <motion.div
+                            className="mt-10"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <Button
+                                onClick={onSignup}
+                                size="lg"
+                                className="w-full py-4 text-lg font-bold
+                               bg-gradient-to-r from-fuchsia-600 to-indigo-600
+                               hover:from-fuchsia-700 hover:to-indigo-700
+                               text-white shadow-lg shadow-fuchsia-500/20
+                               transform transition-all duration-300"
+                            >
+                                Gérer mes propositions
+                            </Button>
+                        </motion.div>
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>

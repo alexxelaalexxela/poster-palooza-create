@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { usePosterStore } from '@/store/usePosterStore';
 import { AttemptsCounter } from '@/components/AttemptsCounter';
 import { motion } from 'framer-motion';
-import { Sparkles, AlertCircle, CreditCard } from 'lucide-react';
+import { Sparkles, AlertCircle, CreditCard, CheckCircle, Clock, Pencil } from 'lucide-react';
+import { useProfile } from '@/hooks/useProfile';
 
 const POSTERS_PER_PAGE = 8; // On charge 8 posters à la fois
 
@@ -15,30 +16,12 @@ export default function Account() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
     const { setSelectedPoster } = usePosterStore();
+    const { profile, loading: profileLoading, refresh } = useProfile();
 
     const [posters, setPosters] = useState<{ url: string }[]>([]);
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [postersLoading, setPostersLoading] = useState(false);
-    const [profile, setProfile] = useState<{ is_paid: boolean; generations_remaining: number } | null>(null);
-
-    const fetchProfile = useCallback(async () => {
-        if (!user) return;
-
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('is_paid, generations_remaining')
-            .eq('id', user.id)
-            .single();
-
-        if (!error && data) {
-            setProfile(data);
-        }
-    }, [user]);
-
-    useEffect(() => {
-        fetchProfile();
-    }, [fetchProfile]);
 
     // Redirige vers /login si déconnecté (après que l'état d'auth soit connu)
     useEffect(() => {
@@ -89,6 +72,23 @@ export default function Account() {
     const handleOrder = (index: number) => {
         setSelectedPoster(index); // On stocke l'index global du poster
         navigate('/order');
+    };
+
+    const handleChangeIncludedPoster = async () => {
+        if (!user) return;
+        if (profile?.included_poster_validated) return; // Sécurité : modification impossible si validé
+        const confirmed = window.confirm('Voulez-vous modifier votre poster sélectionné ? Vous pourrez en choisir un autre ensuite.');
+        if (!confirmed) return;
+        const { error } = await supabase
+            .from('profiles')
+            .update({ included_poster_selected_url: null, included_poster_validated: null })
+            .eq('id', user.id);
+        if (error) {
+            console.error('Error resetting included poster:', error);
+            return;
+        }
+        await refresh();
+        // L'utilisateur peut maintenant choisir un nouveau poster dans la grille ci-dessous
     };
 
     const handleLogout = async () => {
@@ -162,6 +162,62 @@ export default function Account() {
                     </div>
                 )}
             </motion.div>
+
+            {/* Poster sélectionné (si déjà choisi via l'offre incluse) */}
+            {profile?.included_poster_selected_url && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="mt-8 p-6 bg-white rounded-xl shadow-sm border border-gray-200"
+                >
+                    <h2 className="text-xl font-semibold mb-4">Votre poster sélectionné</h2>
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                        <div className="w-40 h-56 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                            <img
+                                src={profile.included_poster_selected_url}
+                                alt="Poster sélectionné"
+                                className="w-full h-full object-contain"
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <div className="mb-4">
+                                {profile.included_poster_validated ? (
+                                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-sm">
+                                        <CheckCircle size={16} /> Validé
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm">
+                                        <Clock size={16} /> En cours de validation
+                                    </span>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
+                                <div>
+                                    <span className="text-gray-500">Format</span>
+                                    <div className="font-medium">{profile.subscription_format ?? '—'}</div>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500">Qualité</span>
+                                    <div className="font-medium">{profile.subscription_quality ?? '—'}</div>
+                                </div>
+                            </div>
+                            <div className="mt-4 flex flex-wrap gap-3">
+                                {!profile.included_poster_validated && (
+                                    <Button onClick={handleChangeIncludedPoster} variant="outline" className="flex items-center gap-2">
+                                        <Pencil size={16} /> Modifier le poster
+                                    </Button>
+                                )}
+                                {profile.included_poster_validated && (
+                                    <Button disabled variant="outline" className="cursor-not-allowed opacity-80">
+                                        Modification verrouillée
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
 
             <h2 className="text-2xl font-bold mt-8">My Posters</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">

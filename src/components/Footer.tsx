@@ -15,7 +15,7 @@ export default function Footer() {
             <Link to="/about" className="text-gray-600 hover:text-gray-900">
               À propos
             </Link>
-            <Link to="/pricing" className="text-gray-600 hover:text-gray-900">
+            <Link to="/subscribe" className="text-gray-600 hover:text-gray-900">
               Tarifs
             </Link>
             <a

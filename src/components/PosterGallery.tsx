@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Crown, Sparkles } from "lucide-react";
 import { usePosterStore } from "@/store/usePosterStore";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useNavigate } from "react-router-dom";
@@ -69,6 +69,7 @@ export default function PosterGallery() {
 
   //const posters = generatedUrls.map((url, i) => ({ id: `poster-${i}`, url }));
   //const postersOld = cachedUrlsFiltered.map((url, i) => ({ id: `poster-old-${i}`, url }));
+  const basePreviewUrl = generatedUrls[0];
 
   return (
     <motion.section
@@ -128,32 +129,64 @@ export default function PosterGallery() {
               );
             })}
 
-            {/* Desktop-only blurred placeholders when only one image is present (unpaid flow) */}
-            {generatedUrls.length === 1 && (
-              Array.from({ length: 3 }).map((_, i) => (
-                <motion.div
-                  key={`placeholder-${i}`}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: (generatedUrls.length + i) * 0.05 }}
-                  className="hidden md:block bg-white/80 backdrop-blur rounded-2xl p-3 md:p-4 border border-[#c8d9f2] shadow-md cursor-pointer"
-                  onClick={() => setShowUpgrade(true)}
-                  title="Passer Premium"
-                >
-                  <div className="relative aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center">
-                    <img
-                      src="/placeholder.svg"
-                      alt="Placeholder"
-                      className="w-full h-full object-contain filter blur-sm opacity-70"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="px-3 py-1.5 rounded-full bg-indigo-600 text-white text-sm font-semibold shadow">Voir plus • Upgrade</span>
+            {/* Desktop-only blurred placeholders using the real poster (unpaid flow) */}
+            {generatedUrls.length === 1 && basePreviewUrl && (
+              Array.from({ length: 3 }).map((_, i) => {
+                const tintImageClasses =
+                  i === 0
+                    ? "hue-rotate-15 saturate-150 brightness-95" // violet/rose
+                    : i === 1
+                    ? "hue-rotate-30 saturate-200 brightness-95" // jaune/rouge
+                    : "hue-rotate-180 saturate-100 brightness-100"; // bleu (plus doux)
+                const tintOverlayGradient =
+                  i === 0
+                    ? "from-indigo-200/20 to-fuchsia-200/10"
+                  : i === 1
+                    ? "from-amber-200/25 to-rose-200/10"
+                    : "from-blue-200/30 to-sky-200/15";
+                return (
+                  <motion.div
+                    key={`placeholder-${i}`}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: (generatedUrls.length + i) * 0.05 }}
+                    className="hidden md:block bg-white/80 backdrop-blur rounded-2xl p-3 md:p-4 border border-[#c8d9f2] shadow-md cursor-pointer"
+                    onClick={() => setShowUpgrade(true)}
+                    role="button"
+                    aria-label="Voir plus - passer Premium"
+                    title="Passer Premium"
+                  >
+                    <div className="relative aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-100">
+                      {/* Real poster preview, slightly less blurred with tint */}
+                      <img
+                        src={basePreviewUrl}
+                        alt="Aperçu floutté — déverrouillez pour voir les détails"
+                        className={`w-full h-full object-cover scale-110 blur-lg ${tintImageClasses} select-none pointer-events-none`}
+                        loading="lazy"
+                      />
+                      {/* Soft gradient veil to ensure no details are visible */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-black/30" />
+                      {/* Subtle color tint overlay to differentiate each slot */}
+                      <div className={`absolute inset-0 pointer-events-none bg-gradient-to-br ${tintOverlayGradient}`} />
+                      {/* Extra multicolor overlays for the blue variant to make it less monotone */}
+                      {i === 2 && (
+                        <>
+                          <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-sky-200/15 via-cyan-200/10 to-indigo-200/15" />
+                          <div className="absolute inset-0 pointer-events-none bg-gradient-to-bl from-rose-200/10 via-amber-200/10 to-emerald-200/10" />
+                        </>
+                      )}
+                      {/* Premium CTA overlay */}
+                      <div className="absolute inset-0 flex items-end justify-center p-3">
+                        <div className="w-full max-w-[90%] rounded-xl border border-white/50 bg-white/70 backdrop-blur px-3 py-2 shadow-md flex items-center justify-center gap-2 hover:bg-white/80 transition">
+                          <Crown className="text-yellow-600" size={16} />
+                          <span className="text-[13px] font-semibold text-gray-900">Voir plus • Upgrade</span>
+                          <Sparkles className="text-indigo-600" size={16} />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))
+                  </motion.div>
+                );
+              })
             )}
           </div>
         </div>

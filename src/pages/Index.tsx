@@ -7,8 +7,10 @@ import FormatPicker from '@/components/FormatPicker';
 import QualityPicker from '@/components/QualityPicker';
 import OrderBar from '@/components/OrderBar';
 import { usePosterStore } from '@/store/usePosterStore';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { ChevronRight, ChevronUp } from 'lucide-react';
+import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/hooks/useAuth';
 
 
 
@@ -78,7 +80,9 @@ const templates = [
 ];
 
 const Index = () => {
-  const { selectedTemplate, setSelectedTemplate } = usePosterStore();
+  const { selectedTemplate, setSelectedTemplate, setSelectedFormat, setSelectedQuality } = usePosterStore();
+  const { user } = useAuth();
+  const { profile } = useProfile();
 
   const [showTemplates, setShowTemplates] = useState(false);
 
@@ -91,6 +95,17 @@ const Index = () => {
     const el = scrollRef.current;
     if (el && el.scrollLeft > 12 && showHint) setShowHint(false);
   };
+
+  // When user has an active plan with stored format/quality, pre-apply and hide pickers
+  const hasIncludedPlan = !!(user && profile?.is_paid && profile?.subscription_format && profile?.subscription_quality && !profile?.included_poster_selected_url);
+
+  useEffect(() => {
+    if (hasIncludedPlan) {
+      // Apply plan format/quality to the store so OrderBar can be used directly
+      setSelectedFormat(profile!.subscription_format as any);
+      setSelectedQuality(profile!.subscription_quality as any);
+    }
+  }, [hasIncludedPlan, profile, setSelectedFormat, setSelectedQuality]);
 
   return (
     <div className="min-h-screen bg-[#E1D7CA]">
@@ -298,7 +313,7 @@ const Index = () => {
           className="h-px w-full max-w-4xl mx-auto bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
         />
         {/* Format Picker */}
-        <FormatPicker />
+        {!hasIncludedPlan && <FormatPicker />}
         <motion.div
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
@@ -307,7 +322,7 @@ const Index = () => {
         />
 
         {/* Quality Picker */}
-        <QualityPicker />
+        {!hasIncludedPlan && <QualityPicker />}
         <motion.div
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}

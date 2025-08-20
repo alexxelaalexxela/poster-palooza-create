@@ -7,15 +7,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 const Order = () => {
   const { selectedPoster, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
   const mergedUrls = [...generatedUrls, ...cachedUrls];
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { profile, refresh } = useProfile();
   //const primaryUrl = generatedUrls[selectedPoster];
   //const fallbackUrl = cachedUrls[selectedPoster];   // ← nouvel accès
   //const finalUrl = primaryUrl ?? fallbackUrl;
   const finalUrl = mergedUrls[selectedPoster] ?? null;
+  const SHIPPING_FEE = 4.99;
+  const totalWithShipping = Number((price + SHIPPING_FEE).toFixed(2));
+  const hasIncludedPlanActive = !!(user && profile?.is_paid && profile?.subscription_format && profile?.subscription_quality && !profile?.included_poster_selected_url);
+  const shippingDisplay = hasIncludedPlanActive ? 0 : SHIPPING_FEE;
+  const totalDisplay = hasIncludedPlanActive ? 0 : totalWithShipping;
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +42,19 @@ const Order = () => {
         return;
       }
 
+      if (hasIncludedPlanActive) {
+        // No Stripe: store selected poster url as included poster and confirm
+        const { error } = await supabase
+          .from('profiles')
+          .update({ included_poster_selected_url: finalUrl, included_poster_validated: false })
+          .eq('id', user!.id);
+        if (error) throw error;
+        await refresh();
+        window.location.href = '/order/confirmation';
+        return;
+      }
+
+      // Default one-off poster purchase via Stripe
       const res = await fetch(
         import.meta.env.VITE_SUPABASE_FUNCTION_URL,
         {
@@ -40,15 +62,13 @@ const Order = () => {
           headers: {
             'Content-Type': 'application/json',
             apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-            // Authorization doit rester l'anon key pour passer verify_jwt côté Edge
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            // On envoie le JWT utilisateur séparément (si dispo)
             'X-Client-Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
+            purchaseType: 'poster',
             format: selectedFormat,
             quality: selectedQuality,
-            // Evite d'envoyer une data URL géante
             posterUrl: typeof finalUrl === 'string' && finalUrl.startsWith('data:') ? undefined : finalUrl,
           }),
         }
@@ -71,7 +91,7 @@ const Order = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Back button */}
         <motion.div
@@ -89,14 +109,14 @@ const Order = () => {
           </Link>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8 justify-items-center">
 
           {/* Order Summary */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg"
+            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg w-full max-w-2xl"
           >
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">Order Summary</h2>
 
@@ -105,7 +125,7 @@ const Order = () => {
             <div className="mb-6">
               {/* conteneur du poster */}
               <div
-                className="aspect-[3/4] w-32 mx-auto mb-4 rounded-lg
+                className="aspect-[3/4] w-40 md:w-64 mx-auto mb-4 rounded-lg
                flex items-center justify-center     /* centre l’image */
                bg-black p-0.5"                       /* bordure noire fine */
               >
@@ -143,9 +163,13 @@ const Order = () => {
                       : 'Museum'}
                 </span>
               </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-gray-600">Livraison:</span>
+                <span className="font-medium">{shippingDisplay.toFixed(2)} €</span>
+              </div>
               <div className="flex justify-between items-center py-3 border-t border-gray-200">
                 <span className="text-lg font-semibold">Total:</span>
-                <span className="text-2xl font-bold text-indigo-600">{price} AUD</span>
+                <span className="text-2xl font-bold text-indigo-600">{totalDisplay.toFixed(2)} €</span>
               </div>
             </div>
 
@@ -172,7 +196,7 @@ const Order = () => {
               onClick={handleSubmitOrder}
               className="w-full py-3 text-lg font-medium bg-indigo-500 hover:bg-indigo-600 mt-6"
             >
-              Complete Order - {price} AUD
+              Complete Order - {totalDisplay.toFixed(2)} €
             </Button>
           </motion.div>
 

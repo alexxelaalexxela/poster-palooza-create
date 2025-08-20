@@ -8,9 +8,11 @@ import { Check } from 'lucide-react';
 
 interface PosterWallProps {
     posterUrl: string | null;
+    sofaImage?: string;
+    compact?: boolean;
 }
 
-const PosterWall: React.FC<PosterWallProps> = ({ posterUrl }) => {
+const PosterWall: React.FC<PosterWallProps> = ({ posterUrl, sofaImage = "./images/Sofa9.png", compact = false }) => {
     const { selectedFormat, setSelectedFormat } = usePosterStore();
     const isActive = (f: Format) => selectedFormat === f;
 
@@ -58,17 +60,16 @@ const PosterWall: React.FC<PosterWallProps> = ({ posterUrl }) => {
         <div className="w-full flex justify-center">
 
             <div
-                className="
+                className={`
                             relative mx-auto
-                            w-full sm:max-w-[420px]      /* limite la largeur jusqu’à 640 px */
+                            w-full sm:max-w-[420px]      /* limite la largeur jusqu'à 640 px */
                             md:max-w-none               /* supprime toute limite dès 768 px */
-                            md:w-[85%] 
-                            md:origin-top md:origin-top md:transform md:scale-[.75] md:-translate-y-10
-                            md:-mb-32
-                        "
+                            ${compact ? 'md:w-[70%]' : 'md:w-[85%]'}
+                            ${compact ? '' : 'md:origin-top md:origin-top md:transform md:scale-[.75] md:-translate-y-10 md:-mb-32'}
+                        `}
             >
                 {/* Image de fond sans coins arrondis */}
-                <img src="./images/Sofa9.png" alt="Poster wall" className="w-full " />
+                <img src={sofaImage} alt="Poster wall" className="w-full " />
 
                 {/* Vignettes */}
                 {PosterSlot('A0', { bottom: '55.3%', left: '3%', width: '18.5%' })}

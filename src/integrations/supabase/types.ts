@@ -87,6 +87,10 @@ export type Database = {
           id: string
           is_paid: boolean | null
           stripe_customer_id: string | null
+          subscription_format: string | null
+          subscription_quality: string | null
+          included_poster_selected_url: string | null
+          included_poster_validated: boolean | null
         }
         Insert: {
           email?: string | null
@@ -94,6 +98,10 @@ export type Database = {
           id: string
           is_paid?: boolean | null
           stripe_customer_id?: string | null
+          subscription_format?: string | null
+          subscription_quality?: string | null
+          included_poster_selected_url?: string | null
+          included_poster_validated?: boolean | null
         }
         Update: {
           email?: string | null
@@ -101,6 +109,34 @@ export type Database = {
           id?: string
           is_paid?: boolean | null
           stripe_customer_id?: string | null
+          subscription_format?: string | null
+          subscription_quality?: string | null
+          included_poster_selected_url?: string | null
+          included_poster_validated?: boolean | null
+        }
+        Relationships: []
+      }
+      pending_signups: {
+        Row: {
+          id: string
+          email: string
+          password_ciphertext: string
+          password_iv: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          password_ciphertext: string
+          password_iv: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          password_ciphertext?: string
+          password_iv?: string
+          created_at?: string
         }
         Relationships: []
       }
