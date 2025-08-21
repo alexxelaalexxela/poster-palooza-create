@@ -36,11 +36,11 @@ const Subscribe = () => {
   } = usePosterStore();
 
   const formatOptions: { id: Format; label: string }[] = [
-    { id: "A4", label: "A4" },
-    { id: "A3", label: "A3" },
-    { id: "A2", label: "A2" },
-    { id: "A1", label: "A1" },
     { id: "A0", label: "A0" },
+    { id: "A1", label: "A1" },
+    { id: "A2", label: "A2" },
+    { id: "A3", label: "A3" },
+    { id: "A4", label: "A4" },
   ];
 
   useEffect(() => {

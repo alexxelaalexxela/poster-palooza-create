@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useFingerprint } from '@/hooks/useFingerprint';
 
 const Order = () => {
   const { selectedPoster, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
@@ -16,6 +17,7 @@ const Order = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile, refresh } = useProfile();
+  const visitorId = useFingerprint();
   //const primaryUrl = generatedUrls[selectedPoster];
   //const fallbackUrl = cachedUrls[selectedPoster];   // ← nouvel accès
   //const finalUrl = primaryUrl ?? fallbackUrl;
@@ -25,6 +27,7 @@ const Order = () => {
   const hasIncludedPlanActive = !!(user && profile?.is_paid && profile?.subscription_format && profile?.subscription_quality && !profile?.included_poster_selected_url);
   const shippingDisplay = hasIncludedPlanActive ? 0 : SHIPPING_FEE;
   const totalDisplay = hasIncludedPlanActive ? 0 : totalWithShipping;
+  const canCheckout = !!user || !!visitorId;
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +73,7 @@ const Order = () => {
             format: selectedFormat,
             quality: selectedQuality,
             posterUrl: typeof finalUrl === 'string' && finalUrl.startsWith('data:') ? undefined : finalUrl,
+            visitorId,
           }),
         }
       );
@@ -194,9 +198,10 @@ const Order = () => {
 
             <Button
               onClick={handleSubmitOrder}
-              className="w-full py-3 text-lg font-medium bg-indigo-500 hover:bg-indigo-600 mt-6"
+              disabled={!canCheckout}
+              className="w-full py-3 text-lg font-medium bg-indigo-500 hover:bg-indigo-600 mt-6 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Complete Order - {totalDisplay.toFixed(2)} €
+              {canCheckout ? `Complete Order - ${totalDisplay.toFixed(2)} €` : 'Initialisation...'}
             </Button>
           </motion.div>
 

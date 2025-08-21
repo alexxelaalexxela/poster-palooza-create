@@ -9,6 +9,12 @@ export interface UserProfile {
     subscription_quality: string | null;
     included_poster_selected_url: string | null;
     included_poster_validated: boolean | null;
+    shipping_name: string | null;
+    shipping_address_line1: string | null;
+    shipping_address_line2: string | null;
+    shipping_city: string | null;
+    shipping_postal_code: string | null;
+    shipping_country: string | null;
 }
 
 export const useProfile = () => {
@@ -27,7 +33,7 @@ export const useProfile = () => {
             setError(null);
             const { data, error } = await supabase
                 .from('profiles')
-                .select('is_paid, generations_remaining, subscription_format, subscription_quality, included_poster_selected_url, included_poster_validated')
+                .select('is_paid, generations_remaining, subscription_format, subscription_quality, included_poster_selected_url, included_poster_validated, shipping_name, shipping_address_line1, shipping_address_line2, shipping_city, shipping_postal_code, shipping_country')
                 .eq('id', user.id)
                 .single();
             if (error) throw error;

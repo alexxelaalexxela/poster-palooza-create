@@ -9,6 +9,8 @@ import { AttemptsCounter } from '@/components/AttemptsCounter';
 import { motion } from 'framer-motion';
 import { Sparkles, AlertCircle, CreditCard, CheckCircle, Clock, Pencil } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 const POSTERS_PER_PAGE = 8; // On charge 8 posters à la fois
 
@@ -17,6 +19,28 @@ export default function Account() {
     const navigate = useNavigate();
     const { setSelectedPoster } = usePosterStore();
     const { profile, loading: profileLoading, refresh } = useProfile();
+    const [editOpen, setEditOpen] = useState(false);
+    const [form, setForm] = useState({
+        shipping_name: '',
+        shipping_address_line1: '',
+        shipping_address_line2: '',
+        shipping_city: '',
+        shipping_postal_code: '',
+        shipping_country: '',
+    });
+
+    useEffect(() => {
+        if (profile) {
+            setForm({
+                shipping_name: profile.shipping_name || '',
+                shipping_address_line1: profile.shipping_address_line1 || '',
+                shipping_address_line2: profile.shipping_address_line2 || '',
+                shipping_city: profile.shipping_city || '',
+                shipping_postal_code: profile.shipping_postal_code || '',
+                shipping_country: profile.shipping_country || '',
+            });
+        }
+    }, [profile]);
 
     const [posters, setPosters] = useState<{ url: string }[]>([]);
     const [page, setPage] = useState(0);
@@ -163,60 +187,144 @@ export default function Account() {
                 )}
             </motion.div>
 
-            {/* Poster sélectionné (si déjà choisi via l'offre incluse) */}
+            {/* Ma commande (poster + livraison) - affichée seulement si poster sélectionné */}
             {profile?.included_poster_selected_url && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="mt-8 p-6 bg-white rounded-xl shadow-sm border border-gray-200"
-                >
-                    <h2 className="text-xl font-semibold mb-4">Votre poster sélectionné</h2>
-                    <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                        <div className="w-40 h-56 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                            <img
-                                src={profile.included_poster_selected_url}
-                                alt="Poster sélectionné"
-                                className="w-full h-full object-contain"
-                            />
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="mt-8 p-6 rounded-2xl border shadow-sm bg-white"
+            >
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-semibold">Ma commande</h2>
+                    <div>
+                        {profile.included_poster_validated ? (
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-sm">
+                                <CheckCircle size={16} /> Validé
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm">
+                                <Clock size={16} /> En cours de validation
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Poster */}
+                    <div className="p-4 rounded-xl border bg-gradient-to-br from-gray-50 to-white">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold">Poster sélectionné</h3>
+                            <div />
                         </div>
-                        <div className="flex-1">
-                            <div className="mb-4">
-                                {profile.included_poster_validated ? (
-                                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-sm">
-                                        <CheckCircle size={16} /> Validé
-                                    </span>
-                                ) : (
-                                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm">
-                                        <Clock size={16} /> En cours de validation
-                                    </span>
-                                )}
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
-                                <div>
-                                    <span className="text-gray-500">Format</span>
-                                    <div className="font-medium">{profile.subscription_format ?? '—'}</div>
+
+                        {profile?.included_poster_selected_url ? (
+                            <>
+                                <div className="flex items-start gap-4">
+                                    <div className="w-28 h-40 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                                        <img src={profile.included_poster_selected_url} alt="Poster sélectionné" className="w-full h-full object-contain" />
+                                    </div>
+                                    <div className="flex-1 grid grid-cols-2 gap-2 text-sm text-gray-700">
+                                        <div>
+                                            <div className="text-gray-500">Format</div>
+                                            <div className="font-medium">{profile.subscription_format ?? '—'}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-gray-500">Qualité</div>
+                                            <div className="font-medium">{profile.subscription_quality ?? '—'}</div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <span className="text-gray-500">Qualité</span>
-                                    <div className="font-medium">{profile.subscription_quality ?? '—'}</div>
-                                </div>
-                            </div>
-                            <div className="mt-4 flex flex-wrap gap-3">
                                 {!profile.included_poster_validated && (
-                                    <Button onClick={handleChangeIncludedPoster} variant="outline" className="flex items-center gap-2">
-                                        <Pencil size={16} /> Modifier le poster
-                                    </Button>
+                                    <div className="mt-4">
+                                        <Button onClick={handleChangeIncludedPoster} variant="outline" className="flex items-center gap-2">
+                                            <Pencil size={16} /> Modifier le poster
+                                        </Button>
+                                    </div>
                                 )}
-                                {profile.included_poster_validated && (
-                                    <Button disabled variant="outline" className="cursor-not-allowed opacity-80">
-                                        Modification verrouillée
-                                    </Button>
-                                )}
+                            </>
+                        ) : (
+                            <div className="text-sm text-gray-500">Aucun poster sélectionné pour l’instant.</div>
+                        )}
+                    </div>
+
+                    {/* Adresse de livraison */}
+                    <div className="p-4 rounded-xl border bg-gradient-to-br from-gray-50 to-white relative">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold">Adresse de livraison</h3>
+                            {!profile?.included_poster_validated && (
+                                <Dialog open={editOpen} onOpenChange={setEditOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button size="sm" variant="outline">Modifier</Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Modifier l’adresse de livraison</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="grid gap-3 mt-4">
+                                            <Input placeholder="Nom complet" value={form.shipping_name} onChange={e => setForm(f => ({ ...f, shipping_name: e.target.value }))} />
+                                            <Input placeholder="Adresse (ligne 1)" value={form.shipping_address_line1} onChange={e => setForm(f => ({ ...f, shipping_address_line1: e.target.value }))} />
+                                            <Input placeholder="Adresse (ligne 2)" value={form.shipping_address_line2} onChange={e => setForm(f => ({ ...f, shipping_address_line2: e.target.value }))} />
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                <Input placeholder="Ville" value={form.shipping_city} onChange={e => setForm(f => ({ ...f, shipping_city: e.target.value }))} />
+                                                <Input placeholder="Code postal" value={form.shipping_postal_code} onChange={e => setForm(f => ({ ...f, shipping_postal_code: e.target.value }))} />
+                                                <Input placeholder="Pays" value={form.shipping_country} onChange={e => setForm(f => ({ ...f, shipping_country: e.target.value }))} />
+                                            </div>
+                                            <div className="flex justify-end gap-3 mt-2">
+                                                <Button variant="outline" onClick={() => setEditOpen(false)}>Annuler</Button>
+                                                <Button onClick={async () => {
+                                                    if (!user) return;
+                                                    const { error } = await supabase
+                                                        .from('profiles')
+                                                        .update({
+                                                            shipping_name: form.shipping_name || null,
+                                                            shipping_address_line1: form.shipping_address_line1 || null,
+                                                            shipping_address_line2: form.shipping_address_line2 || null,
+                                                            shipping_city: form.shipping_city || null,
+                                                            shipping_postal_code: form.shipping_postal_code || null,
+                                                            shipping_country: form.shipping_country || null,
+                                                        })
+                                                        .eq('id', user.id);
+                                                    if (!error) {
+                                                        await refresh();
+                                                        setEditOpen(false);
+                                                    } else {
+                                                        console.error('Update shipping failed', error);
+                                                    }
+                                                }}>Enregistrer</Button>
+                                            </div>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <div className="text-gray-500">Nom</div>
+                                <div className="text-gray-900 font-medium">{profile?.shipping_name || '—'}</div>
+                            </div>
+                            <div className="sm:col-span-2">
+                                <div className="text-gray-500">Adresse</div>
+                                <div className="text-gray-900 font-medium break-words">
+                                    {(profile?.shipping_address_line1 || '—')}{profile?.shipping_address_line2 ? `, ${profile.shipping_address_line2}` : ''}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-gray-500">Ville</div>
+                                <div className="text-gray-900 font-medium">{profile?.shipping_city || '—'}</div>
+                            </div>
+                            <div>
+                                <div className="text-gray-500">Code postal</div>
+                                <div className="text-gray-900 font-medium">{profile?.shipping_postal_code || '—'}</div>
+                            </div>
+                            <div>
+                                <div className="text-gray-500">Pays</div>
+                                <div className="text-gray-900 font-medium">{profile?.shipping_country || '—'}</div>
                             </div>
                         </div>
                     </div>
-                </motion.div>
+                </div>
+            </motion.div>
             )}
 
             <h2 className="text-2xl font-bold mt-8">My Posters</h2>

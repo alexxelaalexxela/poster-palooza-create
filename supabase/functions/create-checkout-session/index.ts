@@ -71,7 +71,7 @@ serve(async (req) => {
 
   /*---------- 3) Lecture & validation du JSON ----------*/
 
-  let body: { format: string; quality: string; posterUrl?: string; purchaseType?: 'poster' | 'plan'; email?: string; password?: string };
+  let body: { format: string; quality: string; posterUrl?: string; purchaseType?: 'poster' | 'plan'; email?: string; password?: string; visitorId?: string };
 
   try {
     body = await req.json();
@@ -82,7 +82,7 @@ serve(async (req) => {
     );
   }
 
-  const { format, quality, posterUrl, purchaseType = 'poster', email, password } = body;
+  const { format, quality, posterUrl, purchaseType = 'poster', email, password, visitorId } = body;
   const priceId = `${format}-${quality}`;
   const unit_amount = prices[priceId];
 
@@ -147,6 +147,10 @@ serve(async (req) => {
   }
   bodyParams.append("metadata[purchase_type]", purchaseType);
   bodyParams.append("metadata[user_id]", userId);
+  if (visitorId && (!userId || userId === 'anonymous')) {
+    bodyParams.append("metadata[visitor_id]", String(visitorId));
+    bodyParams.append("client_reference_id", String(visitorId));
+  }
   if (purchaseType === 'plan') {
     bodyParams.append("metadata[plan_format]", String(format));
     bodyParams.append("metadata[plan_quality]", String(quality));
@@ -198,13 +202,17 @@ serve(async (req) => {
     }
   }
   // N'ajoute pas d'énormes data URLs en metadata Stripe (limites ~500 chars)
-  if (
-    purchaseType === 'poster' &&
-    typeof posterUrl === 'string' &&
-    !posterUrl.startsWith('data:') &&
-    posterUrl.length <= 500
-  ) {
-    bodyParams.append("metadata[poster_url]", posterUrl);
+  if (purchaseType === 'poster') {
+    // Always include format and quality for post-payment processing
+    bodyParams.append("metadata[format]", String(format));
+    bodyParams.append("metadata[quality]", String(quality));
+    if (
+      typeof posterUrl === 'string' &&
+      !posterUrl.startsWith('data:') &&
+      posterUrl.length <= 500
+    ) {
+      bodyParams.append("metadata[poster_url]", posterUrl);
+    }
   }
   bodyParams.append(
     "shipping_address_collection[allowed_countries][]",

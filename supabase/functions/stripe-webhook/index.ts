@@ -30,11 +30,25 @@ serve(async (req) => {
         return new Response(err.message, { status: 400 });
     }
 
-    if (event.type === 'checkout.session.completed') {
+    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
         const session: any = event.data.object;
         const metadata = session?.metadata || {};
         const purchaseType = metadata?.purchase_type || 'poster';
         let userId: string | null = (metadata?.user_id && metadata.user_id !== 'anonymous') ? metadata.user_id : null;
+        const visitorId: string | null = metadata?.visitor_id || session?.client_reference_id || null;
+
+        // Extract shipping details from session
+        const collected = session?.collected_information?.shipping_details || null;
+        const shipping = session?.shipping_details || null;
+        const customerDetails = session?.customer_details || {};
+        const shippingName: string | null = (collected?.name ?? shipping?.name ?? customerDetails?.name) || null;
+        const shippingAddress = (collected?.address || shipping?.address || customerDetails?.address) || {};
+        const shippingLine1: string | null = shippingAddress?.line1 ?? null;
+        const shippingLine2: string | null = shippingAddress?.line2 ?? null;
+        const shippingCity: string | null = shippingAddress?.city ?? null;
+        const shippingPostalCode: string | null = shippingAddress?.postal_code ?? null;
+        const shippingCountry: string | null = shippingAddress?.country ?? null;
+        const receiptEmail: string | null = customerDetails?.email ?? null;
 
         // For plan purchases, allow account creation post-payment (secure: no password)
         if (purchaseType === 'plan') {
@@ -98,6 +112,14 @@ serve(async (req) => {
                 stripe_customer_id: session.customer ?? null,
                 subscription_format: metadata?.plan_format ?? null,
                 subscription_quality: metadata?.plan_quality ?? null,
+                shipping_name: shippingName,
+                shipping_address_line1: shippingLine1,
+                shipping_address_line2: shippingLine2,
+                shipping_city: shippingCity,
+                shipping_postal_code: shippingPostalCode,
+                
+                shipping_country: shippingCountry,
+                
             };
 
             const { error } = await supabase
@@ -112,27 +134,137 @@ serve(async (req) => {
             console.log(`Successfully upgraded user (plan): ${userId}`);
         } else {
             // Poster one-off purchase (legacy behaviour)
-            const userIdFromMeta = session?.metadata?.user_id;
-            if (!userIdFromMeta) {
-                console.error('Webhook Error: No user_id in Stripe session metadata');
-                return new Response('User ID not found in session metadata', { status: 400 });
+            const metaUserId = session?.metadata?.user_id;
+            const posterUrl: string | null = metadata?.poster_url ?? null;
+            const format: string | null = metadata?.format ?? null;
+            const quality: string | null = metadata?.quality ?? null;
+
+            if (metaUserId && metaUserId !== 'anonymous') {
+                // Logged in user poster purchase -> update profile with shipping + mark paid
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({
+                        is_paid: true,
+                        generations_remaining: 15,
+                        stripe_customer_id: session.customer,
+                        shipping_name: shippingName,
+                        shipping_address_line1: shippingLine1,
+                        shipping_address_line2: shippingLine2,
+                        shipping_city: shippingCity,
+                        shipping_postal_code: shippingPostalCode,
+                        shipping_country: shippingCountry,
+                    })
+                    .eq('id', metaUserId);
+
+                if (error) {
+                    console.error('Supabase update error (user poster):', error);
+                    return new Response('Failed to update user profile (poster)', { status: 500 });
+                }
+                console.log(`Poster purchase stored for user ${metaUserId}`);
+            } else if (visitorId) {
+                // Visitor poster purchase -> insert visitor order record
+                const { error } = await supabase
+                    .from('visitor_orders')
+                    .insert({
+                        visitor_id: visitorId,
+                        email: receiptEmail,
+                        poster_url: posterUrl,
+                        format,
+                        quality,
+                        stripe_session_id: session?.id ?? null,
+                        shipping_name: shippingName,
+                        shipping_address_line1: shippingLine1,
+                        shipping_address_line2: shippingLine2,
+                        shipping_city: shippingCity,
+                        shipping_postal_code: shippingPostalCode,
+                        shipping_country: shippingCountry,
+                    });
+                if (error) {
+                    console.error('Supabase insert error (visitor order):', error);
+                    return new Response('Failed to store visitor order', { status: 500 });
+                }
+                console.log(`Visitor order stored for ${visitorId}`);
+            } else {
+                console.warn('Poster purchase without user or visitor id');
             }
+        }
+    } else if (event.type === 'payment_intent.succeeded') {
+        const pi: any = event.data.object;
+        let metadata = pi?.metadata || {};
+        let shipping = pi?.shipping || null;
+        let session: any = null;
+        try {
+            const sessions = await stripe.checkout.sessions.list({ payment_intent: pi.id, limit: 1 });
+            session = sessions.data?.[0] || null;
+        } catch (e) {
+            console.warn('Could not list sessions for PI', pi?.id, e);
+        }
+        if (session) {
+            // Prefer session metadata & shipping if available
+            metadata = session.metadata || metadata;
+            shipping = session.shipping_details || shipping;
+        }
 
-            const { error } = await supabase
-                .from('profiles')
-                .update({
-                    is_paid: true,
-                    generations_remaining: 15, // Débloque le quota
-                    stripe_customer_id: session.customer,
-                })
-                .eq('id', userIdFromMeta);
+        const purchaseType = metadata?.purchase_type || 'poster';
+        const userId: string | null = (metadata?.user_id && metadata.user_id !== 'anonymous') ? metadata.user_id : null;
+        const visitorId: string | null = metadata?.visitor_id || session?.client_reference_id || null;
 
-            if (error) {
-                console.error('Supabase update error:', error);
-                return new Response('Failed to update user profile', { status: 500 });
+        const customerDetails = session?.customer_details || {};
+        const shippingName: string | null = (shipping?.name ?? customerDetails?.name) || null;
+        const shippingAddress = (shipping?.address || customerDetails?.address) || {};
+        const shippingLine1: string | null = shippingAddress?.line1 ?? null;
+        const shippingLine2: string | null = shippingAddress?.line2 ?? null;
+        const shippingCity: string | null = shippingAddress?.city ?? null;
+        const shippingPostalCode: string | null = shippingAddress?.postal_code ?? null;
+        const shippingCountry: string | null = shippingAddress?.country ?? null;
+        const receiptEmail: string | null = customerDetails?.email ?? pi?.receipt_email ?? null;
+
+        if (purchaseType === 'poster') {
+            const posterUrl: string | null = metadata?.poster_url ?? null;
+            const format: string | null = metadata?.format ?? null;
+            const quality: string | null = metadata?.quality ?? null;
+
+            if (userId) {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({
+                        is_paid: true,
+                        generations_remaining: 15,
+                        stripe_customer_id: session?.customer ?? null,
+                        shipping_name: shippingName,
+                        shipping_address_line1: shippingLine1,
+                        shipping_address_line2: shippingLine2,
+                        shipping_city: shippingCity,
+                        shipping_postal_code: shippingPostalCode,
+                        shipping_country: shippingCountry,
+                    })
+                    .eq('id', userId);
+                if (error) {
+                    console.error('Supabase update error (PI user poster):', error);
+                    return new Response('Failed to update user profile (PI poster)', { status: 500 });
+                }
+            } else if (visitorId) {
+                const { error } = await supabase
+                    .from('visitor_orders')
+                    .insert({
+                        visitor_id: visitorId,
+                        email: receiptEmail,
+                        poster_url: posterUrl,
+                        format,
+                        quality,
+                        stripe_session_id: session?.id ?? null,
+                        shipping_name: shippingName,
+                        shipping_address_line1: shippingLine1,
+                        shipping_address_line2: shippingLine2,
+                        shipping_city: shippingCity,
+                        shipping_postal_code: shippingPostalCode,
+                        shipping_country: shippingCountry,
+                    });
+                if (error) {
+                    console.error('Supabase insert error (PI visitor order):', error);
+                    return new Response('Failed to store visitor order (PI)', { status: 500 });
+                }
             }
-
-            console.log(`Successfully upgraded user: ${userIdFromMeta}`);
         }
     }
 

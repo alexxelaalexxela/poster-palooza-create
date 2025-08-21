@@ -91,6 +91,12 @@ export type Database = {
           subscription_quality: string | null
           included_poster_selected_url: string | null
           included_poster_validated: boolean | null
+          shipping_name: string | null
+          shipping_address_line1: string | null
+          shipping_address_line2: string | null
+          shipping_city: string | null
+          shipping_postal_code: string | null
+          shipping_country: string | null
         }
         Insert: {
           email?: string | null
@@ -102,6 +108,12 @@ export type Database = {
           subscription_quality?: string | null
           included_poster_selected_url?: string | null
           included_poster_validated?: boolean | null
+          shipping_name?: string | null
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_city?: string | null
+          shipping_postal_code?: string | null
+          shipping_country?: string | null
         }
         Update: {
           email?: string | null
@@ -113,6 +125,71 @@ export type Database = {
           subscription_quality?: string | null
           included_poster_selected_url?: string | null
           included_poster_validated?: boolean | null
+          shipping_name?: string | null
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_city?: string | null
+          shipping_postal_code?: string | null
+          shipping_state?: string | null
+          shipping_country?: string | null
+          shipping_phone?: string | null
+        }
+        Relationships: []
+      }
+      visitor_orders: {
+        Row: {
+          id: string
+          created_at: string
+          visitor_id: string
+          email: string | null
+          poster_url: string | null
+          format: string | null
+          quality: string | null
+          stripe_session_id: string | null
+          shipping_name: string | null
+          shipping_address_line1: string | null
+          shipping_address_line2: string | null
+          shipping_city: string | null
+          shipping_postal_code: string | null
+          shipping_state: string | null
+          shipping_country: string | null
+          shipping_phone: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          visitor_id: string
+          email?: string | null
+          poster_url?: string | null
+          format?: string | null
+          quality?: string | null
+          stripe_session_id?: string | null
+          shipping_name?: string | null
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_city?: string | null
+          shipping_postal_code?: string | null
+          shipping_state?: string | null
+          shipping_country?: string | null
+          shipping_phone?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          visitor_id?: string
+          email?: string | null
+          poster_url?: string | null
+          format?: string | null
+          quality?: string | null
+          stripe_session_id?: string | null
+          shipping_name?: string | null
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_city?: string | null
+          shipping_postal_code?: string | null
+          shipping_state?: string | null
+          shipping_country?: string | null
+          shipping_phone?: string | null
         }
         Relationships: []
       }
