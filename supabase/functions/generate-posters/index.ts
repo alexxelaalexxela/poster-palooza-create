@@ -1,12 +1,15 @@
 
+// @ts-nocheck
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { FunctionsHttpError } from 'https://esm.sh/@supabase/supabase-js@2';
+import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const logoUrl = Deno.env.get('LOGO_URL');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,10 +97,22 @@ serve(async (req) => {
     variationsToUse.map(variation => generateImage(variation))
   );
 
-  // 2) Upload dans le Storage et récupère des URLs publiques légères
+  // 2) Ajoute le logo en bas à gauche à chaque image
+  const base64WithLogos = await Promise.all(
+    base64Images.map(async (b64) => {
+      try {
+        return await addLogoToBase64Image(b64);
+      } catch (e) {
+        console.error('Logo overlay failed:', e);
+        return b64; // fallback: upload original if overlay fails
+      }
+    })
+  );
+
+  // 3) Upload dans le Storage et récupère des URLs publiques légères
   const folder = userId ? `users/${userId}` : `visitors/${visitorId || 'unknown'}`;
   const imageUrls: string[] = [];
-  for (const b64 of base64Images) {
+  for (const b64 of base64WithLogos) {
     try {
       const publicUrl = await uploadBase64ToStorage(b64, folder);
       imageUrls.push(publicUrl);
@@ -294,6 +309,55 @@ function base64ToUint8Array(base64: string): Uint8Array {
     bytes[i] = binary.charCodeAt(i);
   }
   return bytes;
+}
+
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+let cachedLogoBytes: Uint8Array | null = null;
+
+async function getLogoBytes(): Promise<Uint8Array> {
+  if (cachedLogoBytes) return cachedLogoBytes;
+  if (!logoUrl) {
+    throw new Error('LOGO_URL env var not set for generate-posters function');
+  }
+  const resp = await fetch(logoUrl);
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch logo from ${logoUrl}: ${resp.status}`);
+  }
+  const buf = new Uint8Array(await resp.arrayBuffer());
+  cachedLogoBytes = buf;
+  return buf;
+}
+
+async function addLogoToBase64Image(base64Poster: string): Promise<string> {
+  const posterBytes = base64ToUint8Array(base64Poster);
+  const posterImg = await Image.decode(posterBytes);
+
+  const logoBytes = await getLogoBytes();
+  let logoImg = await Image.decode(logoBytes);
+
+  // Scale logo to ~8% of poster height, preserve aspect ratio
+  const targetLogoHeight = Math.max(24, Math.round(posterImg.height * 0.08));
+  const scale = targetLogoHeight / logoImg.height;
+  const targetLogoWidth = Math.max(24, Math.round(logoImg.width * scale));
+  logoImg = logoImg.resize(targetLogoWidth, targetLogoHeight);
+
+  // Bottom-left with padding ~2% of min dimension
+  const padding = Math.max(16, Math.round(Math.min(posterImg.width, posterImg.height) * 0.02));
+  const x = padding;
+  const y = posterImg.height - logoImg.height - padding;
+
+  posterImg.composite(logoImg, x, y);
+
+  const outBytes = await posterImg.encode();
+  return uint8ArrayToBase64(outBytes);
 }
 
 async function uploadBase64ToStorage(base64: string, folder: string): Promise<string> {

@@ -24,14 +24,18 @@ import { AuthProvider } from "@/hooks/useAuth"; // On va créer ce hook
 
 const queryClient = new QueryClient();
 
-const App = () => {
+function PostersBootstrap() {
   useLoadVisitorPosters();
+  return null;
+}
 
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider> {/* Enveloppez avec le fournisseur d'auth */}
+            <PostersBootstrap />
             <Toaster />
             <Sonner />
             <Layout>

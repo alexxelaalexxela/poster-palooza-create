@@ -11,13 +11,14 @@ import { Sparkles, AlertCircle, CreditCard, CheckCircle, Clock, Pencil } from 'l
 import { useProfile } from '@/hooks/useProfile';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useUnifiedPosters } from '@/hooks/useUnifiedPosters';
 
 const POSTERS_PER_PAGE = 8; // On charge 8 posters à la fois
 
 export default function Account() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
-    const { setSelectedPoster } = usePosterStore();
+    const { setSelectedPoster, setSelectedPosterUrl, generatedUrls, cachedUrls } = usePosterStore();
     const { profile, loading: profileLoading, refresh } = useProfile();
     const [editOpen, setEditOpen] = useState(false);
     const [form, setForm] = useState({
@@ -42,10 +43,9 @@ export default function Account() {
         }
     }, [profile]);
 
-    const [posters, setPosters] = useState<{ url: string }[]>([]);
+    const { posters: allPosters, loading: postersLoading } = useUnifiedPosters();
     const [page, setPage] = useState(0);
-    const [hasMore, setHasMore] = useState(true);
-    const [postersLoading, setPostersLoading] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(POSTERS_PER_PAGE);
 
     // Redirige vers /login si déconnecté (après que l'état d'auth soit connu)
     useEffect(() => {
@@ -54,47 +54,19 @@ export default function Account() {
         }
     }, [loading, user, navigate]);
 
-    const fetchPosters = useCallback(async (currentPage: number) => {
-        if (!user || postersLoading) return;
-
-        setPostersLoading(true);
-
-        const from = currentPage * POSTERS_PER_PAGE;
-        const to = from + POSTERS_PER_PAGE - 1;
-
-        const { data, error } = await supabase
-            .from('visitor_posters')
-            .select('url')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .range(from, to);
-
-        if (error) {
-            console.error("Error fetching posters:", error);
-        } else if (data) {
-            // Si on reçoit moins de posters que la taille de la page, c'est qu'il n'y en a plus.
-            if (data.length < POSTERS_PER_PAGE) {
-                setHasMore(false);
-            }
-            // On ajoute les nouveaux posters à la liste existante
-            setPosters(prev => [...prev, ...data]);
-        }
-        setPostersLoading(false);
-    }, [user, postersLoading]);
-
-    // Effet pour charger la première page
-    useEffect(() => {
-        fetchPosters(0);
-    }, [user]); // Déclenché uniquement lorsque l'utilisateur change
+    // Posters paginés pour l'affichage
+    const visiblePosters = allPosters.slice(0, visibleCount);
+    const hasMore = visibleCount < allPosters.length;
 
     const handleLoadMore = () => {
-        const nextPage = page + 1;
-        setPage(nextPage);
-        fetchPosters(nextPage);
+        setVisibleCount(prev => prev + POSTERS_PER_PAGE);
     };
 
-    const handleOrder = (index: number) => {
-        setSelectedPoster(index); // On stocke l'index global du poster
+    const handleOrder = (url: string) => {
+        const merged = [...generatedUrls, ...cachedUrls];
+        const idx = merged.findIndex(u => u === url);
+        setSelectedPoster(idx >= 0 ? idx : null);
+        setSelectedPosterUrl(url ?? null);
         navigate('/order');
     };
 
@@ -328,28 +300,40 @@ export default function Account() {
             )}
 
             <h2 className="text-2xl font-bold mt-8">My Posters</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                {posters.map((poster, index) => (
-                    <div key={index} className="group relative aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden">
-                        <img
-                            src={poster.url}
-                            alt={`Poster ${index + 1}`}
-                            className="w-full h-full object-contain"
-                            loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button onClick={() => handleOrder(index)}>
-                                Commander
-                            </Button>
+            {postersLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="aspect-[3/4] bg-gray-200 rounded-lg animate-pulse" />
+                    ))}
+                </div>
+            ) : visiblePosters.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                    {visiblePosters.map((poster, index) => (
+                        <div key={poster.url || index} className="group relative aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden">
+                            <img
+                                src={poster.url}
+                                alt={`Poster ${index + 1}`}
+                                className="w-full h-full object-contain"
+                                loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button onClick={() => handleOrder(poster.url)}>
+                                    Commander
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center mt-8 text-gray-500">
+                    <p>Aucun poster trouvé. Générez votre premier poster !</p>
+                </div>
+            )}
 
             {hasMore && (
-            <div className="text-center mt-8">
-                    <Button onClick={handleLoadMore} disabled={postersLoading}>
-                        {postersLoading ? 'Loading...' : 'Load More'}
+                <div className="text-center mt-8">
+                    <Button onClick={handleLoadMore}>
+                        Load More ({allPosters.length - visibleCount} remaining)
                     </Button>
                 </div>
             )}

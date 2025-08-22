@@ -15,12 +15,17 @@ export default function PosterGallery() {
     generatedUrls = [],
     selectedPoster,
     setSelectedPoster,
+    setSelectedPosterUrl,
   } = usePosterStore();
 
   const navigate = useNavigate();
   const [showUpgrade, setShowUpgrade] = useState(false);
 
-  const cachedUrlsFiltered = cachedUrls.filter((url) => !generatedUrls.includes(url));
+  // Si on a des nouveaux posters générés, on les sépare des anciens
+  // Sinon, on affiche tous les posters comme "anciens"
+  const cachedUrlsFiltered = generatedUrls.length > 0 
+    ? cachedUrls.filter((url) => !generatedUrls.includes(url))
+    : cachedUrls;
 
   const mergedUrls = [...generatedUrls, ...cachedUrlsFiltered];
 
@@ -31,11 +36,11 @@ export default function PosterGallery() {
   /* Lightbox state (mobile only) */
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   /* Pagination for old posters */
-  const [visibleOldCount, setVisibleOldCount] = useState<number>(4);
+  const [visibleOldCount, setVisibleOldCount] = useState<number>(8);
 
   useEffect(() => {
     // Reset visible count when the cached list changes
-    setVisibleOldCount(4);
+    setVisibleOldCount(8);
   }, [cachedUrlsFiltered.length]);
 
   /* Close on ESC */
@@ -111,6 +116,7 @@ export default function PosterGallery() {
                     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
                     // Toujours sélectionner
                     setSelectedPoster(idx);
+                    setSelectedPosterUrl(url);
                     // Ouvrir l'aperçu plein écran uniquement sur mobile
                     if (!isDesktop) {
                       setLightboxIdx(idx);
@@ -220,6 +226,7 @@ export default function PosterGallery() {
                     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
                     // Toujours sélectionner
                     setSelectedPoster(globalIdx);
+                    setSelectedPosterUrl(url);
                     // Ouvrir l'aperçu plein écran uniquement sur mobile
                     if (!isDesktop) {
                       setLightboxIdx(globalIdx);
@@ -243,7 +250,7 @@ export default function PosterGallery() {
               <button
                 onClick={() =>
                   setVisibleOldCount((c) =>
-                    Math.min(c + 4, cachedUrlsFiltered.length)
+                    Math.min(c + 8, cachedUrlsFiltered.length)
                   )
                 }
                 className="px-5 py-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition"

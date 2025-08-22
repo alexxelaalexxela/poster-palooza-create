@@ -21,6 +21,7 @@ export type Quality = 'classic' | 'premium' | 'museum' | 'paper2';
 interface PosterStore {
   selectedTemplate: number | null;
   selectedPoster: number | null;
+  selectedPosterUrl: string | null;
   selectedFormat: Format | 'A2';
   selectedQuality: Quality | null;
   price: number;
@@ -29,6 +30,7 @@ interface PosterStore {
 
   setSelectedTemplate: (id: number | null) => void;
   setSelectedPoster: (id: number | null) => void;
+  setSelectedPosterUrl: (url: string | null) => void;
   setSelectedFormat: (format: Format | null) => void;
   setSelectedQuality: (quality: Quality | null) => void;
   calculatePrice: () => void;
@@ -41,6 +43,7 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
 
   selectedTemplate: 2,
   selectedPoster: null,
+  selectedPosterUrl: null,
   selectedFormat: null,
   selectedQuality: null,
   price: 60,
@@ -57,6 +60,11 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
 
   setSelectedPoster: (id) => {
     set({ selectedPoster: id });
+    get().calculatePrice();
+  },
+
+  setSelectedPosterUrl: (url) => {
+    set({ selectedPosterUrl: url });
     get().calculatePrice();
   },
 

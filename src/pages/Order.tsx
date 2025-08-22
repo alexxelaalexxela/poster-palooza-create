@@ -12,7 +12,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useFingerprint } from '@/hooks/useFingerprint';
 
 const Order = () => {
-  const { selectedPoster, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
+  const { selectedPoster, selectedPosterUrl, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
   const mergedUrls = [...generatedUrls, ...cachedUrls];
   const { toast } = useToast();
   const { user } = useAuth();
@@ -21,7 +21,7 @@ const Order = () => {
   //const primaryUrl = generatedUrls[selectedPoster];
   //const fallbackUrl = cachedUrls[selectedPoster];   // ← nouvel accès
   //const finalUrl = primaryUrl ?? fallbackUrl;
-  const finalUrl = mergedUrls[selectedPoster] ?? null;
+  const finalUrl = selectedPosterUrl ?? (selectedPoster != null ? mergedUrls[selectedPoster] : null);
   const SHIPPING_FEE = 4.99;
   const totalWithShipping = Number((price + SHIPPING_FEE).toFixed(2));
   const hasIncludedPlanActive = !!(user && profile?.is_paid && profile?.subscription_format && profile?.subscription_quality && !profile?.included_poster_selected_url);
