@@ -98,14 +98,19 @@ serve(async (req) => {
       variationsToUse.map(async (variation) => {
         try {
           let b64 = await generateImage(variation);
+          // Overlay -> retourne directement des bytes PNG (évite conversions base64 inutiles)
+          let pngBytes: Uint8Array;
           try {
-            b64 = await addLogoToBase64Image(b64);
+            pngBytes = await addLogoToBase64ImageReturnBytes(b64);
           } catch (e) {
             console.error('Logo overlay failed:', e);
+            // fallback: upload l'image telle quelle
+            pngBytes = base64ToUint8Array(b64);
           }
-          const publicUrl = await uploadBase64ToStorage(b64, folder);
-          // Aide le GC en relâchant la grosse string
+          const publicUrl = await uploadBytesToStorage(pngBytes, folder);
+          // Aide le GC en relâchant les gros buffers
           b64 = '';
+          pngBytes = new Uint8Array(0);
           return publicUrl;
         } catch (e) {
           console.error('Pipeline failed for a variation:', e);
@@ -332,33 +337,42 @@ async function getLogoBytes(): Promise<Uint8Array> {
   return buf;
 }
 
-async function addLogoToBase64Image(base64Poster: string): Promise<string> {
+// Cache de logos redimensionnés par hauteur cible pour éviter de recalculer
+const resizedLogoCache = new Map<number, Uint8Array>();
+
+async function addLogoToBase64ImageReturnBytes(base64Poster: string): Promise<Uint8Array> {
   const posterBytes = base64ToUint8Array(base64Poster);
   const posterImg = await Image.decode(posterBytes);
 
   const logoBytes = await getLogoBytes();
-  let logoImg = await Image.decode(logoBytes);
-
-  // Scale logo to ~8% of poster height, preserve aspect ratio
   const targetLogoHeight = Math.max(24, Math.round(posterImg.height * 0.08));
-  const scale = targetLogoHeight / logoImg.height;
-  const targetLogoWidth = Math.max(24, Math.round(logoImg.width * scale));
-  logoImg = logoImg.resize(targetLogoWidth, targetLogoHeight);
+
+  // Récupère un logo déjà redimensionné si disponible
+  let resizedLogoBytes = resizedLogoCache.get(targetLogoHeight) || null;
+  if (!resizedLogoBytes) {
+    let logoImg = await Image.decode(logoBytes);
+    const scale = targetLogoHeight / logoImg.height;
+    const targetLogoWidth = Math.max(24, Math.round(logoImg.width * scale));
+    logoImg = logoImg.resize(targetLogoWidth, targetLogoHeight);
+    resizedLogoBytes = await logoImg.encode();
+    resizedLogoCache.set(targetLogoHeight, resizedLogoBytes);
+  }
+
+  const logoImgDecoded = await Image.decode(resizedLogoBytes);
 
   // Bottom-left with padding ~2% of min dimension
   const padding = Math.max(16, Math.round(Math.min(posterImg.width, posterImg.height) * 0.02));
   const x = padding;
-  const y = posterImg.height - logoImg.height - padding;
+  const y = posterImg.height - logoImgDecoded.height - padding;
 
-  posterImg.composite(logoImg, x, y);
+  posterImg.composite(logoImgDecoded, x, y);
 
   const outBytes = await posterImg.encode();
-  return uint8ArrayToBase64(outBytes);
+  return outBytes;
 }
 
-async function uploadBase64ToStorage(base64: string, folder: string): Promise<string> {
+async function uploadBytesToStorage(bytes: Uint8Array, folder: string): Promise<string> {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  const bytes = base64ToUint8Array(base64);
   const filename = `${folder}/${crypto.randomUUID()}.png`;
   const { error: uploadError } = await supabase
     .storage
