@@ -51,7 +51,7 @@ export const UpgradeModal = ({ open, onClose, onSignup }: UpgradeModalProps) => 
             <DialogContent className="w-[95vw] sm:max-w-2xl p-0 bg-gray-900 text-white shadow-2xl rounded-2xl border-fuchsia-500/20 border max-h-[90vh] overflow-y-auto">
                 <div className="relative">
                     <img
-                        src="/images/hero-background2.png" // A nice background
+                        src="/images/hero-background.png" // A nice background
                         alt="Premium background"
                         className="absolute inset-0 w-full h-full object-cover opacity-10"
                     />
@@ -108,9 +108,7 @@ export const UpgradeModal = ({ open, onClose, onSignup }: UpgradeModalProps) => 
                             <p className="mt-2 text-5xl font-bold tracking-tight">
                                 45€
                             </p>
-                            <p className="mt-1 text-sm text-gray-400">
-                                Jusqu'à 65€ (format A0)
-                            </p>
+                            
                         </div>
 
                         <motion.div

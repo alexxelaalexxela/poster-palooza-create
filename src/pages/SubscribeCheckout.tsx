@@ -17,7 +17,7 @@ const SubscribeCheckout = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const SHIPPING_FEE = 0; // forfait: livraison incluse, on conserve adresse au checkout stripe
+  const SHIPPING_FEE = 4.99; // frais de livraison pour le forfait
   const totalWithShipping = Number((price + SHIPPING_FEE).toFixed(2));
 
   const handleConfirm = async () => {
@@ -77,7 +77,7 @@ const SubscribeCheckout = () => {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
               <span className="text-gray-600">Livraison:</span>
-              <span className="font-medium">Incluse</span>
+              <span className="font-medium">4,99 €</span>
             </div>
             <div className="flex justify-between items-center py-3 border-t border-gray-200">
               <span className="text-lg font-semibold">Total:</span>
@@ -95,7 +95,7 @@ const SubscribeCheckout = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
                 <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Votre mot de passe" required />
               </div>
-              <p className="text-xs text-gray-500">Votre compte sera créé après paiement et vous pourrez vous connecter avec ces identifiants.</p>
+              <p className="text-xs text-gray-500">Votre compte sera créé après paiement et vous pourrez vous connecter avec ces identifiants pour générer vos posters.</p>
             </div>
           ) : (
             <p className="mt-6 text-sm text-gray-700">Vous êtes connecté en tant que <strong>{user.email}</strong>. Le forfait sera attaché à ce compte.</p>

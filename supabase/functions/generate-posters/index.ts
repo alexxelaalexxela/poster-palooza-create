@@ -146,11 +146,11 @@ serve(async (req) => {
       // Utilisateur connecté - décrémenter ses tentatives
       await supabase.rpc('decrement_generations', { user_id_param: user.id });
       // Associer les posters générés à l'utilisateur
-      const posterRows = postersWithMeta.map(({ url, usedPrompt }) => ({
+      const posterRows = postersWithMeta.map(({ url }) => ({
         visitor_id: visitorId,
         url,
         user_id: user.id,
-        used_prompt: usedPrompt,
+        used_prompt: prompt,
         template: templateName,
       }));
       await supabase.from('visitor_posters').insert(posterRows);
@@ -181,10 +181,10 @@ serve(async (req) => {
       }
       
       // Enregistrer les posters comme anonymes
-      const posterRows = postersWithMeta.map(({ url, usedPrompt }) => ({
+      const posterRows = postersWithMeta.map(({ url }) => ({
         visitor_id: visitorId,
         url,
-        used_prompt: usedPrompt,
+        used_prompt: prompt,
         template: templateName,
       }));
       await supabase.from('visitor_posters').insert(posterRows);

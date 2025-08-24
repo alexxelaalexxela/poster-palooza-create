@@ -8,17 +8,17 @@ import PosterWall from "@/components/SofaPoster";
 import { useAuth } from "@/hooks/useAuth";
 
 const benefits = [
-  { icon: Sparkles, text: "15 générations premium par mois", highlight: "premium" },
+  { icon: Sparkles, text: "15 générations premium", highlight: "premium" },
   { icon: Layers, text: "4 propositions par prompt", highlight: "unique" },
-  { icon: User, text: "Photo de personne ou lieu pour personnalisation", highlight: "perso" },
-  { icon: Gem, text: "Impression haute qualité galerie", highlight: "qualité" },
+  { icon: User, text: "Photo de personne ou lieu pour la personnalisation", highlight: "perso" },
+  { icon: Gem, text: "Impression haute qualité", highlight: "qualité" },
   { icon: Truck, text: "Livraison rapide & emballage soigné", highlight: "rapide" },
 ];
 
 const qualityOptions: { id: Quality; name: string; subtitle: string; price: string; ring: string; popular?: boolean }[] = [
-  { id: "classic", name: "Classic", subtitle: "170 g/m² · Mat", price: "Base", ring: "from-neutral-400/30 via-neutral-500/30 to-neutral-600/30" },
-  { id: "premium", name: "Premium", subtitle: "230 g/m² · Satin", price: "+10€", ring: "from-sky-400/30 via-indigo-500/30 to-indigo-600/30", popular: true },
-  { id: "museum", name: "Museum", subtitle: "305 g/m² · Gloss", price: "+20€", ring: "from-amber-400/30 via-rose-400/30 to-rose-500/30" },
+  { id: "classic", name: "Classic", subtitle: "250 g/m²", price: "Base", ring: "from-blue-50/50 via-blue-100/60 to-blue-200/70" },
+  { id: "premium", name: "Premium", subtitle: "250 g/m² · Laminé Mat", price: "+10€", ring: "from-indigo-500/20 via-blue-600/30 to-purple-600/40", popular: true },
+  { id: "museum", name: "Museum", subtitle: "250 g/m² · Premium", price: "+20€", ring: "from-orange-100/50 via-yellow-100/60 to-amber-200/70" },
 ];
 
 const Subscribe = () => {
@@ -52,10 +52,10 @@ const Subscribe = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50/30">
       {/* Hero Section Premium */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
-        <div className="absolute inset-0 bg-[url('/images/hero-background2.png')] opacity-5 bg-cover bg-center" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-blue-900 via-indigo-800 to-purple-800">
+        <div className="absolute inset-0 bg-[url('/images/hero-background.png')] opacity-5 bg-cover bg-center" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
         
         {/* Floating particles effect */}
@@ -98,7 +98,7 @@ const Subscribe = () => {
               className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-white leading-tight"
             >
               Votre Poster<br />
-              <span className="bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 bg-clip-text text-transparent">
                 Personnalisé
               </span>
             </motion.h1>
@@ -107,7 +107,7 @@ const Subscribe = () => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="mt-6 text-xl md:text-2xl text-indigo-100 max-w-3xl mx-auto leading-relaxed"
+              className="mt-6 text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto leading-relaxed"
             >
               De l'idée à l'impression premium. Générez, choisissez, recevez.
             </motion.p>
@@ -127,7 +127,7 @@ const Subscribe = () => {
             className="xl:col-span-4"
           >
             <div className="sticky top-24">
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-8 shadow-2xl h-fit">
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-600 p-8 shadow-2xl h-fit">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-20 translate-x-20" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-16 -translate-x-16" />
                 
@@ -184,7 +184,7 @@ const Subscribe = () => {
                 <div className="relative">
                   {(() => {
                     const merged = [...generatedUrls, ...cachedUrls];
-                    const previewUrl = merged[0] ?? "/images/poster6.png";
+                    const previewUrl = merged[0] ?? "/images/poster8.png";
                     return <PosterWall posterUrl={previewUrl} sofaImage="./images/Sofa10.png" compact={true} />;
                   })()}
                 </div>
@@ -198,7 +198,7 @@ const Subscribe = () => {
                         key={f.id}
                         type="button"
                         onClick={() => setSelectedFormat(f.id)}
-                        className={`py-2 rounded-xl border-2 text-sm font-semibold transition-colors ${active ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white hover:border-indigo-300'}`}
+                        className={`py-2 rounded-xl border-2 text-sm font-semibold transition-colors ${active ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white hover:border-indigo-400'}`}
                       >
                         {f.label}
                       </button>
@@ -271,7 +271,7 @@ const Subscribe = () => {
               </div>
 
               {/* Price & CTA */}
-              <div className="bg-gradient-to-r from-gray-50 to-indigo-50/50 p-8 border-t border-gray-200">
+              <div className="bg-gradient-to-r from-blue-50/50 to-purple-50/50 p-8 border-t border-gray-200">
                 <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
                   <div className="text-center lg:text-left">
                     <p className="text-gray-600 text-sm mb-1">Prix total</p>
@@ -279,7 +279,6 @@ const Subscribe = () => {
                       <span className="text-4xl lg:text-5xl font-black text-gray-900">{price}€</span>
                       <span className="text-gray-500 text-lg">TTC</span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">Livraison incluse en France</p>
                   </div>
 
                   
@@ -293,7 +292,7 @@ const Subscribe = () => {
                       size="lg"
                       className="px-8 py-4 text-lg font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white shadow-xl shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed group"
                     >
-                      Finaliser ma commande
+                       Finaliser ma commande
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </motion.div>

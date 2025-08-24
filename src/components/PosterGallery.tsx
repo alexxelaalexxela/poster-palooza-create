@@ -302,7 +302,7 @@ export default function PosterGallery() {
       <UpgradeModal
         open={showUpgrade}
         onClose={() => setShowUpgrade(false)}
-        onSignup={() => navigate('/register')}
+        onSignup={() => { setShowUpgrade(false); navigate('/subscribe'); }}
       />
     </motion.section>
   );

@@ -10,9 +10,9 @@ interface LayoutProps {
 }
 
 const navigation = [
-  { name: "What we propose", href: "/" },
-  { name: "Pricing", href: "/subscribe" },
-  { name: "About Us", href: "/about" },
+  { name: "Accueil", href: "/" },
+  { name: "Tarifs", href: "/subscribe" },
+  { name: "À propos", href: "/about" },
 ];
 
 export default function Layout({ children }: LayoutProps) {

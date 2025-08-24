@@ -305,7 +305,7 @@ const PromptBar = () => {
           text-center mb-6
         "
         >
-          Describe your poster idea
+          Décrivez votre idée de poster
         </h2>
 
         {/* Compteur de tentatives */}

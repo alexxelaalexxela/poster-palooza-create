@@ -218,6 +218,13 @@ serve(async (req) => {
     "shipping_address_collection[allowed_countries][]",
     "FR",        // France
   );
+  // Ajouter des frais de livraison pour les forfaits (plan)
+  if (purchaseType === 'plan') {
+    bodyParams.append("shipping_options[0][shipping_rate_data][display_name]", "Livraison standard");
+    bodyParams.append("shipping_options[0][shipping_rate_data][type]", "fixed_amount");
+    bodyParams.append("shipping_options[0][shipping_rate_data][fixed_amount][amount]", "499");
+    bodyParams.append("shipping_options[0][shipping_rate_data][fixed_amount][currency]", "eur");
+  }
 
   /*---------- 5) Appel Stripe ----------*/
   let stripeRes: Response;

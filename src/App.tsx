@@ -7,7 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { usePosterStore } from "@/store/usePosterStore";      // ← ajoute
 import Layout from "@/components/Layout";
 import Index from "@/pages/Index";
-import Pricing from "@/pages/Pricing";
+
 import About from "@/pages/About";
 import Order from "@/pages/Order";
 import NotFound from "@/pages/NotFound";
@@ -21,6 +21,9 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Account from "@/pages/Account";
 import { AuthProvider } from "@/hooks/useAuth"; // On va créer ce hook
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import VerifyEmail from "@/pages/VerifyEmail";
 
 const queryClient = new QueryClient();
 
@@ -41,7 +44,7 @@ const App = () => {
             <Layout>
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/pricing" element={<Pricing />} />
+                
                 <Route path="/about" element={<About />} />
                 <Route path="/order" element={<Order />} />
                 <Route path="/order/confirmation" element={<OrderConfirmation />} />
@@ -49,6 +52,9 @@ const App = () => {
                 <Route path="/subscribe/checkout" element={<SubscribeCheckout />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/mot-de-passe-oublie" element={<ForgotPassword />} />
+                <Route path="/reinitialiser-mot-de-passe" element={<ResetPassword />} />
+                <Route path="/verifier-email" element={<VerifyEmail />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
