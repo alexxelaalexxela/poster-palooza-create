@@ -102,7 +102,7 @@ const getTemplate = (id: number | null) =>
 /*                         TemplateDropdown (mobile + desktop)                 */
 /* -------------------------------------------------------------------------- */
 
-const TemplateDropdown = ({ onUpgrade }: { onUpgrade: () => void }) => {
+const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid: boolean }) => {
   const { selectedTemplate, setSelectedTemplate } = usePosterStore();
   const [open, setOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -111,8 +111,8 @@ const TemplateDropdown = ({ onUpgrade }: { onUpgrade: () => void }) => {
   const PREVIEW_WIDTH = "w-28"; // Légèrement plus large pour le nouveau design
 
   const handleSelect = (id: number, templateName: string) => {
-    // Seul "Vintage" (template 2) est autorisé
-    const isAllowed = templateName.toLowerCase() === 'vintage';
+    // Si l'utilisateur est payé, tout est autorisé; sinon seul "Vintage" (template 2)
+    const isAllowed = isPaid || templateName.toLowerCase() === 'vintage';
     
     if (!isAllowed) {
       onUpgrade();
@@ -161,7 +161,7 @@ const TemplateDropdown = ({ onUpgrade }: { onUpgrade: () => void }) => {
               {Object.entries(templates).map(([id, tpl]) => {
                 const tplId = Number(id);
                 const active = tplId === selectedTemplate;
-                const isAllowed = tpl.name.toLowerCase() === 'vintage';
+                const isAllowed = isPaid || tpl.name.toLowerCase() === 'vintage';
                 
                 return (
                   <button
@@ -395,7 +395,7 @@ const PromptBar = () => {
                   ) : (
                     <span className="text-orange-600">⚠️ Sélectionnez un template</span>
                   )}
-                  <TemplateDropdown onUpgrade={() => setShowUpgrade(true)} />
+                  <TemplateDropdown onUpgrade={() => setShowUpgrade(true)} isPaid={isPaid} />
                 </div>
 
                 {/* Upload image - Design amélioré */}
