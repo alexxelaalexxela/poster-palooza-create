@@ -147,79 +147,91 @@ const Index = () => {
           {/* Barre de prompt → premier élément visible */}
           <PromptBar />
 
-          {/* Bouton toggle templates */}
+          {/* Bouton toggle templates - Style amélioré */}
           <motion.button
             whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.05 }}
             className="
-              mx-auto flex items-center gap-2
-              bg-indigo-600 hover:bg-indigo-700 text-white
-              font-medium px-6 py-3 rounded-full shadow-lg
+              mx-auto flex items-center gap-3
+              bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700
+              text-white font-semibold px-8 py-4 rounded-2xl shadow-2xl
+              border border-white/20 backdrop-blur-sm
+              transition-all duration-300
             "
             onClick={() => setShowTemplates((p) => !p)}
           >
-            {showTemplates ? 'Masquer les exemples' : 'Voir des exemples'}
-            {showTemplates ? <ChevronUp size={20} /> : <ChevronRight size={20} />}
+            <div className="p-1 bg-white/20 rounded-full">
+              {showTemplates ? <ChevronUp size={16} /> : <ChevronRight size={16} />}
+            </div>
+            <span className="text-lg">
+              {showTemplates ? 'Masquer les exemples' : 'Voir des exemples'}
+            </span>
           </motion.button>
 
-          {/* Picker de templates (collapsible) */}
+          {/* Section des exemples redesignée */}
           <AnimatePresence initial={false}>
             {showTemplates && (
               <motion.div
                 key="templates"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.45, ease: [.4, 0, .2, 1] }}
-                className="relative overflow-hidden" // ← ajouté 'relative' pour flèche
+                initial={{ opacity: 0, height: 0, y: -20 }}
+                animate={{ opacity: 1, height: 'auto', y: 0 }}
+                exit={{ opacity: 0, height: 0, y: -20 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className="relative overflow-hidden"
               >
-                {/*<h2
-        className="
-          relative z-20
-          text-xl sm:text-xl md:text-2xl font-extrabold
-          text-white
-          drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]
-          text-center mb-8
-        "
-      >
-        Choisis ton template
-      </h2>*/}
+                {/* Header Section */}
+                
 
-                <div
-                  ref={scrollRef}                      // ← ajouté ici
-                  onScroll={handleScroll}              // ← ajouté ici
-                  className="
-          flex gap-4 overflow-x-auto px-1
-          scroll-smooth snap-x snap-mandatory no-scrollbar
-          md:grid md:grid-cols-5 md:gap-6 md:overflow-visible md:px-0
-        "
-                >
-                  {templates.map((t) => (
-                    <TemplateCard
-                      key={t.id}
-                      template={t}
-                    />
-                  ))}
-                </div>
-
-                {showHint && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="pointer-events-none sm:hidden
-            absolute inset-y-0 right-0 w-16
-            bg-gradient-to-l from-white via-white/70 to-transparent"
+                {/* Gallery Container */}
+                <div className="relative bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10 shadow-2xl">
+                  <div
+                    ref={scrollRef}
+                    onScroll={handleScroll}
+                    className="
+                      flex gap-6 overflow-x-auto px-2 py-4
+                      scroll-smooth snap-x snap-mandatory no-scrollbar
+                      md:grid md:grid-cols-5 md:gap-8 md:overflow-visible md:px-0
+                    "
                   >
+                    {templates.map((t, index) => (
+                      <motion.div
+                        key={t.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: index * 0.1 }}
+                      >
+                        <TemplateCard template={t} />
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Mobile Scroll Hint */}
+                  {showHint && (
                     <motion.div
-                      initial={{ x: 0 }}
-                      animate={{ x: [0, 6, 0] }}
-                      transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
-                      className="absolute top-1/2 -translate-y-1/2 right-3 text-gray-500"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="pointer-events-none md:hidden
+                        absolute inset-y-0 right-0 w-16
+                        bg-gradient-to-l from-white/10 via-white/5 to-transparent rounded-r-3xl"
                     >
-                      <ChevronRight size={22} />
+                      <motion.div
+                        initial={{ x: 0 }}
+                        animate={{ x: [0, 8, 0] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                        className="absolute top-1/2 -translate-y-1/2 right-4"
+                      >
+                        <div className="p-2 bg-white/20 rounded-full backdrop-blur-sm">
+                          <ChevronRight size={16} className="text-white" />
+                        </div>
+                      </motion.div>
                     </motion.div>
-                  </motion.div>
-                )}
+                  )}
+
+                  {/* Decorative Elements */}
+                  <div className="absolute top-3 left-3 w-2 h-2 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full opacity-60"></div>
+                  <div className="absolute bottom-3 right-3 w-2 h-2 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full opacity-60"></div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

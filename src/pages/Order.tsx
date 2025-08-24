@@ -1,10 +1,13 @@
 
 import { motion } from 'framer-motion';
-import { ArrowLeft, Check, CreditCard, MapPin, User } from 'lucide-react';
+import { ArrowLeft, Check, CreditCard, MapPin, User, Package, Star, Shield, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePosterStore } from '@/store/usePosterStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -94,190 +97,213 @@ const Order = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
+        <div 
+          className="absolute inset-0 animate-pulse opacity-20"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          }}
+        />
+        
+        {/* Floating orbs */}
+        <div className="absolute top-1/4 left-1/6 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/6 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-pink-500/10 rounded-full blur-2xl animate-pulse delay-500"></div>
+      </div>
 
-        {/* Back button */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
-          <Link
-            to="/"
-            className="inline-flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to design
-          </Link>
-        </motion.div>
-
-        <div className="grid grid-cols-1 gap-8 justify-items-center">
-
-          {/* Order Summary */}
+      <div className="relative z-10 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Navigation */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg w-full max-w-2xl"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8"
           >
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6">Order Summary</h2>
-
-            {/* Selected poster preview */}
-
-            <div className="mb-6">
-              {/* conteneur du poster */}
-              <div
-                className="aspect-[3/4] w-40 md:w-64 mx-auto mb-4 rounded-lg
-               flex items-center justify-center     /* centre l’image */
-               bg-black p-0.5"                       /* bordure noire fine */
-              >
-
-                {finalUrl ? (
-                  <img
-                    src={finalUrl}
-                    alt={`Poster ${selectedPoster}`}
-                    className="max-w-full max-h-full object-contain" /* plus de crop */
-                  />
-                ) : (
-                  /* fallback */
-                  <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center rounded-md">
-                    <span className="text-gray-500 text-sm">
-                      Poster #{selectedPoster}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Order details */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Format:</span>
-                <span className="font-medium">{selectedFormat}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Quality:</span>
-                <span className="font-medium">
-                  {selectedQuality === 'classic'
-                    ? 'Classic'
-                    : selectedQuality === 'premium'
-                      ? 'Premium'
-                      : 'Museum'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Livraison:</span>
-                <span className="font-medium">{shippingDisplay.toFixed(2)} €</span>
-              </div>
-              <div className="flex justify-between items-center py-3 border-t border-gray-200">
-                <span className="text-lg font-semibold">Total:</span>
-                <span className="text-2xl font-bold text-indigo-600">{totalDisplay.toFixed(2)} €</span>
-              </div>
-            </div>
-
-            {/* Features included */}
-            <div className="mt-6 p-4 bg-emerald-50 rounded-xl">
-              <h3 className="font-medium text-emerald-800 mb-2">Included:</h3>
-              <ul className="space-y-2 text-sm text-emerald-700">
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 mr-2" />
-                  High-quality printing
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 mr-2" />
-                  Fast shipping (5-7 business days)
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 mr-2" />
-                  Protective packaging
-                </li>
-              </ul>
-            </div>
-
-            <Button
-              onClick={handleSubmitOrder}
-              disabled={!canCheckout}
-              className="w-full py-3 text-lg font-medium bg-indigo-500 hover:bg-indigo-600 mt-6 disabled:opacity-60 disabled:cursor-not-allowed"
+            <Link
+              to="/"
+              className="inline-flex items-center text-white/80 hover:text-white transition-colors"
             >
-              {canCheckout ? `Complete Order - ${totalDisplay.toFixed(2)} €` : 'Initialisation...'}
-            </Button>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Retour au design
+            </Link>
           </motion.div>
 
-          {/* Checkout Form */}
-          {/*<motion.div
-            initial={{ opacity: 0, y: 20 }}
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg"
+            transition={{ duration: 0.6 }}
+            className="text-center mb-8"
           >
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6">Checkout</h2>
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl mb-4 border border-white/20">
+              <Package className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Finaliser votre Commande</h1>
+            <p className="text-white/80 text-lg">Vérifiez les détails de votre poster avant la commande</p>
+          </motion.div>
 
-            <form onSubmit={handleSubmitOrder} className="space-y-6">
-
-              
-              <div>
-                <h3 className="flex items-center text-lg font-medium text-gray-800 mb-4">
-                  <User className="w-5 h-5 mr-2" />
-                  Personal Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input placeholder="First name" required />
-                  <Input placeholder="Last name" required />
-                  <Input type="email" placeholder="Email address" className="md:col-span-2" required />
-                  <Input type="tel" placeholder="Phone number" className="md:col-span-2" />
-                </div>
-              </div>
-
-             
-              <div>
-                <h3 className="flex items-center text-lg font-medium text-gray-800 mb-4">
-                  <MapPin className="w-5 h-5 mr-2" />
-                  Shipping Address
-                </h3>
-                <div className="space-y-4">
-                  <Input placeholder="Street address" required />
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Input placeholder="City" required />
-                    <Input placeholder="State/Province" required />
-                    <Input placeholder="Postal code" required />
-                  </div>
-                  <Input placeholder="Country" required />
-                </div>
-              </div>
-
-              
-              <div>
-                <h3 className="flex items-center text-lg font-medium text-gray-800 mb-4">
-                  <CreditCard className="w-5 h-5 mr-2" />
-                  Payment Method
-                </h3>
-                <div className="space-y-4">
-                  <Input placeholder="Card number" required />
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input placeholder="MM/YY" required />
-                    <Input placeholder="CVC" required />
-                  </div>
-                  <Input placeholder="Cardholder name" required />
-                </div>
-              </div>
-
-              
-              <Button
-                onClick={handleSubmitOrder}
-                className="w-full py-3 text-lg font-medium bg-indigo-500 hover:bg-indigo-600"
-              >
-                Complete Order - {price} AUD
-              </Button>
-            </form>
-            <Button
-              onClick={handleSubmitOrder}
-              className="w-full py-3 text-lg font-medium bg-indigo-500 hover:bg-indigo-600"
+          <div className="grid lg:grid-cols-5 gap-8">
+            {/* Poster Preview */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="lg:col-span-2"
             >
-              Complete Order - {price} AUD
-            </Button>
-          </motion.div>*/}
+              <Card className="backdrop-blur-xl bg-white/10 border-white/20 shadow-2xl sticky top-8">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Star className="w-5 h-5" />
+                    Votre Poster
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Poster Preview */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <div className="aspect-[3/4] w-full max-w-xs mx-auto mb-4 rounded-lg bg-black/20 p-1 backdrop-blur-sm">
+                      {finalUrl ? (
+                        <img
+                          src={finalUrl}
+                          alt={`Poster ${selectedPoster}`}
+                          className="w-full h-full object-contain rounded-md"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center rounded-md">
+                          <span className="text-white/60 text-sm">
+                            Poster #{selectedPoster}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <Badge variant="outline" className="text-white border-white/30">
+                        Poster Sélectionné
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Order Summary */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="lg:col-span-3"
+            >
+              <Card className="backdrop-blur-xl bg-white/10 border-white/20 shadow-2xl">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <CreditCard className="w-5 h-5" />
+                    Récapitulatif de Commande
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Order Details */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b border-white/10">
+                      <span className="text-white/70">Format:</span>
+                      <Badge variant="outline" className="text-white border-white/30">
+                        {selectedFormat}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-white/10">
+                      <span className="text-white/70">Qualité:</span>
+                      <Badge variant="outline" className="text-white border-white/30">
+                        {selectedQuality === 'classic'
+                          ? 'Classic'
+                          : selectedQuality === 'premium'
+                            ? 'Premium'
+                            : 'Museum'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-white/10">
+                      <span className="text-white/70">Livraison:</span>
+                      <span className="text-white font-medium">
+                        {hasIncludedPlanActive ? 'Gratuite' : `${shippingDisplay.toFixed(2)} €`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-white/20" />
+
+                  {/* Total */}
+                  <div className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-xl p-4 border border-white/20">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white font-semibold text-lg">Total:</span>
+                      <span className="text-3xl font-bold text-white">
+                        {hasIncludedPlanActive ? 'Gratuit' : `${totalDisplay.toFixed(2)} €`}
+                      </span>
+                    </div>
+                    {hasIncludedPlanActive && (
+                      <p className="text-white/60 text-xs mt-1">Inclus dans votre abonnement Premium</p>
+                    )}
+                  </div>
+
+                  {/* Features included */}
+                  <div className="bg-green-500/20 border border-green-400/30 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Shield className="w-4 h-4 text-green-300" />
+                      <h3 className="font-medium text-green-200">Inclus dans votre commande:</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-green-200">
+                      <div className="flex items-center gap-2">
+                        <Star className="w-3 h-3" />
+                        <span>Impression haute qualité</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-3 h-3" />
+                        <span>Livraison rapide (5-7 jours)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Package className="w-3 h-3" />
+                        <span>Emballage protecteur</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Check className="w-3 h-3" />
+                        <span>Garantie qualité</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Button */}
+                  <Button
+                    onClick={handleSubmitOrder}
+                    disabled={!canCheckout}
+                    className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    {canCheckout ? (
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-5 h-5" />
+                        {hasIncludedPlanActive 
+                          ? 'Confirmer la Commande' 
+                          : `Finaliser la Commande - ${totalDisplay.toFixed(2)} €`
+                        }
+                        <Star className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Initialisation...
+                      </div>
+                    )}
+                  </Button>
+
+                  {/* Security info */}
+                  <div className="text-center">
+                    <p className="text-white/60 text-xs">
+                      <Shield className="w-3 h-3 inline mr-1" />
+                      Paiement 100% sécurisé avec Stripe
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>

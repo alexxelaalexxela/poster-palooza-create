@@ -326,7 +326,8 @@ const PromptBar = () => {
                 disabled={isGenerating}
               />
 
-              <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3">
+              <div className="flex flex-col sm:flex-row items-center sm:justify-end gap-3">
+                {/* Template Selection - Commenté
                 <div className="flex items-center gap-1 text-sm text-gray-800">
                   {selectedTemplate ? (
                     <>
@@ -337,10 +338,11 @@ const PromptBar = () => {
                   )}
                   <TemplateDropdown />
                 </div>
+                */}
                 {!isGenerating && (
                   <Button
                     onClick={handleGenerate}
-                    disabled={!prompt.trim() || !selectedTemplate}
+                    disabled={!prompt.trim()}
                     className="w-full sm:w-auto px-6 py-3 font-medium bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:text-white/70 disabled:cursor-not-allowed"
                   >
                     {"Générer les posters"}

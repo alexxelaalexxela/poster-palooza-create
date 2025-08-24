@@ -126,7 +126,7 @@ serve(async (req) => {
 
   const bodyParams = new URLSearchParams({
     mode: "payment",
-    success_url: allowOrigin,
+    success_url: purchaseType === 'plan' ? `${allowOrigin}/subscribe/success` : `${allowOrigin}/poster/success`,
     cancel_url: allowOrigin,
     "line_items[0][price_data][currency]": "eur",
     "line_items[0][price_data][product_data][name]":
@@ -219,12 +219,12 @@ serve(async (req) => {
     "FR",        // France
   );
   // Ajouter des frais de livraison pour les forfaits (plan)
-  if (purchaseType === 'plan') {
+  
     bodyParams.append("shipping_options[0][shipping_rate_data][display_name]", "Livraison standard");
     bodyParams.append("shipping_options[0][shipping_rate_data][type]", "fixed_amount");
-    bodyParams.append("shipping_options[0][shipping_rate_data][fixed_amount][amount]", "499");
+    bodyParams.append("shipping_options[0][shipping_rate_data][fixed_amount][amount]", "0");
     bodyParams.append("shipping_options[0][shipping_rate_data][fixed_amount][currency]", "eur");
-  }
+  
 
   /*---------- 5) Appel Stripe ----------*/
   let stripeRes: Response;

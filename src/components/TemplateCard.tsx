@@ -1,12 +1,10 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { RotateCw } from "lucide-react";
 
 interface Template {
   id: number;
   name: string;
   image: string;
-  description: string;  // prompt utilisé
+  description: string;
 }
 
 interface TemplateCardProps {
@@ -14,81 +12,91 @@ interface TemplateCardProps {
 }
 
 const TemplateCard = ({ template }: TemplateCardProps) => {
-  const [flipped, setFlipped] = useState(false);
-
   return (
-    <button
-      type="button"
-      onClick={() => setFlipped(!flipped)}
-      className="
-        w-32 aspect-[2/3] shrink-0 relative overflow-hidden
-        transition-transform duration-300 hover:-translate-y-0.5
-        snap-start focus:outline-none
-        border-[4px] border-black
-      "
-      style={{ perspective: "1000px" }}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      viewport={{ once: true }}
+      className="group w-36 sm:w-40 md:w-44 shrink-0 snap-start"
     >
-      <motion.div
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ duration: 0.6 }}
-        className="absolute inset-0"
-        style={{ transformStyle: "preserve-3d" }}
-      >
-        {/* ---------- Face avant ---------- */}
-        <div
-          className="absolute inset-0"
-          style={{ backfaceVisibility: "hidden", backgroundColor: "black" }}
-        >
-          <img
-            src={template.image}
-            alt={template.name}
-            className="object-cover w-full h-full"
-          />
-
-          {/* Indice « Cliquer » – fixe */}
-          {!flipped && (
-            <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 text-[0.8rem] font-semibold text-white pointer-events-none">
-              <RotateCw className="w-4 h-4" />
-              Voir Prompt
-            </div>
-          )}
-        </div>
-
-        {/* ---------- Face arrière ---------- */}
-        <div
-          className="absolute inset-0 flex items-center justify-center"
+      {/* Cadre en bois rectangulaire */}
+      <div className="relative">
+        {/* Cadre extérieur - Effet bois */}
+        <div 
+          className="relative p-2 shadow-2xl group-hover:shadow-3xl transition-all duration-500"
           style={{
-            backfaceVisibility: "hidden",
-            transform: "rotateY(180deg)",
+            background: `
+              linear-gradient(135deg, 
+                #8B4513 0%, 
+                #A0522D 15%, 
+                #CD853F 30%, 
+                #D2691E 45%, 
+                #A0522D 60%, 
+                #8B4513 75%, 
+                #654321 100%
+              )
+            `,
+            borderRadius: '4px'
           }}
         >
-          {/* Image floutée */}
-          <img
-            src={template.image}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover blur-md scale-110"
+          {/* Texture bois avec lignes */}
+          <div 
+            className="absolute inset-0 opacity-30"
+            style={{
+              background: `
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 2px,
+                  rgba(0,0,0,0.1) 2px,
+                  rgba(0,0,0,0.1) 3px
+                ),
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 8px,
+                  rgba(0,0,0,0.05) 8px,
+                  rgba(0,0,0,0.05) 10px
+                )
+              `,
+              borderRadius: '4px'
+            }}
           />
 
-          {/* Texte – plus petit, scroll vertical possible */}
-          <div
-            className="
-              relative z-10 w-full h-full px-3 py-2 overflow-y-auto
-              flex flex-col gap-2 text-left text-[0.7rem] leading-tight
-              text-white 
-            "
-          >
-            <div>
-              <strong>Template&nbsp;:</strong>&nbsp;{template.name}
-            </div>
-            <div>
-              <strong>Prompt&nbsp;:</strong>
-              <span className="block mt-0.5">{template.description}</span>
+          {/* Biseaux du cadre */}
+          <div className="absolute inset-0 border-2 border-amber-900/40" style={{ borderRadius: '4px' }} />
+          <div className="absolute inset-1 border border-amber-700/60" style={{ borderRadius: '2px' }} />
 
+          {/* Passe-partout crème */}
+          <div className="relative bg-gradient-to-br from-amber-50 to-stone-100 p-3 shadow-inner" style={{ borderRadius: '2px' }}>
+            {/* Image du poster */}
+            <div className="relative aspect-[2/3] overflow-hidden bg-white shadow-sm">
+              <img
+                src={template.image}
+                alt="Exemple de poster"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
             </div>
           </div>
+
+          {/* Ombre réaliste du cadre */}
+          <div 
+            className="absolute inset-0 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            style={{
+              filter: 'drop-shadow(0 10px 25px rgba(139, 69, 19, 0.3))',
+              borderRadius: '4px'
+            }}
+          />
         </div>
-      </motion.div>
-    </button>
+
+        {/* Ombre portée au sol */}
+        <div 
+          className="absolute -bottom-2 left-2 right-2 h-4 bg-gradient-to-b from-black/20 to-transparent blur-sm -z-10 opacity-60 group-hover:opacity-80 transition-opacity duration-500"
+          style={{ borderRadius: '50%' }}
+        />
+      </div>
+    </motion.div>
   );
 };
 

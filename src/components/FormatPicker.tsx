@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { Check, Maximize } from 'lucide-react';
 import { usePosterStore, Format } from '@/store/usePosterStore';
 import PosterWall from './SofaPoster';
 
@@ -37,10 +37,27 @@ const FormatPicker = () => {
       className="mt-4 md:mt-0"
     >
 
-      <div className="w-full flex flex-col items-center pt-6 md:pt-2">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-0">
-          Format
-        </h2>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        viewport={{ once: true }}
+        className="text-center mb-8 md:mb-12"
+      >
+        <div className="inline-flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+          <div className="p-2 md:p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg md:rounded-xl shadow-lg">
+            <Maximize className="w-4 h-4 md:w-6 md:h-6 text-white" />
+          </div>
+          <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+            Choisissez votre Format
+          </h2>
+        </div>
+        <p className="text-gray-600 text-sm md:text-lg max-w-2xl mx-auto px-4">
+          Sélectionnez la taille parfaite pour votre poster personnalisé
+        </p>
+      </motion.div>
+
+      <div className="w-full flex flex-col items-center">
         <div className="overflow-hidden">
           <PosterWall posterUrl={posterUrl} />
         </div>

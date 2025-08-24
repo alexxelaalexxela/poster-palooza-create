@@ -14,6 +14,8 @@ import NotFound from "@/pages/NotFound";
 import Subscribe from "@/pages/Subscribe";
 import SubscribeCheckout from "@/pages/SubscribeCheckout";
 import OrderConfirmation from "@/pages/OrderConfirmation";
+import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
+import PosterSuccess from "@/pages/PosterSuccess";
 import { useLoadVisitorPosters } from "./hooks/useLoadVisitorPosters";
 
 
@@ -50,6 +52,8 @@ const App = () => {
                 <Route path="/order/confirmation" element={<OrderConfirmation />} />
                 <Route path="/subscribe" element={<Subscribe />} />
                 <Route path="/subscribe/checkout" element={<SubscribeCheckout />} />
+                <Route path="/subscribe/success" element={<SubscriptionSuccess />} />
+                <Route path="/poster/success" element={<PosterSuccess />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/mot-de-passe-oublie" element={<ForgotPassword />} />

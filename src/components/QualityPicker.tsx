@@ -5,7 +5,7 @@
  ****************************************************************/
 
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { Check, Palette } from 'lucide-react';
 import { usePosterStore, type Quality } from '@/store/usePosterStore';
 
 const qualityOptions: {
@@ -14,9 +14,9 @@ const qualityOptions: {
   subtitle: string;
   ring: string;
 }[] = [
-    { id: 'classic', name: 'Classic', subtitle: '170 g/m² · Mat', ring: 'from-neutral-400/40 via-neutral-500/40 to-neutral-600/40' },
-    { id: 'premium', name: 'Premium', subtitle: '230 g/m² · Satin', ring: 'from-sky-400/40 via-indigo-500/40 to-indigo-600/40' },
-    { id: 'museum', name: 'Museum', subtitle: '305 g/m² · Gloss', ring: 'from-amber-400/40 via-rose-400/40 to-rose-500/40' },
+    { id: 'classic', name: 'Classic', subtitle: '250 g/m²', ring: 'from-neutral-400/40 via-neutral-500/40 to-neutral-600/40' },
+    { id: 'premium', name: 'Premium', subtitle: '250 g/m² · Laminé Mat', ring: 'from-sky-400/40 via-indigo-500/40 to-indigo-600/40' },
+    { id: 'museum', name: 'Museum', subtitle: '250 g/m² · Premium', ring: 'from-amber-400/40 via-rose-400/40 to-rose-500/40' },
   ];
 
 const cardVariants = {
@@ -40,10 +40,25 @@ export default function QualityPicker() {
       viewport={{ once: true }}
       className="mt-6"
     >
-      {/* Titre : même taille desktop, plus petit mobile */}
-      <h2 className="text-center text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
-        Quality
-      </h2>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        viewport={{ once: true }}
+        className="text-center mb-8 md:mb-12"
+      >
+        <div className="inline-flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+          <div className="p-2 md:p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg md:rounded-xl shadow-lg">
+            <Palette className="w-4 h-4 md:w-6 md:h-6 text-white" />
+          </div>
+          <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+            Qualité d'impression
+          </h2>
+        </div>
+        <p className="text-gray-600 text-sm md:text-lg max-w-2xl mx-auto px-4">
+          Choisissez le niveau de qualité qui correspond à vos attentes
+        </p>
+      </motion.div>
 
       {/* Grille : 1 colonne mobile, 3 colonnes dès sm (≥640 px) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-sm sm:max-w-3xl mx-auto">

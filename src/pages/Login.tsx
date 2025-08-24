@@ -56,7 +56,7 @@ export default function Login() {
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl mb-4 border border-white/20">
                             <Sparkles className="w-8 h-8 text-white" />
                         </div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Poster Palooza</h1>
+                        <h1 className="text-3xl font-bold text-white mb-2">Neoma Poster</h1>
                         <p className="text-white/80">Créez des posters uniques avec l'IA</p>
                     </div>
 

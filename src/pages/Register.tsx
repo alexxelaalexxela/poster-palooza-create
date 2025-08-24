@@ -109,7 +109,7 @@ export default function Register() {
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl mb-4 border border-white/20">
                             <Sparkles className="w-8 h-8 text-white" />
                         </div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Rejoignez Poster Palooza</h1>
+                        <h1 className="text-3xl font-bold text-white mb-2">Rejoignez Neoma Poster </h1>
                         <p className="text-white/80">Commencez à créer des posters incroyables dès aujourd'hui</p>
                     </div>
 
@@ -329,7 +329,7 @@ export default function Register() {
 
                     {/* Footer */}
                     <div className="text-center mt-8 text-white/50 text-xs">
-                        <p>© 2024 Poster Palooza. Libérer la créativité dans le monde entier.</p>
+                        <p>© 2025 Neoma Poster. Libérer la créativité dans le monde entier.</p>
                     </div>
                 </div>
             </div>

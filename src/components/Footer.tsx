@@ -8,7 +8,7 @@ export default function Footer() {
           <div className="flex items-center gap-3">
             <img src="/logoo.png" alt="Neoma logo" className="h-8 w-auto" />
             <span className="text-sm text-gray-500">
-              © {new Date().getFullYear()} Poster Palooza
+              © {new Date().getFullYear()} Neoma Poster 
             </span>
           </div>
           <nav className="flex items-center gap-6 text-sm">
