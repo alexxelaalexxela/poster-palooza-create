@@ -224,6 +224,8 @@ export type Database = {
           url: string
           user_id: string | null
           visitor_id: string
+          used_prompt: string | null
+          template: string | null
         }
         Insert: {
           created_at?: string
@@ -231,6 +233,8 @@ export type Database = {
           url: string
           user_id?: string | null
           visitor_id: string
+          used_prompt?: string | null
+          template?: string | null
         }
         Update: {
           created_at?: string
@@ -238,6 +242,8 @@ export type Database = {
           url?: string
           user_id?: string | null
           visitor_id?: string
+          used_prompt?: string | null
+          template?: string | null
         }
         Relationships: []
       }

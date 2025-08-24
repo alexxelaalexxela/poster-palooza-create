@@ -93,8 +93,7 @@ serve(async (req) => {
 
     // Génère, superpose le logo et uploade en parallèle, sans conserver d'intermédiaires volumineux
     const folder = userId ? `users/${userId}` : `visitors/${visitorId || 'unknown'}`;
-    const imageUrls: string[] = [];
-    const urlResults = await Promise.all(
+    const generationResults = await Promise.all(
       variationsToUse.map(async (variation) => {
         try {
           let b64 = await generateImage(variation);
@@ -111,16 +110,16 @@ serve(async (req) => {
           // Aide le GC en relâchant les gros buffers
           b64 = '';
           pngBytes = new Uint8Array(0);
-          return publicUrl;
+          return { url: publicUrl, usedPrompt: variation };
         } catch (e) {
           console.error('Pipeline failed for a variation:', e);
           return null;
         }
       })
     );
-    for (const url of urlResults) {
-      if (url) imageUrls.push(url);
-    }
+
+    const postersWithMeta = generationResults.filter((r) => r && (r as any).url) as { url: string; usedPrompt: string }[];
+    const imageUrls: string[] = postersWithMeta.map((r) => r.url);
 
   console.log('Generated image URLs (public):', imageUrls);
 
@@ -147,7 +146,13 @@ serve(async (req) => {
       // Utilisateur connecté - décrémenter ses tentatives
       await supabase.rpc('decrement_generations', { user_id_param: user.id });
       // Associer les posters générés à l'utilisateur
-      const posterRows = imageUrls.map(url => ({ visitor_id: visitorId, url, user_id: user.id }));
+      const posterRows = postersWithMeta.map(({ url, usedPrompt }) => ({
+        visitor_id: visitorId,
+        url,
+        user_id: user.id,
+        used_prompt: usedPrompt,
+        template: templateName,
+      }));
       await supabase.from('visitor_posters').insert(posterRows);
     } else if (visitorId) {
       // Visiteur anonyme - incrémenter le compteur de tentatives
@@ -176,7 +181,12 @@ serve(async (req) => {
       }
       
       // Enregistrer les posters comme anonymes
-      const posterRows = imageUrls.map(url => ({ visitor_id: visitorId, url }));
+      const posterRows = postersWithMeta.map(({ url, usedPrompt }) => ({
+        visitor_id: visitorId,
+        url,
+        used_prompt: usedPrompt,
+        template: templateName,
+      }));
       await supabase.from('visitor_posters').insert(posterRows);
     }
 
