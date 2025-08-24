@@ -91,35 +91,31 @@ serve(async (req) => {
     // Decide how many images to generate depending on user status
     const variationsToUse = isPaid ? promptVariations : [promptVariations[0]];
 
-    // Generate images using DALL-E 3
-  // 1) Génère les images (base64)
-  const base64Images = await Promise.all(
-    variationsToUse.map(variation => generateImage(variation))
-  );
-
-  // 2) Ajoute le logo en bas à gauche à chaque image
-  const base64WithLogos = await Promise.all(
-    base64Images.map(async (b64) => {
-      try {
-        return await addLogoToBase64Image(b64);
-      } catch (e) {
-        console.error('Logo overlay failed:', e);
-        return b64; // fallback: upload original if overlay fails
-      }
-    })
-  );
-
-  // 3) Upload dans le Storage et récupère des URLs publiques légères
-  const folder = userId ? `users/${userId}` : `visitors/${visitorId || 'unknown'}`;
-  const imageUrls: string[] = [];
-  for (const b64 of base64WithLogos) {
-    try {
-      const publicUrl = await uploadBase64ToStorage(b64, folder);
-      imageUrls.push(publicUrl);
-    } catch (e) {
-      console.error('Storage upload failed:', e);
+    // Génère, superpose le logo et uploade en parallèle, sans conserver d'intermédiaires volumineux
+    const folder = userId ? `users/${userId}` : `visitors/${visitorId || 'unknown'}`;
+    const imageUrls: string[] = [];
+    const urlResults = await Promise.all(
+      variationsToUse.map(async (variation) => {
+        try {
+          let b64 = await generateImage(variation);
+          try {
+            b64 = await addLogoToBase64Image(b64);
+          } catch (e) {
+            console.error('Logo overlay failed:', e);
+          }
+          const publicUrl = await uploadBase64ToStorage(b64, folder);
+          // Aide le GC en relâchant la grosse string
+          b64 = '';
+          return publicUrl;
+        } catch (e) {
+          console.error('Pipeline failed for a variation:', e);
+          return null;
+        }
+      })
+    );
+    for (const url of urlResults) {
+      if (url) imageUrls.push(url);
     }
-  }
 
   console.log('Generated image URLs (public):', imageUrls);
 
