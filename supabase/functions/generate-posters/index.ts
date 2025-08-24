@@ -21,6 +21,7 @@ interface GenerateRequest {
   templateName: string;
   templateDescription: string;
   hasImage?: boolean;
+  imageDataUrl?: string;
   visitorId?: string;
 }
 
@@ -30,7 +31,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, templateName, templateDescription, hasImage, visitorId }: GenerateRequest = await req.json();
+    const { prompt, templateName, templateDescription, hasImage, imageDataUrl, visitorId }: GenerateRequest = await req.json();
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const authHeader = req.headers.get('Authorization')!;
@@ -83,9 +84,32 @@ serve(async (req) => {
       });
     }
 
-    // Generate 4 different prompts using GPT-4 (we may use only 1 if not paid)
+    // Feature premium: description d'image réservée aux utilisateurs payants
+    if (hasImage && !isPaid) {
+      return new Response(JSON.stringify({ success: false, error: 'Premium required for image upload.' }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // If an image is provided, describe it with GPT-4o-mini and merge into the prompt
+    let effectivePrompt = prompt || '';
+    if (hasImage && imageDataUrl) {
+      try {
+        const imageDescription = await describeImage(imageDataUrl);
+        console.log('Image description:', imageDescription);
+        effectivePrompt = effectivePrompt
+          ? `${effectivePrompt}\n\nDescription de la personne/batiment: ${imageDescription}`
+          : `Description de l'image: ${imageDescription}`;
+      } catch (e) {
+        console.error('Image description failed:', e);
+        // Continue without image description rather than failing hard
+      }
+    }
+
+    // Generate 4 different prompts using GPT-4
     console.log('template description');
-    const promptVariations = await generatePromptVariations(prompt, templateDescription);
+    const promptVariations = await generatePromptVariations(effectivePrompt, templateDescription);
     console.log('Generated prompt variationsss:', promptVariations);
 
     // Decide how many images to generate depending on user status
@@ -279,6 +303,60 @@ Return 4 slightly different from each other prompts, one prompt per line so that
 }
 
 
+
+async function describeImage(imageDataUrl: string): Promise<string> {
+  if (!openAIApiKey) throw new Error('OPENAI_API_KEY not set');
+  // Accept Data URL (data:image/*;base64,....). If not, wrap as JPEG data URL by default.
+  const imageUrlData = imageDataUrl.startsWith('data:')
+    ? imageDataUrl
+    : `data:image/jpeg;base64,${imageDataUrl}`;
+
+  const messages = [
+    {
+      role: 'user',
+      content: [
+        { type: 'text', text: `Décris uniquement les éléments principaux visibles dans l’image.  
+
+- Si une ou plusieurs personnes apparaissent :  
+  ➝ Donne une description minimale et factuelle : sexe, âge approximatif, couleur et style de cheveux, un ou deux détails vestimentaires.  
+  ➝ Format télégraphique, sans phrases, seulement des mots-clés séparés par des virgules.  
+
+- Si aucun humain n’apparaît et que c’est un bâtiment :  
+  ➝ Donne une description détaillée : style architectural (moderne, ancien, gothique, haussmannien, industriel, etc.), matériaux dominants (pierre, verre, béton, bois), nombre d’étages, état général (neuf, vétuste, rénové), couleurs principales, éléments particuliers (balcons, colonnes, toit en pente, vitres, etc.).  
+
+- Pas d’interprétation émotionnelle ou narrative.  
+
+Exemples :  
+- "homme, cheveux bruns, mi-longs bouclés, chemise noire rayée"  
+- "femme, cheveux blonds, attachés, robe rouge"  
+- "immeuble haussmannien, pierre beige, 6 étages, balcons en fer forgé, fenêtres hautes, toit mansardé gris"  
+- "gratte-ciel moderne, verre bleu, 40 étages, façade lisse, base en béton"` },
+        { type: 'image_url', image_url: { url: imageUrlData } },
+      ],
+    },
+  ];
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages,
+      temperature: 0.4,
+      max_tokens: 200,
+    }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.error?.message || `OpenAI vision returned ${response.status}`);
+  }
+  const text = data?.choices?.[0]?.message?.content?.trim?.() || '';
+  return text;
+}
 
 async function generateImage(prompt: string): Promise<string> {
   console.log('prompt', prompt);
