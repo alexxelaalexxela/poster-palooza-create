@@ -165,7 +165,7 @@ const SubscribeCheckout = () => {
                     <div className="space-y-2 text-sm text-white/80">
                       <div className="flex items-center gap-2">
                         <Zap className="w-3 h-3" />
-                        <span>15 générations par mois</span>
+                        <span>15 générations premium</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Package className="w-3 h-3" />

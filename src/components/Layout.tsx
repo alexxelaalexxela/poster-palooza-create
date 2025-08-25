@@ -117,42 +117,42 @@ export default function Layout({ children }: LayoutProps) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden bg-white shadow-lg border-t border-gray-200 transition"
+              className="md:hidden bg-white/95 backdrop-blur-md shadow-sm border-t border-gray-100"
             >
-              <div className="px-4 py-2 space-y-2">
+              <div className="px-6 py-4 space-y-1">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`block px-4 py-3 text-lg font-medium transition-colors ${isActive(item.href)
-                      ? "bg-gray-50 text-gray-900"
-                      : "text-gray-600"
+                    className={`block px-3 py-2.5 text-base font-medium rounded-lg transition-all duration-200 ${isActive(item.href)
+                      ? "bg-indigo-50 text-indigo-700 border-l-2 border-indigo-600"
+                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                       }`}
                   >
                     {item.name}
                   </Link>
                 ))}
 
-                {/* ======================== NOUVEAU BLOC MOBILE ======================= */}
-                <div className="border-t border-gray-100 my-2" />
+                {/* Séparateur plus discret */}
+                <div className="h-px bg-gray-200 my-3" />
+                
                 {loading ? (
-                  <div className="w-full h-12 bg-gray-100 rounded-md animate-pulse" />
+                  <div className="w-24 h-8 bg-gray-200 rounded-md animate-pulse ml-3" />
                 ) : user ? (
                   <Link
                     to="/account"
-                    className="block px-4 py-3 text-lg font-medium text-gray-600"
+                    className="block px-3 py-2.5 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-all duration-200"
                   >
                     Mon Compte
                   </Link>
                 ) : (
                   <Link
                     to="/login"
-                    className="block px-4 py-3 text-lg font-medium text-indigo-600"
+                    className="block px-3 py-2.5 text-base font-semibold text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg transition-all duration-200"
                   >
-                    Login / Register
+                    Connexion
                   </Link>
                 )}
-                {/* ====================== FIN NOUVEAU BLOC MOBILE ===================== */}
               </div>
             </motion.div>
           )}

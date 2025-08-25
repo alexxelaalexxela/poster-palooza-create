@@ -30,51 +30,60 @@ interface TemplateMeta {
 
 const templates: Record<number, TemplateMeta> = {
   1: {
-    name: "City",
-    description: `Illustration vectorielle minimaliste, style affiche touristique vintage des années 50. 
-Scène : [décris ici le lieu ou l’action, ex. « plage de Biarritz au coucher du soleil »].
-Palette : aplats doux et chauds (sable, ocre, orange brûlé, vert d’eau, turquoise), sans dégradés ni textures.
-Composition : horizon clair, perspective simple, larges formes géométriques nettes.
-Personnages : 1-4 figures stylisées, corps en aplats de couleurs harmonieuses, postures naturelles. 
-IMPORTANT → AUCUN trait du visage, AUCUN contour noir, AUCune ombre portée ; vêtements et accessoires en couleurs unies.
-Typo : titre centré en haut, majuscules sans-serif épaisses et arrondies, couleur contrastante.
-Rendu : bords francs, arrière-plan épuré, effet sérigraphie propre, 4K.
-
---négatif-- silhouettes noires, ombrage réaliste, détails fins, lignes de croquis, texture photo, grain, visages détaillés, gradients`,
-    thumbnail: "/images/poster6.png",
-  },
-  2: {
     name: "Vintage",
     description: `Illustration vectorielle minimaliste au style rétro, inspirée des affiches touristiques vintage. La scène représente un paysage naturel épuré, avec de larges aplats de couleurs chaudes et douces (sable, ocre, orange, verts doux ou teintes adaptées au thème), sans contours ni détails superflus ! Perspective simple avec un horizon visible et possiblement un couché de soleil (ex. : plage et mer sous un soleil couchant). 
       
-      Les personnages, s’ils sont présents, sont stylisés de manière minimaliste mais colorée : pas de silhouettes sombres ou noires, mais des corps représentés avec des aplats de couleurs variées et harmonieuses. Ils n’ont PAS de traits du visage ! mais des postures expressives et naturelles. Les vêtements et accessoires sont également représentés sans ombres ni textures, avec des couleurs unies. L’objectif est de garder un style vivant mais épuré, sans tomber dans un effet “ombre chinoise”.
+      Les personnages, s'ils sont présents, sont stylisés de manière minimaliste mais colorée : pas de silhouettes sombres ou noires, mais des corps représentés avec des aplats de couleurs variées et harmonieuses. Ils n'ont PAS de traits du visage ! mais des postures expressives et naturelles. Les vêtements et accessoires sont également représentés sans ombres ni textures, avec des couleurs unies. L'objectif est de garder un style vivant mais épuré, sans tomber dans un effet "ombre chinoise".
 
-      La composition est équilibrée, avec un titre centré en haut de l’image, écrit en lettres majuscules, utilisant une typographie sans-serif épaisse, arrondie et bien espacée, dans une couleur qui contraste agréablement avec le fond.
+      La composition est équilibrée, avec un titre centré en haut de l'image, écrit en lettres majuscules, utilisant une typographie sans-serif épaisse, arrondie et bien espacée, dans une couleur qui contraste agréablement avec le fond.
       Il faut absulument que le prompt dise qu'on veut un paysage naturel épuré avec des forme et large aplat et que les personnage soit minimaliste coloré et sans traits de visage .
       `,
-    thumbnail: "/images/poster2.jpg",
+    thumbnail: "/images/poster10.png",
   },
-  3: {
+  2: {
     name: "Affiche de Film",
-    description: `Illustration vectorielle minimaliste, style affiche touristique vintage des années 50. 
-Scène : [décris ici le lieu ou l’action, ex. « plage de Biarritz au coucher du soleil »].
-Palette : aplats doux et chauds (sable, ocre, orange brûlé, vert d’eau, turquoise), sans dégradés ni textures.
-Composition : horizon clair, perspective simple, larges formes géométriques nettes.
-Personnages : 1-4 figures stylisées, corps en aplats de couleurs harmonieuses, postures naturelles. 
-IMPORTANT → AUCUN trait du visage, AUCUN contour noir, AUCune ombre portée ; vêtements et accessoires en couleurs unies.
-Typo : titre centré en haut, majuscules sans-serif épaisses et arrondies, couleur contrastante.
-Rendu : bords francs, arrière-plan épuré, effet sérigraphie propre, 4K.`,
+    description: `Affiche de cinéma au style néo-rétro inspiré des couvertures de magazines pulp des années 50 et 60, avec une esthétique marquée par des contrastes forts, une typographie massive et un traitement visuel volontairement dramatique. L’image centrale représente un personnage féminin en pose iconique, placé au premier plan et occupant la moitié inférieure de la composition. Le rendu privilégie un réalisme cinématographique, avec un éclairage artificiel et contrasté (ombres profondes et tons saturés), accentuant les volumes du visage et des objets environnants.
+
+Le fond est composé d’un décor intérieur simplifié, sombre et secondaire, servant principalement à faire ressortir la figure principale. Les couleurs dominantes reposent sur une palette chaude et saturée (rouges profonds, oranges, jaunes lumineux), contrebalancée par des tons plus sombres (noirs, bleus nuit). Cette palette crée une tension visuelle et dramatique, propre aux visuels pulp.
+
+La typographie est un élément central de la composition : le titre est inscrit en lettres capitales massives, sans empattement, épaisses et serrées, avec une texture légèrement vieillie. Sa couleur jaune vif contraste violemment avec le fond rouge, renforçant la dimension accrocheuse et publicitaire. En dessous, une signature manuscrite (ex “a Quentin Tarantino film”) apporte une touche plus personnelle et artisanale. La liste des acteurs apparaît en colonne à gauche, en lettres capitales jaunes également, équilibrant visuellement la composition et respectant la hiérarchie typographique.
+
+La composition est organisée verticalement : le titre occupe le tiers supérieur, le personnage central domine la partie médiane, et les crédits en petits caractères forment une base textuelle dense dans la zone inférieure. L’ensemble est encadré par des motifs visuels et des éléments iconographiques (revolver, cigarettes, roman pulp) qui enrichissent l’atmosphère rétro et ancrent l’image dans un univers de fiction dramatique et ironique.
+
+L’objectif esthétique est de transmettre une identité visuelle immédiatement reconnaissable : mélange de culture populaire rétro, de cinéma noir, et d’icônes graphiques pulp, avec un rendu à la fois sophistiqué et volontairement kitsch, proche de l’affiche de magazine d’époque modernisée.
+
+
+
+`,
     thumbnail: "/images/poster3.png",
   },
+  3: {
+    name: "Street Art",
+    description: `Illustration digitale au style pop art et street art contemporain, inspirée des fresques murales urbaines et des affiches graphiques modernes. La composition met en valeur un personnage central, représenté de manière stylisée avec des lignes affirmées et des couleurs franches. L’arrière-plan est constitué d’un mur texturé recouvert de graffitis multicolores, réalisés en larges aplats de teintes vives (rouges, oranges, bleus, violets, roses, verts), enrichis de projections et de coulures de peinture, créant une atmosphère vibrante et dynamique.
+
+Lorsqu’un personnage est présent, il occupe une place centrale et s’impose par une posture expressive et déterminée. Ses traits sont simplifiés mais volontairement stylisés, dans un rendu illustratif affirmé évoquant l’iconographie contemporaine. Des symboles graphiques (étoiles, cœurs, couronnes, motifs subversifs) et des slogans typographiques (“KING”, “VICTORY”, “THE WORLD IS YOURS”, “BE THE BEST VERSION OF YOURSELF”) s’intègrent à la composition, rappelant l’esthétique du graffiti et du collage visuel.
+
+La typographie se distingue par un mélange de styles : capitales massives et géométriques, lettrages arrondis inspirés du street art, et inscriptions manuscrites proches du marquage au feutre ou au spray. Les choix chromatiques (bleu électrique, orange fluorescent, rose néon, noir profond) créent des contrastes forts qui accentuent l’impact visuel.
+
+La composition se caractérise par une densité assumée, une asymétrie contrôlée et une superposition volontaire de motifs, d’inscriptions et de symboles. L’ensemble transmet une impression de puissance, d’énergie et de contestation, où l’iconographie urbaine (graffitis, slogans, codes visuels de la culture de rue) se combine avec la force expressive du personnage central.`,
+    thumbnail: "/images/poster9.png",
+  },
   4: {
-    name: "Abstract",
-    description: "Vibrant contrasting colours with free-form geometric or organic patterns.",
-    thumbnail: "/images/poster4.png",
+    name: "Minimaliste",
+    description: `Le style est celui d’une affiche illustrée minimaliste au rendu vectoriel, utilisant uniquement des aplats de couleurs sans contours. La composition s’organise en plusieurs plans : un premier plan décoratif qui encadre la scène (par exemple des branches ou motifs stylisés, environ 10 à 15 % de la surface), un deuxième plan qui met en valeur le sujet principal (village, monument, élément central) occupant environ 40 % de la hauteur, et un arrière-plan composé de formes superposées simplifiées (collines, montagnes) représentant 40 à 50 % restants. La palette repose sur des tons sourds et harmonieux (verts, violets, ocres, beiges), enrichis de quelques touches de couleurs vives (jaunes, rouges) servant d’accents visuels. Le texte est centré en bas, dans une zone discrète d’environ 5 à 7 % de la hauteur totale : le titre principal est en majuscules, police sans-serif géométrique, espacé, avec une taille équivalente à environ 1/40 de la hauteur du poster, tandis que le sous-titre, placé juste en dessous, est 4 à 5 fois plus petit, presque comme une annotation. L’ensemble conserve une esthétique épurée, élégante et équilibrée, favorisant la lisibilité et une atmosphère calme et contemplative.
+Les personnages, s'ils sont présents, sont stylisés de manière minimaliste mais colorée : pas de silhouettes sombres ou noires, mais des corps représentés avec des aplats de couleurs variées et harmonieuses. Ils n'ont PAS de traits du visage ! mais des postures expressives et naturelles. Les vêtements et accessoires sont également représentés sans ombres ni textures, avec des couleurs unies. L'objectif est de garder un style vivant mais épuré, sans tomber dans un effet "ombre chinoise".`,
+    thumbnail: "/images/poster11.png",
   },
   5: {
-    name: "Painting Vintage",
-    description: "Vibrant contrasting colours with free-form geometric or organic patterns.",
-    thumbnail: "/images/poster7.png",
+    name: "City",
+    description: `Illustration vectorielle minimaliste au style rétro, inspirée des affiches touristiques des années 1930 à 1950. La scène met en valeur un paysage urbain ou côtier épuré, composé de larges aplats de couleurs franches et lumineuses (bleu ciel, turquoise, jaune sable, rouge brique, vert végétal), sans contours ni détails superflus. Les formes sont simplifiées et stylisées, privilégiant l’équilibre visuel et la lisibilité. La perspective reste simple, avec un horizon clair et une organisation en plans successifs (premier plan décoratif, deuxième plan mettant en valeur le sujet principal comme une plage, une promenade, un monument, puis un arrière-plan avec collines, mer ou ciel).
+
+Les personnages, s’ils apparaissent, sont représentés de manière minimaliste mais colorée : pas de silhouettes sombres, mais des corps aux aplats harmonieux. Ils n’ont pas de traits de visage, uniquement des postures expressives et naturelles. Leurs vêtements sont traités sans ombres ni textures, dans des couleurs franches et contrastées (blanc, rouge, jaune, bleu). L’ensemble conserve un style vivant et élégant, sans jamais basculer dans la surcharge ou l’effet d’ombre chinoise.
+
+La composition est soigneusement équilibrée, avec un titre centré en haut de l’image, écrit en lettres majuscules, utilisant une typographie sans-serif géométrique, épaisse et bien espacée. La couleur du titre contraste nettement avec le fond (souvent blanc cassé, crème ou une teinte claire). Sous ce titre sous la partie gauche et qui chevauche un peu le titre, le nom du pays ou de la région apparaît en beaucoup beaucoup plus petit (10x plus petit), généralement en typographie cursive manuscrite élégante, d’une couleur vive (orange, rouge, bleu).
+
+L’objectif global est de transmettre une atmosphère lumineuse, épurée et élégante, évoquant à la fois le voyage, l’été et le raffinement des affiches vintage, tout en restant intemporel grâce à la simplicité graphique des aplats.`,
+    thumbnail: "/images/poster6.png",
   },
 };
 const examples = [

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,6 +34,16 @@ function PostersBootstrap() {
   return null;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    try {
+      window.scrollTo(0, 0);
+    } catch {}
+  }, [pathname]);
+  return null;
+}
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -41,6 +51,7 @@ const App = () => {
         <BrowserRouter>
           <AuthProvider> {/* Enveloppez avec le fournisseur d'auth */}
             <PostersBootstrap />
+            <ScrollToTop />
             <Toaster />
             <Sonner />
             <Layout>
