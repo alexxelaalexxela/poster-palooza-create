@@ -30,7 +30,7 @@ const About = () => {
               <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
             </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-              À propos de <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-300 to-fuchsia-300">Poster Palooza</span>
+              À propos de <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-300 to-fuchsia-300">Neoma Poster</span>
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-white/80 max-w-3xl mx-auto leading-relaxed px-2">
               L'art de créer des posters uniques, professionnels et personnalisés grâce à l'intelligence artificielle
