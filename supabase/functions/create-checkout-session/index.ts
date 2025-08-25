@@ -88,7 +88,7 @@ serve(async (req) => {
   let unit_amount = prices[priceId];
 
   if (purchaseType === 'poster') {
-    unit_amount += 499;
+    unit_amount += 0;
   }
 
   if (!unit_amount) {
@@ -131,8 +131,10 @@ serve(async (req) => {
 
   const bodyParams = new URLSearchParams({
     mode: "payment",
-    success_url: allowOrigin,
-    cancel_url: allowOrigin,
+    success_url: purchaseType === 'plan' 
+      ? "https://neomaposter.netlify.app/subscribe/success"
+      : "https://neomaposter.netlify.app/poster/success",
+    cancel_url: "https://neomaposter.netlify.app/subscribe",
     "line_items[0][price_data][currency]": "eur",
     "line_items[0][price_data][product_data][name]":
       purchaseType === 'plan'
@@ -227,7 +229,7 @@ serve(async (req) => {
   if (purchaseType === 'plan') {
     bodyParams.append("shipping_options[0][shipping_rate_data][display_name]", "Livraison standard");
     bodyParams.append("shipping_options[0][shipping_rate_data][type]", "fixed_amount");
-    bodyParams.append("shipping_options[0][shipping_rate_data][fixed_amount][amount]", "499");
+    bodyParams.append("shipping_options[0][shipping_rate_data][fixed_amount][amount]", "0");
     bodyParams.append("shipping_options[0][shipping_rate_data][fixed_amount][currency]", "eur");
   }
 
