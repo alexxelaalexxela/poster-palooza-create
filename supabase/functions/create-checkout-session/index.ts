@@ -6,6 +6,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Assure
  * Configuration CORS
  *───────────────────────────*/
 const ALLOWED_ORIGINS = [
+  "https://neomaposter.netlify.app",
   "https://poster-palooza-create.lovable.app",
   "https://preview--poster-palooza-create.lovable.app",
   "http://localhost:5173",
