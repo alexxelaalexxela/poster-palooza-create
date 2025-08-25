@@ -173,7 +173,7 @@ const About = () => {
 
           {/* Footer */}
           <div className="text-center mt-8 sm:mt-12 text-white/60 text-xs sm:text-sm px-4">
-            <p>© 2025 Poster Palooza. Créé avec passion par deux étudiants ingénieurs.</p>
+            <p>© 2025 Neoma Poster. Créé avec passion par deux étudiants ingénieurs.</p>
           </div>
         </div>
       </div>
