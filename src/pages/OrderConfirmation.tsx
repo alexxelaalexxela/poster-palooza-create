@@ -120,7 +120,7 @@ const OrderConfirmation = () => {
               <span>Expédition depuis la France • Délai : 3-5 jours ouvrés</span>
             </div>
             <p className="text-white/50 text-xs mt-2">
-              © 2024 Poster Palooza. Merci de nous faire confiance pour vos créations uniques.
+              © 2025 Neoma Poster . Merci de nous faire confiance pour vos créations uniques.
             </p>
           </div>
         </div>
