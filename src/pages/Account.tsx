@@ -296,7 +296,10 @@ export default function Account() {
                                                             <img 
                                                                 src={profile.included_poster_selected_url} 
                                                                 alt="Poster sélectionné" 
-                                                                className="w-full h-full object-contain hover:scale-105 transition-transform duration-300" 
+                                                                className="w-full h-full object-contain hover:scale-105 transition-transform duration-300 select-none pointer-events-none" 
+                                                                onContextMenu={(e) => e.preventDefault()}
+                                                                style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                                                                draggable={false}
                                                             />
                                                         </div>
                                                     </div>
@@ -533,7 +536,10 @@ export default function Account() {
                             <img
                                 src={poster.url}
                                 alt={`Poster ${index + 1}`}
-                                                    className="w-full h-full object-contain p-1 sm:p-2 group-hover:scale-105 transition-transform duration-300"
+                                                    className="w-full h-full object-contain p-1 sm:p-2 group-hover:scale-105 transition-transform duration-300 select-none pointer-events-none"
+                                onContextMenu={(e) => e.preventDefault()}
+                                style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                                draggable={false}
                                 loading="lazy"
                             />
                                                 

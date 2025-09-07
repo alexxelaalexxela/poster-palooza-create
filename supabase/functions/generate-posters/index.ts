@@ -107,9 +107,28 @@ serve(async (req) => {
       }
     }
 
+    // Generate a title based on the user's prompt
+    console.log('Generating title from prompt...');
+    const generatedTitle = await generateTitle(effectivePrompt);
+    console.log('Generated title:', generatedTitle);
+    // Split title into main and subtitle around the first comma
+    let mainTitle = '';
+    let subtitle = '';
+    if (generatedTitle && typeof generatedTitle === 'string') {
+      const [rawMain, ...rest] = generatedTitle.split(',');
+      mainTitle = (rawMain || '').trim().replace(/^['"]|['"]$/g, '');
+      subtitle = (rest.join(',') || '').trim().replace(/^['"]|['"]$/g, '');
+      // If no main title found, fallback to whole string
+      if (!mainTitle && subtitle) {
+        mainTitle = subtitle;
+        subtitle = '';
+      }
+    }
+    console.log('Parsed titles => mainTitle:', mainTitle, '| subtitle:', subtitle);
+
     // Generate 4 different prompts using GPT-4
     console.log('template description');
-    const promptVariations = await generatePromptVariations(effectivePrompt, templateDescription);
+    const promptVariations = await generatePromptVariations(effectivePrompt, templateDescription, mainTitle, subtitle);
     console.log('Generated prompt variationsss:', promptVariations);
 
     // Decide how many images to generate depending on user status
@@ -231,7 +250,64 @@ serve(async (req) => {
   }
 });
 
-async function generatePromptVariations(originalPrompt: string, templateDescription: string): Promise<string[]> {
+async function generateTitle(prompt: string): Promise<string> {
+  const systemPrompt = `Tu es un expert en création de titres pour des affiches. 
+  
+  À partir du prompt de l'utilisateur, génère un titre court et percutant (1-3 mots maximum) qui capture le le lieu du prompt. Utilise tes connaissances pour rajouter le pays ou le lieu ou autre faisant sens par rapport au prompt (1-2 mots maximum). 
+  
+  Pas de titre ennuyant, pas de phrase, juste le lieu principalement. 
+  
+  Exemples de bons titres :
+  - "Paris, France"
+  - "Paris, ville des lumières"
+  - "Plage des Estagnot, Hossegor"
+  - "Côte d'Azur, Nice"
+  - "Terraza du Petit St-Jean, Biarritz"
+  - "Bord de mer, Hossegor"
+
+  Exemples de mauvais titres :
+  - "Tennis au soleil"
+  - "Paris Balade de touristes"
+  - "Spot de surf à Bondi"
+
+
+  
+  Retourne uniquement le titre et le subtitle separé par une virgule, sans guillemets ni formatage supplémentaire.`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 100
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message || `OpenAI returned ${response.status}`
+    );
+  }
+
+  if (!data.choices?.length) {
+    throw new Error('OpenAI response missing choices');
+  }
+
+  const title = data.choices[0].message.content.trim();
+  return title;
+}
+
+async function generatePromptVariations(originalPrompt: string, templateDescription: string, mainTitle: string, subtitle: string): Promise<string[]> {
   const systemPromptOld = `You are a creative poster design expert. Given a user's prompt and template style, create 4 prompts for gpt-image to generate posters in the "${templateDescription}" style.
 
 Each prompt should:
@@ -243,17 +319,18 @@ Each prompt should:
 The objective is to take the following idea and very importantly to make it in the aesthetic of "${templateDescription}" !
 Return 4 slightly different from each other prompts, one prompt per line so that i can separate after, no numbering or formatting.`;
 
-  const systemPrompt = `You are a creative poster-design expert. Given a user’s prompt and the template style, create 4 prompts for GPT-Image that will generate posters in the “${templateDescription}” style.
+  const systemPrompt = `You are a creative poster-design expert. Given a user's prompt, a generated main title and subtitle, and the template style, create 4 prompts for GPT-Image that will generate posters in the "${templateDescription}" style.
 
   Each prompt must:
     •	Be specific and detailed for the poster design (composition, colour palette, typography hints).
-    •	Rigorously maintain the “${templateDescription}” aesthetic.
-    •	Include a short title—just one or two words, never a full sentence, that captures the place or activity (like the city, the country, the activity etc.. ). If possible, add a one- or two-word subtitle directly below. 
+    •	Rigorously maintain the "${templateDescription}" aesthetic.
+    •	Include the main title "${mainTitle}" prominently, and directly underneath include the subtitle "${subtitle}" in smaller letters (at least half the size of the main title). IMPORTANT: Do not include any comma in the rendered titles.
+    •	Do not include any other title than these two.
     •	Offer unique, creative variations of the original idea.
-    •	Incorporate the user’s prompt that will follow.
-    The most important is to take the aesthetic described “${templateDescription}” !!
+    •	Incorporate the user's prompt that will follow.
+    The most important is to take the aesthetic described "${templateDescription}" !!
   
-   Return 4 slightly different, complete prompts that each describe the entire poster. Output them in a table formatted exactly like ["prompt1", "prompt2", "prompt3", "prompt4"], with one prompt per line and no numbering or extra formatting.`
+   Return 4 slightly different (different background, different perspective, different composition, but same title and subtitle), complete prompts that each describe the entire poster. Output them in a table formatted exactly like ["prompt1", "prompt2", "prompt3", "prompt4"], with one prompt per line and no numbering or extra formatting.`
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',

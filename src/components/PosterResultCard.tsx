@@ -24,15 +24,16 @@ const PosterResultCard = ({ result, index }: PosterResultCardProps) => {
         <img
           src={result.url}
           alt={`Generated poster ${result.id}`}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover select-none pointer-events-none"
+          onContextMenu={(e) => e.preventDefault()}
+          style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+          draggable={false}
         />
       </div>
       <div className="p-4">
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600">Poster #{result.id}</span>
-          <button className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
-            Download
-          </button>
+          {/* Bouton de téléchargement retiré pour empêcher le download direct */}
         </div>
       </div>
     </motion.div>

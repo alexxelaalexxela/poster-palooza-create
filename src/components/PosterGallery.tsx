@@ -87,7 +87,7 @@ export default function PosterGallery() {
       {generatedUrls.length > 0 && (
         <div>
           <h2 className="mt-8 text-xl sm:text-2xl md:text-3xl font-bold text-center text-gray-900">
-            Generated Posters
+            Posters générés 
           </h2>
 
 
@@ -127,7 +127,10 @@ export default function PosterGallery() {
                     <img
                       src={url}
                       alt={`Generated poster ${idx + 1}`}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain select-none pointer-events-none"
+                      onContextMenu={(e) => e.preventDefault()}
+                      style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                      draggable={false}
                       loading="lazy"
                     />
                   </div>
@@ -168,6 +171,9 @@ export default function PosterGallery() {
                         src={basePreviewUrl}
                         alt="Aperçu floutté — déverrouillez pour voir les détails"
                         className={`w-full h-full object-cover scale-110 blur-lg ${tintImageClasses} select-none pointer-events-none`}
+                        onContextMenu={(e) => e.preventDefault()}
+                        style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                        draggable={false}
                         loading="lazy"
                       />
                       {/* Soft gradient veil to ensure no details are visible */}
@@ -291,7 +297,10 @@ export default function PosterGallery() {
               <img
                 src={mergedUrls[lightboxIdx!]}
                 alt="Large preview"
-                className="w-full h-auto object-contain"
+                className="w-full h-auto object-contain select-none pointer-events-none"
+                onContextMenu={(e) => e.preventDefault()}
+                style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                draggable={false}
               />
             </motion.div>
           </motion.div>
