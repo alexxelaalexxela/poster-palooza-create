@@ -5,6 +5,8 @@
 import React from 'react';
 import { usePosterStore, type Format } from '@/store/usePosterStore';
 import { Check } from 'lucide-react';
+import Watermark from '@/components/Watermark';
+import { useProfile } from '@/hooks/useProfile';
 
 interface PosterWallProps {
     posterUrl: string | null;
@@ -13,6 +15,8 @@ interface PosterWallProps {
 }
 
 const PosterWall: React.FC<PosterWallProps> = ({ posterUrl, sofaImage = "./images/Sofa9.png", compact = false }) => {
+    const { profile } = useProfile();
+    const isPaid = !!profile?.is_paid;
     const { selectedFormat, setSelectedFormat } = usePosterStore();
     const isActive = (f: Format) => selectedFormat === f;
 
@@ -44,20 +48,29 @@ const PosterWall: React.FC<PosterWallProps> = ({ posterUrl, sofaImage = "./image
             onKeyDown={(e) => e.key === 'Enter' && setSelectedFormat(fmt)}
             className="absolute cursor-pointer outline-none"
             style={style}
+            onContextMenu={(e) => e.preventDefault()}
         >
-            <img
-                src={posterUrl ?? ''}
-                alt={`Poster ${fmt}`}
-                className={`${baseImg} ${isActive(fmt) ? 'scale-105 shadow-[0_0_0_6px_rgba(99,102,241,0.6)]' : ''
-                    }`}
-            />
+            <div className="relative">
+                {!isPaid && (
+                    <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={10} />
+                )}
+                <img
+                    src={posterUrl ?? ''}
+                    alt={`Poster ${fmt}`}
+                    className={`${baseImg} ${isActive(fmt) ? 'scale-105 shadow-[0_0_0_6px_rgba(99,102,241,0.6)]' : ''} select-none pointer-events-none`}
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                    onContextMenu={(e) => e.preventDefault()}
+                    style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                />
+            </div>
             {Indicator(fmt)}
         </div>
     );
 
     return (
 
-        <div className="w-full flex justify-center">
+        <div className="w-full flex justify-center" onContextMenu={(e) => e.preventDefault()}>
 
             <div
                 className={`

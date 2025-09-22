@@ -8,6 +8,8 @@ import { X, Crown, Sparkles } from "lucide-react";
 import { usePosterStore } from "@/store/usePosterStore";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useNavigate } from "react-router-dom";
+import { useProfile } from "@/hooks/useProfile";
+import Watermark from "@/components/Watermark";
 
 export default function PosterGallery() {
   const {
@@ -20,6 +22,8 @@ export default function PosterGallery() {
 
   const navigate = useNavigate();
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const { profile } = useProfile();
+  const isPaid = !!profile?.is_paid;
 
   // Si on a des nouveaux posters générés, on les sépare des anciens
   // Sinon, on affiche tous les posters comme "anciens"
@@ -123,7 +127,10 @@ export default function PosterGallery() {
                     }
                   }}
                 >
-                  <div className="aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-50 flex items-center justify-center">
+                  <div className="relative aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-50 flex items-center justify-center">
+                    {!isPaid && (
+                      <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
+                    )}
                     <img
                       src={url}
                       alt={`Generated poster ${idx + 1}`}
@@ -165,7 +172,7 @@ export default function PosterGallery() {
                     aria-label="Voir plus - passer Premium"
                     title="Passer Premium"
                   >
-                    <div className="relative aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-100">
+                  <div className="relative aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-100">
                       {/* Real poster preview, slightly less blurred with tint */}
                       <img
                         src={basePreviewUrl}
@@ -239,11 +246,17 @@ export default function PosterGallery() {
                     }
                   }}
                 >
-                  <div className="aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-50 flex items-center justify-center">
+                  <div className="relative aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-50 flex items-center justify-center">
+                    {!isPaid && (
+                      <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
+                    )}
                     <img
                       src={url}
                       alt={`Generated poster ${idx + 1}`}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain select-none pointer-events-none"
+                      onContextMenu={(e) => e.preventDefault()}
+                      style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                      draggable={false}
                       loading="lazy"
                     />
                   </div>
@@ -294,6 +307,9 @@ export default function PosterGallery() {
               >
                 <X size={20} />
               </button>
+              {!isPaid && (
+                <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
+              )}
               <img
                 src={mergedUrls[lightboxIdx!]}
                 alt="Large preview"

@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useFingerprint } from '@/hooks/useFingerprint';
+import Watermark from '@/components/Watermark';
+import { createWatermarkedPreview } from '@/lib/watermarkPreview';
 
 const Order = () => {
   const { selectedPoster, selectedPosterUrl, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
@@ -48,6 +50,17 @@ const Order = () => {
         return;
       }
 
+      // Crée une preview filigranée pour Stripe
+      let posterPreviewDataUrl: string | null = null;
+      try {
+        posterPreviewDataUrl = await createWatermarkedPreview(finalUrl, {
+          text: 'apercu Neoma',
+          tile: 120,
+          opacity: 0.18,
+          fontSize: 14,
+        });
+      } catch {}
+
       if (hasIncludedPlanActive) {
         // No Stripe: store selected poster url as included poster and confirm
         const { error } = await supabase
@@ -76,6 +89,7 @@ const Order = () => {
             format: selectedFormat,
             quality: selectedQuality,
             posterUrl: typeof finalUrl === 'string' && finalUrl.startsWith('data:') ? undefined : finalUrl,
+            posterPreviewDataUrl: posterPreviewDataUrl ?? undefined,
             visitorId,
           }),
         }
@@ -163,13 +177,22 @@ const Order = () => {
                 <CardContent className="space-y-6">
                   {/* Poster Preview */}
                   <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                    <div className="aspect-[3/4] w-full max-w-xs mx-auto mb-4 rounded-lg bg-black/20 p-1 backdrop-blur-sm">
+                    <div className="relative aspect-[3/4] w-full max-w-xs mx-auto mb-4 rounded-lg bg-black/20 p-1 backdrop-blur-sm" onContextMenu={(e) => e.preventDefault()}>
                       {finalUrl ? (
-                        <img
-                          src={finalUrl}
-                          alt={`Poster ${selectedPoster}`}
-                          className="w-full h-full object-contain rounded-md"
-                        />
+                        <>
+                          {!profile?.is_paid && (
+                            <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
+                          )}
+                          <img
+                            src={finalUrl}
+                            alt={`Poster ${selectedPoster}`}
+                            className="w-full h-full object-contain rounded-md select-none pointer-events-none"
+                            draggable={false}
+                            onDragStart={(e) => e.preventDefault()}
+                            onContextMenu={(e) => e.preventDefault()}
+                            style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                          />
+                        </>
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center rounded-md">
                           <span className="text-white/60 text-sm">

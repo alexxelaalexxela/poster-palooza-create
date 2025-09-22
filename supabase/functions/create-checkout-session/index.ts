@@ -1,6 +1,8 @@
+// @ts-nocheck
 // supabase/functions/create-checkout-session/index.ts
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'; // Assurez-vous d'avoir les imports
+import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
 
 /*───────────────────────────*
  * Configuration CORS
@@ -72,7 +74,7 @@ serve(async (req) => {
 
   /*---------- 3) Lecture & validation du JSON ----------*/
 
-  let body: { format: string; quality: string; posterUrl?: string; purchaseType?: 'poster' | 'plan'; email?: string; password?: string; visitorId?: string };
+  let body: { format: string; quality: string; posterUrl?: string; posterPreviewDataUrl?: string; purchaseType?: 'poster' | 'plan'; email?: string; password?: string; visitorId?: string };
 
   try {
     body = await req.json();
@@ -83,7 +85,7 @@ serve(async (req) => {
     );
   }
 
-  const { format, quality, posterUrl, purchaseType = 'poster', email, password, visitorId } = body;
+  const { format, quality, posterUrl, posterPreviewDataUrl, purchaseType = 'poster', email, password, visitorId } = body;
   const priceId = `${format}-${quality}`;
   let unit_amount = prices[priceId];
 
@@ -143,14 +145,17 @@ serve(async (req) => {
     "line_items[0][price_data][unit_amount]": `${unit_amount}`, "line_items[0][quantity]": "1",
     "payment_method_types[0]": "card",
   });
-  // Ajoute une image d'aperçu si l'URL est courte et publique (uniquement pour achat poster)
-  if (
-    purchaseType === 'poster' &&
-    typeof posterUrl === 'string' &&
-    !posterUrl.startsWith('data:') &&
-    posterUrl.length <= 200
-  ) {
-    bodyParams.append("line_items[0][price_data][product_data][images][0]", posterUrl);
+  // Ajoute une image d'aperçu filigranée (Stripe Checkout) si possible
+  // Ajoute une image d'aperçu fournie par le client (déjà filigranée) si possible
+  if (purchaseType === 'poster' && typeof posterPreviewDataUrl === 'string' && posterPreviewDataUrl.startsWith('data:image')) {
+    try {
+      const uploadedUrl = await uploadPreviewFromDataUrl(posterPreviewDataUrl);
+      if (uploadedUrl) {
+        bodyParams.append("line_items[0][price_data][product_data][images][0]", uploadedUrl);
+      }
+    } catch (e) {
+      console.warn('Could not upload client watermarked preview:', e);
+    }
   }
   bodyParams.append("metadata[purchase_type]", purchaseType);
   bodyParams.append("metadata[user_id]", userId);
@@ -213,13 +218,7 @@ serve(async (req) => {
     // Always include format and quality for post-payment processing
     bodyParams.append("metadata[format]", String(format));
     bodyParams.append("metadata[quality]", String(quality));
-    if (
-      typeof posterUrl === 'string' &&
-      !posterUrl.startsWith('data:') &&
-      posterUrl.length <= 500
-    ) {
-      bodyParams.append("metadata[poster_url]", posterUrl);
-    }
+    // Ne jamais exposer l'URL originale en clair dans les metadata Stripe
   }
   bodyParams.append(
     "shipping_address_collection[allowed_countries][]",
@@ -267,3 +266,27 @@ serve(async (req) => {
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 });
+
+async function uploadStripePreview(bytes: Uint8Array): Promise<string> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const filename = `stripe-previews/${crypto.randomUUID()}.png`;
+  const { error } = await supabase.storage.from('posters').upload(filename, bytes, {
+    contentType: 'image/png',
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from('posters').getPublicUrl(filename);
+  return data.publicUrl;
+}
+
+async function uploadPreviewFromDataUrl(dataUrl: string): Promise<string | null> {
+  try {
+    const commaIdx = dataUrl.indexOf(',');
+    if (commaIdx === -1) return null;
+    const b64 = dataUrl.slice(commaIdx + 1);
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    return await uploadStripePreview(bytes);
+  } catch (_e) {
+    return null;
+  }
+}

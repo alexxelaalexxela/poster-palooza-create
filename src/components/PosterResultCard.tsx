@@ -1,5 +1,7 @@
 
 import { motion } from 'framer-motion';
+import Watermark from '@/components/Watermark';
+import { useProfile } from '@/hooks/useProfile';
 
 interface PosterResult {
   id: number;
@@ -12,6 +14,8 @@ interface PosterResultCardProps {
 }
 
 const PosterResultCard = ({ result, index }: PosterResultCardProps) => {
+  const { profile } = useProfile();
+  const isPaid = !!profile?.is_paid;
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -20,7 +24,10 @@ const PosterResultCard = ({ result, index }: PosterResultCardProps) => {
       whileHover={{ scale: 1.02 }}
       className="bg-white rounded-2xl overflow-hidden drop-shadow-lg hover:drop-shadow-xl transition-all duration-300"
     >
-      <div className="aspect-[3/4] overflow-hidden">
+      <div className="relative aspect-[3/4] overflow-hidden">
+        {!isPaid && (
+          <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
+        )}
         <img
           src={result.url}
           alt={`Generated poster ${result.id}`}

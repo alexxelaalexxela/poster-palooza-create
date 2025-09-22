@@ -15,6 +15,7 @@ import { useUnifiedPosters } from '@/hooks/useUnifiedPosters';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import Watermark from '@/components/Watermark';
 
 const POSTERS_PER_PAGE = 8; // On charge 8 posters à la fois
 
@@ -292,7 +293,10 @@ export default function Account() {
                                             <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm">
                                                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                                                     <div className="flex-shrink-0 self-center sm:self-start">
-                                                        <div className="w-24 h-32 sm:w-32 sm:h-44 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border-2 sm:border-4 border-white mx-auto sm:mx-0">
+                                                        <div className="relative w-24 h-32 sm:w-32 sm:h-44 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border-2 sm:border-4 border-white mx-auto sm:mx-0">
+                                                            {!profile?.is_paid && (
+                                                                <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={160} fontSize={12} />
+                                                            )}
                                                             <img 
                                                                 src={profile.included_poster_selected_url} 
                                                                 alt="Poster sélectionné" 
@@ -533,6 +537,12 @@ export default function Account() {
                                                 transition={{ duration: 0.3, delay: index * 0.05 }}
                                                 className="group relative aspect-[3/4] bg-gradient-to-br from-gray-50 to-white rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-300"
                                             >
+                            {!profile?.is_paid && (
+                                <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={12} />
+                            )}
+                            {!profile?.is_paid && (
+                                <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={12} />
+                            )}
                             <img
                                 src={poster.url}
                                 alt={`Poster ${index + 1}`}

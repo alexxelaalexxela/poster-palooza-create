@@ -253,7 +253,7 @@ serve(async (req) => {
 async function generateTitle(prompt: string): Promise<string> {
   const systemPrompt = `Tu es un expert en création de titres pour des affiches. 
   
-  À partir du prompt de l'utilisateur, génère un titre court et percutant (1-3 mots maximum) qui capture le le lieu du prompt. Utilise tes connaissances pour rajouter le pays ou le lieu ou autre faisant sens par rapport au prompt (1-2 mots maximum). 
+  À partir du prompt de l'utilisateur, génère un titre court et percutant (1-3 mots maximum) qui capture le le lieu du prompt. Utilise tes connaissances pour rajouter le pays ou le lieu ou autre faisant sens par rapport au prompt (1-2 mots maximum), par exemple si c'est une ville tu peux rajouter le pays ou la région. 
   
   Pas de titre ennuyant, pas de phrase, juste le lieu principalement. 
   
@@ -263,7 +263,7 @@ async function generateTitle(prompt: string): Promise<string> {
   - "Plage des Estagnot, Hossegor"
   - "Côte d'Azur, Nice"
   - "Terraza du Petit St-Jean, Biarritz"
-  - "Bord de mer, Hossegor"
+  - "Hossegor, Landes"
 
   Exemples de mauvais titres :
   - "Tennis au soleil"
