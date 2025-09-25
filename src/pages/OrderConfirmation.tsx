@@ -2,10 +2,17 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Package, Truck, Mail, ArrowRight, Home, User, Sparkles, Clock, MapPin } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical } from '@/lib/utils';
 
 const OrderConfirmation = () => {
   return (
     <div className="min-h-screen relative overflow-hidden">
+      <Helmet>
+        <title>Confirmation de commande – Neoma Poster</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href={buildCanonical('/order/confirmation')} />
+      </Helmet>
       {/* Animated background with gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-800">
         <div 

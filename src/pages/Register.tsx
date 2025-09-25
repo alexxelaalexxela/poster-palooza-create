@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFingerprint } from '@/hooks/useFingerprint';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Sparkles, UserPlus, Check, X, Shield } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical } from '@/lib/utils';
 
 export default function Register() {
     const navigate = useNavigate();
@@ -87,6 +89,11 @@ export default function Register() {
 
     return (
         <div className="min-h-screen relative overflow-hidden">
+            <Helmet>
+                <title>Créer un compte – Neoma Poster</title>
+                <meta name="robots" content="noindex, nofollow" />
+                <link rel="canonical" href={buildCanonical('/register')} />
+            </Helmet>
             {/* Animated background with different gradient */}
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-800">
                 <div 

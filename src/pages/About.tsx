@@ -3,10 +3,21 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Users, Lightbulb, Target, Award, Heart, ArrowRight, Palette, Zap, Shield } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical, truncate } from '@/lib/utils';
 
 const About = () => {
   return (
     <div className="min-h-screen relative overflow-hidden">
+      <Helmet>
+        <title>À propos – Neoma Poster</title>
+        <meta name="description" content={truncate("Notre mission : des posters personnalisés de qualité professionnelle, créés avec l'IA.", 160)} />
+        <link rel="canonical" href={buildCanonical('/about')} />
+        <meta property="og:title" content="À propos – Neoma Poster" />
+        <meta property="og:description" content="Notre mission : des posters personnalisés de qualité professionnelle, créés avec l'IA." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={buildCanonical('/about')} />
+      </Helmet>
       {/* Animated background with gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-violet-900 via-purple-900 to-fuchsia-800">
         <div 

@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff, Lock, Sparkles, Check } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical } from '@/lib/utils';
 
 export default function ResetPassword() {
     const [password, setPassword] = useState('');
@@ -52,6 +54,11 @@ export default function ResetPassword() {
 
     return (
         <div className="min-h-screen relative overflow-hidden">
+            <Helmet>
+                <title>Réinitialiser le mot de passe – Neoma Poster</title>
+                <meta name="robots" content="noindex, nofollow" />
+                <link rel="canonical" href={buildCanonical('/reinitialiser-mot-de-passe')} />
+            </Helmet>
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-800" />
 
             <div className="relative z-10 min-h-screen flex items-center justify-center p-4">

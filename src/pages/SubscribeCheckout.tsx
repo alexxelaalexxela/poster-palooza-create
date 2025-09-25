@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft, Crown, Shield, Check, X, Eye, EyeOff, Mail, Lock, CreditCard, Package, Star, Zap, Sparkles, Truck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical } from '@/lib/utils';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,6 +97,11 @@ const SubscribeCheckout = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
+      <Helmet>
+        <title>Abonnement – Paiement | Neoma Poster</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href={buildCanonical('/subscribe/checkout')} />
+      </Helmet>
       {/* Animated background */}
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
         <div 

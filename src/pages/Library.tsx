@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 // import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SHIPPING_FEE_CENTS } from '@/lib/pricing';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical, truncate } from '@/lib/utils';
 
 function formatPriceEUR(cents: number): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(cents / 100);
@@ -65,6 +67,15 @@ export default function Library() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Helmet>
+        <title>Librairie d'affiches – Neoma Poster</title>
+        <meta name="description" content={truncate("Explorez des affiches prêtes à acheter ou à personnaliser avec notre IA.", 160)} />
+        <link rel="canonical" href={buildCanonical('/librairie')} />
+        <meta property="og:title" content="Librairie d'affiches – Neoma Poster" />
+        <meta property="og:description" content="Explorez des affiches prêtes à acheter ou à personnaliser avec notre IA." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={buildCanonical('/librairie')} />
+      </Helmet>
       {/* Hero Section (sobre + un peu plus design) */}
       <section className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">

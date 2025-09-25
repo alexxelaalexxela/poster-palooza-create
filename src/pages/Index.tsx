@@ -1,5 +1,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical, truncate } from '@/lib/utils';
 import TemplateCard from '@/components/TemplateCard';
 import PromptBar from '@/components/PromptBar';
 import PosterGallery from '@/components/PosterGallery';
@@ -109,6 +111,52 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[#E1D7CA]">
+      <Helmet>
+        <title>Neoma Poster – Créez votre poster IA personnalisé</title>
+        <meta name="description" content={truncate("Décrivez votre idée, choisissez un style et obtenez un poster unique en quelques secondes. Qualité pro, impression prête.", 160)} />
+        <meta
+          name="keywords"
+          content={[
+            'poster ia',
+            'affiche ia',
+            'poster IA personnalisé',
+            'affiche personnalisée',
+            'poster personnalisé',
+            'affiche vintage',
+            'poster vintage',
+            'affiche sport',
+            'affiche ville',
+            'poster déco',
+            'décoration murale',
+            'affiche murale',
+            'impression poster',
+            'création affiche',
+            'affiche sur mesure',
+            'poster cadeau',
+            'affiche cadeau',
+            'Neoma Poster',
+            'Neoma AI',
+          ].join(', ')}
+        />
+        <link rel="canonical" href={buildCanonical('/')} />
+        <meta property="og:title" content="Neoma Poster – Créez votre poster IA personnalisé" />
+        <meta property="og:description" content="Décrivez votre idée, choisissez un style et obtenez un poster unique en quelques secondes." />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content={buildCanonical('/images/hero-background.png')} />
+        <meta property="og:url" content={buildCanonical('/')} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'Neoma Poster',
+          url: buildCanonical('/'),
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: `${buildCanonical('/librairie')}?q={search_term_string}`,
+            'query-input': 'required name=search_term_string'
+          }
+        })}</script>
+      </Helmet>
       {/*<div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">*/}
       {/* Hero Section */}
 

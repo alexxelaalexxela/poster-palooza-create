@@ -15,6 +15,8 @@ import { useProfile } from '@/hooks/useProfile';
 import { useFingerprint } from '@/hooks/useFingerprint';
 import Watermark from '@/components/Watermark';
 import { createWatermarkedPreview } from '@/lib/watermarkPreview';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical } from '@/lib/utils';
 
 const Order = () => {
   const { selectedPoster, selectedPosterUrl, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
@@ -112,6 +114,11 @@ const Order = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
+      <Helmet>
+        <title>Commande – Neoma Poster</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href={buildCanonical('/order')} />
+      </Helmet>
       {/* Animated background */}
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
         <div 

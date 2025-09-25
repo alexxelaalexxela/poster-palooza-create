@@ -16,6 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import Watermark from '@/components/Watermark';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical } from '@/lib/utils';
 
 const POSTERS_PER_PAGE = 8; // On charge 8 posters à la fois
 
@@ -110,6 +112,11 @@ export default function Account() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+            <Helmet>
+                <title>Mon compte – Neoma Poster</title>
+                <meta name="robots" content="noindex, nofollow" />
+                <link rel="canonical" href={buildCanonical('/account')} />
+            </Helmet>
             {/* Hero Header */}
             <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
                 <div 

@@ -6,6 +6,8 @@ import { motion } from 'framer-motion';
 import { Star, ArrowLeft, Sparkles, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getPriceCents, SHIPPING_FEE_CENTS } from '@/lib/pricing';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical, truncate } from '@/lib/utils';
 
 function formatPriceEUR(cents: number): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(cents / 100);
@@ -66,6 +68,35 @@ export default function PosterDetails() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Helmet>
+        <title>{poster.title} – Affiche à personnaliser | Neoma Poster</title>
+        <meta name="description" content={truncate(`Découvrez "${poster.title}" et personnalisez-la avec votre style. Qualité d'impression professionnelle.`)} />
+        <link rel="canonical" href={buildCanonical(`/posters/${poster.id}`)} />
+        <meta property="og:title" content={`${poster.title} – Affiche à personnaliser | Neoma Poster`} />
+        <meta property="og:description" content={`Découvrez "${poster.title}" et personnalisez-la avec votre style.`} />
+        <meta property="og:type" content="product" />
+        <meta property="og:url" content={buildCanonical(`/posters/${poster.id}`)} />
+        <meta property="og:image" content={buildCanonical(poster.imageUrl)} />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: poster.title,
+          image: [buildCanonical(poster.imageUrl)],
+          description: `Affiche "+poster.title+" personnalisable, impression haute qualité`,
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: poster.rating,
+            reviewCount: poster.ratingCount
+          },
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'EUR',
+            price: (computedPrice/100).toFixed(2),
+            availability: 'https://schema.org/InStock',
+            url: buildCanonical(`/posters/${poster.id}`)
+          }
+        })}</script>
+      </Helmet>
       <section className="border-b border-gray-200 bg-white/60 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
           <button onClick={() => navigate('/librairie')} className="inline-flex items-center text-gray-600 hover:text-gray-900">

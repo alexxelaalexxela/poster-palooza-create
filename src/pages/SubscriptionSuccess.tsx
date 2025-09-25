@@ -5,6 +5,8 @@ import { CheckCircle, Crown, Sparkles, ArrowRight, Package, Zap } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical } from '@/lib/utils';
 
 const SubscriptionSuccess = () => {
   const navigate = useNavigate();
@@ -33,6 +35,11 @@ const SubscriptionSuccess = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      <Helmet>
+        <title>Abonnement confirmé – Neoma Poster</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href={buildCanonical('/subscribe/success')} />
+      </Helmet>
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           {/* Animation de succès */}

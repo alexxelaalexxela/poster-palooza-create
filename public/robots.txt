@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://neomaposter.netlify.app/sitemap.xml
+Sitemap: https://neoma-ai.fr/sitemap.xml

@@ -1,3 +1,5 @@
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical } from '@/lib/utils';
 // src/pages/Login.tsx
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +36,11 @@ export default function Login() {
 
     return (
         <div className="min-h-screen relative overflow-hidden">
+            <Helmet>
+                <title>Connexion – Neoma Poster</title>
+                <meta name="robots" content="noindex, nofollow" />
+                <link rel="canonical" href={buildCanonical('/login')} />
+            </Helmet>
             {/* Animated background with gradient */}
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
                 <div 

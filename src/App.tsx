@@ -28,6 +28,8 @@ import { AuthProvider } from "@/hooks/useAuth"; // On va créer ce hook
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical } from '@/lib/utils';
 
 const queryClient = new QueryClient();
 
@@ -56,6 +58,10 @@ const App = () => {
             <ScrollToTop />
             <Toaster />
             <Sonner />
+            {/* Default fallback meta for non-indexed routes */}
+            <Helmet>
+              <meta name="theme-color" content="#ffffff" />
+            </Helmet>
             <Layout>
               <Routes>
                 <Route path="/" element={<Index />} />

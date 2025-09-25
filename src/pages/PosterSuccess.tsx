@@ -5,6 +5,8 @@ import { CheckCircle, Mail, Package, Clock, Truck, ArrowRight, Sparkles, MapPin 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical } from '@/lib/utils';
 
 const PosterSuccess = () => {
   const navigate = useNavigate();
@@ -33,6 +35,11 @@ const PosterSuccess = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+      <Helmet>
+        <title>Commande confirmée – Neoma Poster</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href={buildCanonical('/poster/success')} />
+      </Helmet>
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           {/* Animation de succès */}

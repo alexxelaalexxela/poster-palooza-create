@@ -3,10 +3,17 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, MailCheck, ArrowRight } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { buildCanonical } from '@/lib/utils';
 
 export default function VerifyEmail() {
   return (
     <div className="min-h-screen relative overflow-hidden">
+      <Helmet>
+        <title>Vérifier l'email – Neoma Poster</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href={buildCanonical('/verifier-email')} />
+      </Helmet>
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800" />
 
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
