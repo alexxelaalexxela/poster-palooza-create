@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { getPriceEuros } from '@/lib/pricing';
+import { getPriceEuros, SHIPPING_FEE_CENTS } from '@/lib/pricing';
 
 export interface Template {
   id: number;
@@ -101,7 +101,9 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
     }
     const normalizedQuality = selectedQuality === 'paper2' ? 'premium' : selectedQuality;
     const euros = getPriceEuros(selectedFormat as any, normalizedQuality as any);
-    set({ price: Number(euros.toFixed(2)) });
+    // Subtract shipping (4.99) on all pre-order pages, Order page will add it back
+    const eurosMinusShipping = Math.max(0, euros - SHIPPING_FEE_CENTS / 100);
+    set({ price: Number(eurosMinusShipping.toFixed(2)) });
   },
 
   canOrder: () => {

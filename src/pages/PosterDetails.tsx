@@ -5,7 +5,7 @@ import { usePosterStore, Format, Quality } from '@/store/usePosterStore';
 import { motion } from 'framer-motion';
 import { Star, ArrowLeft, Sparkles, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getPriceCents } from '@/lib/pricing';
+import { getPriceCents, SHIPPING_FEE_CENTS } from '@/lib/pricing';
 
 function formatPriceEUR(cents: number): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(cents / 100);
@@ -24,9 +24,12 @@ export default function PosterDetails() {
     if (!poster) return 0;
     const q = (tempQuality === 'paper2' ? 'premium' : tempQuality) as 'classic' | 'premium' | 'museum';
     try {
-      return getPriceCents(tempFormat as any, q);
+      const cents = getPriceCents(tempFormat as any, q);
+      const minusShipping = Math.max(0, cents - SHIPPING_FEE_CENTS);
+      return minusShipping;
     } catch {
-      return poster.priceCents ?? 0;
+      const fallback = poster.priceCents ?? 0;
+      return Math.max(0, fallback - SHIPPING_FEE_CENTS);
     }
   }, [poster, tempFormat, tempQuality]);
 

@@ -8,6 +8,7 @@ import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
  * Configuration CORS
  *───────────────────────────*/
 const ALLOWED_ORIGINS = [
+  "https://neoma-ai.fr",
   "https://neomaposter.netlify.app",
   "https://poster-palooza-create.lovable.app",
   "https://preview--poster-palooza-create.lovable.app",
@@ -134,9 +135,9 @@ serve(async (req) => {
   const bodyParams = new URLSearchParams({
     mode: "payment",
     success_url: purchaseType === 'plan' 
-      ? "https://neomaposter.netlify.app/subscribe/success"
-      : "https://neomaposter.netlify.app/poster/success",
-    cancel_url: "https://neomaposter.netlify.app/subscribe",
+      ? "https://neoma-ai.fr/subscribe/success"
+      : "https://neoma-ai.fr/poster/success",
+    cancel_url: "https://neoma-ai.fr/subscribe",
     "line_items[0][price_data][currency]": "eur",
     "line_items[0][price_data][product_data][name]":
       purchaseType === 'plan'

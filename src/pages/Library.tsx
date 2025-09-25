@@ -7,6 +7,7 @@ import { Star, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 // import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SHIPPING_FEE_CENTS } from '@/lib/pricing';
 
 function formatPriceEUR(cents: number): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(cents / 100);
@@ -183,7 +184,7 @@ export default function Library() {
                       {/* Price and primary action (stacked on mobile) */}
                       <div className="mb-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
                         <div className="text-indigo-700 font-bold text-base sm:text-lg whitespace-nowrap">
-                          {formatPriceEUR(item.priceCents)}
+                          {formatPriceEUR(Math.max(0, item.priceCents - SHIPPING_FEE_CENTS))}
                         </div>
                         <Button
                           onClick={(e) => { e.stopPropagation(); handleView(item.id); }}
