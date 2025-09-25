@@ -11,6 +11,7 @@ interface LayoutProps {
 
 const navigation = [
   { name: "Accueil", href: "/" },
+  { name: "Librairie", href: "/librairie" },
   { name: "Tarifs", href: "/subscribe" },
   { name: "À propos", href: "/about" },
 ];

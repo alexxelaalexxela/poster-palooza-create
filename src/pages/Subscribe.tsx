@@ -17,8 +17,8 @@ const benefits = [
 
 const qualityOptions: { id: Quality; name: string; subtitle: string; price: string; ring: string; popular?: boolean }[] = [
   { id: "classic", name: "Classic", subtitle: "250 g/m²", price: "Base", ring: "from-blue-50/50 via-blue-100/60 to-blue-200/70" },
-  { id: "premium", name: "Premium", subtitle: "250 g/m² · Laminé Mat", price: "+10€", ring: "from-indigo-500/20 via-blue-600/30 to-purple-600/40", popular: true },
-  { id: "museum", name: "Museum", subtitle: "250 g/m² · Premium", price: "+20€", ring: "from-orange-100/50 via-yellow-100/60 to-amber-200/70" },
+  { id: "premium", name: "Premium", subtitle: "250 g/m² · Laminé Mat", price: "", ring: "from-indigo-500/20 via-blue-600/30 to-purple-600/40", popular: true },
+  { id: "museum", name: "Museum", subtitle: "250 g/m² · Premium", price: "", ring: "from-orange-100/50 via-yellow-100/60 to-amber-200/70" },
 ];
 
 const Subscribe = () => {

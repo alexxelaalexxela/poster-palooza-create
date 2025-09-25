@@ -20,6 +20,7 @@ interface GenerateRequest {
   prompt: string;
   templateName: string;
   templateDescription: string;
+  libraryPosterId?: string;
   hasImage?: boolean;
   imageDataUrl?: string;
   visitorId?: string;
@@ -31,7 +32,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, templateName, templateDescription, hasImage, imageDataUrl, visitorId }: GenerateRequest = await req.json();
+    const { prompt, templateName, templateDescription, libraryPosterId, hasImage, imageDataUrl, visitorId }: GenerateRequest = await req.json();
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const authHeader = req.headers.get('Authorization')!;
@@ -126,9 +127,12 @@ serve(async (req) => {
     }
     console.log('Parsed titles => mainTitle:', mainTitle, '| subtitle:', subtitle);
 
+    // Determine final style description: if a library poster is selected, treat its description as the only style source (ignore old templates)
+    const styleDescription = templateDescription || '';
+
     // Generate 4 different prompts using GPT-4
     console.log('template description');
-    const promptVariations = await generatePromptVariations(effectivePrompt, templateDescription, mainTitle, subtitle);
+    const promptVariations = await generatePromptVariations(effectivePrompt, styleDescription, mainTitle, subtitle);
     console.log('Generated prompt variationsss:', promptVariations);
 
     // Decide how many images to generate depending on user status
@@ -526,7 +530,7 @@ async function addLogoToBase64ImageReturnBytes(base64Poster: string): Promise<Ui
   const logoImgDecoded = await Image.decode(resizedLogoBytes);
 
   // Bottom-left with padding ~2% of min dimension
-  const padding = Math.max(16, Math.round(Math.min(posterImg.width, posterImg.height) * 0.02));
+  const padding = Math.max(25, Math.round(Math.min(posterImg.width, posterImg.height) * 0.04));
   const x = padding;
   const y = posterImg.height - logoImgDecoded.height - padding;
 

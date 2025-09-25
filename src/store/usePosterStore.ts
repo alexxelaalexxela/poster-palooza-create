@@ -1,5 +1,6 @@
 
 import { create } from 'zustand';
+import { getPriceEuros } from '@/lib/pricing';
 
 export interface Template {
   id: number;
@@ -22,6 +23,8 @@ interface PosterStore {
   selectedTemplate: number | null;
   selectedPoster: number | null;
   selectedPosterUrl: string | null;
+  // Library selection (poster catalog)
+  selectedLibraryPosterId: string | null;
   selectedFormat: Format | 'A2';
   selectedQuality: Quality | null;
   price: number;
@@ -31,6 +34,8 @@ interface PosterStore {
   setSelectedTemplate: (id: number | null) => void;
   setSelectedPoster: (id: number | null) => void;
   setSelectedPosterUrl: (url: string | null) => void;
+  setSelectedLibraryPosterId: (id: string | null) => void;
+  clearSelectedLibraryPoster: () => void;
   setSelectedFormat: (format: Format | null) => void;
   setSelectedQuality: (quality: Quality | null) => void;
   calculatePrice: () => void;
@@ -44,9 +49,10 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
   selectedTemplate: 1,
   selectedPoster: null,
   selectedPosterUrl: null,
+  selectedLibraryPosterId: null,
   selectedFormat: null,
   selectedQuality: null,
-  price: 60,
+  price: 0,
   generatedUrls: [],
   cachedUrls: [],
 
@@ -68,6 +74,15 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
     get().calculatePrice();
   },
 
+  setSelectedLibraryPosterId: (id) => {
+    set({ selectedLibraryPosterId: id });
+    // Do not persist selection automatically; only session-level state
+  },
+
+  clearSelectedLibraryPoster: () => {
+    set({ selectedLibraryPosterId: null });
+  },
+
   setSelectedFormat: (format) => {
     set({ selectedFormat: format });
     get().calculatePrice();
@@ -80,17 +95,13 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
 
   calculatePrice: () => {
     const { selectedFormat, selectedQuality } = get();
-    let price = 60; // base price
-
-    if (selectedFormat === 'A0') price += 30;
-    if (selectedFormat === 'A1') price += 20;
-    if (selectedFormat === 'A2') price += 10;
-    if (selectedFormat === 'A4') price -= 10;
-
-    if (selectedQuality === 'premium') price += 10;
-    if (selectedQuality === 'museum') price += 20;
-
-    set({ price });
+    if (!selectedFormat || !selectedQuality) {
+      set({ price: 0 });
+      return;
+    }
+    const normalizedQuality = selectedQuality === 'paper2' ? 'premium' : selectedQuality;
+    const euros = getPriceEuros(selectedFormat as any, normalizedQuality as any);
+    set({ price: Number(euros.toFixed(2)) });
   },
 
   canOrder: () => {

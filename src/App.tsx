@@ -9,6 +9,8 @@ import Layout from "@/components/Layout";
 import Index from "@/pages/Index";
 
 import About from "@/pages/About";
+import Library from "@/pages/Library";
+import PosterDetails from "@/pages/PosterDetails";
 import Order from "@/pages/Order";
 import NotFound from "@/pages/NotFound";
 import Subscribe from "@/pages/Subscribe";
@@ -59,6 +61,9 @@ const App = () => {
                 <Route path="/" element={<Index />} />
                 
                 <Route path="/about" element={<About />} />
+                <Route path="/librairie" element={<Library />} />
+                <Route path="/posters" element={<Library />} />
+                <Route path="/posters/:id" element={<PosterDetails />} />
                 <Route path="/order" element={<Order />} />
                 <Route path="/order/confirmation" element={<OrderConfirmation />} />
                 <Route path="/subscribe" element={<Subscribe />} />

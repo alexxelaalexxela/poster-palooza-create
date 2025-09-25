@@ -152,7 +152,7 @@ export const OfferModal = ({ open, onClose }: OfferModalProps) => {
             <section className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm text-gray-600">Prix estimé</p>
-                <p className="text-3xl font-extrabold tracking-tight">{price}€</p>
+                <p className="text-3xl font-extrabold tracking-tight">{price.toFixed(2)} €</p>
               </div>
               <Button
                 onClick={handleBuy}

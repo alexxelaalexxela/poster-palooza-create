@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { usePosterStore } from "@/store/usePosterStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 // shadcn/ui components
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock, X } from "lucide-react";
 import { useTypingPlaceholder } from "./useTypingPlaceholder";
 import { useFingerprint } from "@/hooks/useFingerprint";
 
@@ -17,6 +17,7 @@ import { AttemptsCounter } from "@/components/AttemptsCounter";
 
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { useProfile } from "@/hooks/useProfile";
+import { findPosterById } from "@/lib/posterCatalog";
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
 /* -------------------------------------------------------------------------- */
@@ -41,6 +42,12 @@ const templates: Record<number, TemplateMeta> = {
     thumbnail: "/images/poster10.png",
   },
   2: {
+    name: "Minimaliste",
+    description: `Le style est celui d’une affiche illustrée minimaliste au rendu vectoriel, utilisant uniquement des aplats de couleurs sans contours. La composition s’organise en plusieurs plans : un premier plan décoratif qui encadre la scène (par exemple des branches ou motifs stylisés, environ 10 à 15 % de la surface), un deuxième plan qui met en valeur le sujet principal (village, monument, élément central) occupant environ 40 % de la hauteur, et un arrière-plan composé de formes superposées simplifiées (collines, montagnes) représentant 40 à 50 % restants. La palette repose sur des tons sourds et harmonieux (verts, violets, ocres, beiges), enrichis de quelques touches de couleurs vives (jaunes, rouges) servant d’accents visuels. Le texte est centré en bas, dans une zone discrète d’environ 5 à 7 % de la hauteur totale : le titre principal est en majuscules, police sans-serif géométrique, espacé, avec une taille équivalente à environ 1/40 de la hauteur du poster, tandis que le sous-titre, placé juste en dessous, est 4 à 5 fois plus petit, presque comme une annotation. L’ensemble conserve une esthétique épurée, élégante et équilibrée, favorisant la lisibilité et une atmosphère calme et contemplative.
+Les personnages, s'ils sont présents, sont stylisés de manière minimaliste mais colorée : pas de silhouettes sombres ou noires, mais des corps représentés avec des aplats de couleurs variées et harmonieuses. Ils n'ont PAS de traits du visage ! mais des postures expressives et naturelles. Les vêtements et accessoires sont également représentés sans ombres ni textures, avec des couleurs unies. L'objectif est de garder un style vivant mais épuré, sans tomber dans un effet "ombre chinoise".`,
+    thumbnail: "/images/poster11.png",
+  },
+  3: {
     name: "Affiche de Film",
     description: `Affiche de cinéma au style néo-rétro inspiré des couvertures de magazines pulp des années 50 et 60, avec une esthétique marquée par des contrastes forts, une typographie massive et un traitement visuel volontairement dramatique. L’image centrale représente un personnage féminin en pose iconique, placé au premier plan et occupant la moitié inférieure de la composition. Le rendu privilégie un réalisme cinématographique, avec un éclairage artificiel et contrasté (ombres profondes et tons saturés), accentuant les volumes du visage et des objets environnants.
 
@@ -57,7 +64,7 @@ L’objectif esthétique est de transmettre une identité visuelle immédiatemen
 `,
     thumbnail: "/images/poster3.png",
   },
-  3: {
+  4: {
     name: "Street Art",
     description: `Illustration digitale au style pop art et street art contemporain, inspirée des fresques murales urbaines et des affiches graphiques modernes. La composition met en valeur un personnage central, représenté de manière stylisée avec des lignes affirmées et des couleurs franches. L’arrière-plan est constitué d’un mur texturé recouvert de graffitis multicolores, réalisés en larges aplats de teintes vives (rouges, oranges, bleus, violets, roses, verts), enrichis de projections et de coulures de peinture, créant une atmosphère vibrante et dynamique.
 
@@ -68,12 +75,7 @@ La typographie se distingue par un mélange de styles : capitales massives et g�
 La composition se caractérise par une densité assumée, une asymétrie contrôlée et une superposition volontaire de motifs, d’inscriptions et de symboles. L’ensemble transmet une impression de puissance, d’énergie et de contestation, où l’iconographie urbaine (graffitis, slogans, codes visuels de la culture de rue) se combine avec la force expressive du personnage central.`,
     thumbnail: "/images/poster9.png",
   },
-  4: {
-    name: "Minimaliste",
-    description: `Le style est celui d’une affiche illustrée minimaliste au rendu vectoriel, utilisant uniquement des aplats de couleurs sans contours. La composition s’organise en plusieurs plans : un premier plan décoratif qui encadre la scène (par exemple des branches ou motifs stylisés, environ 10 à 15 % de la surface), un deuxième plan qui met en valeur le sujet principal (village, monument, élément central) occupant environ 40 % de la hauteur, et un arrière-plan composé de formes superposées simplifiées (collines, montagnes) représentant 40 à 50 % restants. La palette repose sur des tons sourds et harmonieux (verts, violets, ocres, beiges), enrichis de quelques touches de couleurs vives (jaunes, rouges) servant d’accents visuels. Le texte est centré en bas, dans une zone discrète d’environ 5 à 7 % de la hauteur totale : le titre principal est en majuscules, police sans-serif géométrique, espacé, avec une taille équivalente à environ 1/40 de la hauteur du poster, tandis que le sous-titre, placé juste en dessous, est 4 à 5 fois plus petit, presque comme une annotation. L’ensemble conserve une esthétique épurée, élégante et équilibrée, favorisant la lisibilité et une atmosphère calme et contemplative.
-Les personnages, s'ils sont présents, sont stylisés de manière minimaliste mais colorée : pas de silhouettes sombres ou noires, mais des corps représentés avec des aplats de couleurs variées et harmonieuses. Ils n'ont PAS de traits du visage ! mais des postures expressives et naturelles. Les vêtements et accessoires sont également représentés sans ombres ni textures, avec des couleurs unies. L'objectif est de garder un style vivant mais épuré, sans tomber dans un effet "ombre chinoise".`,
-    thumbnail: "/images/poster11.png",
-  },
+  
   5: {
     name: "City",
     description: `Illustration vectorielle minimaliste au style rétro, inspirée des affiches touristiques des années 1930 à 1950. La scène met en valeur un paysage urbain ou côtier épuré, composé de larges aplats de couleurs franches et lumineuses (bleu ciel, turquoise, jaune sable, rouge brique, vert végétal), sans contours ni détails superflus. Les formes sont simplifiées et stylisées, privilégiant l’équilibre visuel et la lisibilité. La perspective reste simple, avec un horizon clair et une organisation en plans successifs (premier plan décoratif, deuxième plan mettant en valeur le sujet principal comme une plage, une promenade, un monument, puis un arrière-plan avec collines, mer ou ciel).
@@ -120,14 +122,14 @@ const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid
   const PREVIEW_WIDTH = "w-28"; // Légèrement plus large pour le nouveau design
 
   const handleSelect = (id: number, templateName: string) => {
-    // Si l'utilisateur est payé, tout est autorisé; sinon seul "Vintage" (template 2)
-    const isAllowed = isPaid || templateName.toLowerCase() === 'vintage';
-    
+    // Templates à venir: tout sauf "Vintage" reste indisponible pour tous
+    const isAllowed = templateName.toLowerCase() === 'vintage';
+
     if (!isAllowed) {
-      onUpgrade();
+      // Ne pas ouvrir la modale d'upgrade: c'est "Prochainement..."
       return;
     }
-    
+
     setSelectedTemplate(id);
     setOpen(false);
   };
@@ -170,7 +172,8 @@ const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid
               {Object.entries(templates).map(([id, tpl]) => {
                 const tplId = Number(id);
                 const active = tplId === selectedTemplate;
-                const isAllowed = isPaid || tpl.name.toLowerCase() === 'vintage';
+                // Seul "Vintage" est disponible; les autres sont "Prochainement..."
+                const isAllowed = tpl.name.toLowerCase() === 'vintage';
                 
                 return (
                   <button
@@ -197,7 +200,7 @@ const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                         <div className="px-2 py-1 rounded-full bg-white/95 text-amber-700 text-[0.65rem] font-semibold inline-flex items-center gap-1 shadow">
                           <Lock size={12} />
-                          Premium
+                          Prochainement...
                         </div>
                       </div>
                     )}
@@ -230,10 +233,11 @@ const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid
 
 const PromptBar = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const visitorId = useFingerprint();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const { selectedTemplate, setGeneratedUrls, setCachedUrls } = usePosterStore();
+  const { selectedTemplate, selectedLibraryPosterId, setSelectedLibraryPosterId, setGeneratedUrls, setCachedUrls } = usePosterStore();
   const { toast } = useToast();
   const [showUpgrade, setShowUpgrade] = useState(false);
   // const [showOffer, setShowOffer] = useState(false);
@@ -255,7 +259,8 @@ const PromptBar = () => {
       toast({ title: "Ajoutez un prompt ou une image", description: "Décrivez votre idée ou importez une image.", variant: "destructive" });
       return;
     }
-    if (!selectedTemplate) {
+    // If no library poster is selected, require template selection as before
+    if (!selectedLibraryPosterId && !selectedTemplate) {
       toast({ title: "Choisissez un template", description: "Sélectionnez un style.", variant: "destructive" });
       return;
     }
@@ -269,7 +274,9 @@ const PromptBar = () => {
     setIsGenerating(true);
 
     try {
-      const { name, description } = getTemplate(selectedTemplate);
+      const libraryPoster = findPosterById(selectedLibraryPosterId || undefined);
+      const useTemplate = !libraryPoster;
+      const { name, description } = useTemplate ? getTemplate(selectedTemplate) : { name: "LibraryPoster", description: libraryPoster?.stylePrompt || "" };
 
       /* ②  appel Supabase */
       const { data } = await supabase.functions.invoke("generate-posters", {
@@ -277,6 +284,7 @@ const PromptBar = () => {
           prompt: prompt.trim(),
           templateName: name,
           templateDescription: description,
+          libraryPosterId: libraryPoster?.id,
           hasImage: !!imageDataUrl,
           imageDataUrl: imageDataUrl ?? undefined,
           visitorId,
@@ -360,6 +368,18 @@ const PromptBar = () => {
   };
 
   const currentTemplate = getTemplate(selectedTemplate);
+  const selectedLibraryPoster = findPosterById(selectedLibraryPosterId || undefined);
+
+  // Hydration on homepage: only from URL param, otherwise clear selection
+  useEffect(() => {
+    const idFromUrl = searchParams.get('selectedPoster');
+    if (idFromUrl) {
+      setSelectedLibraryPosterId(idFromUrl);
+    } else {
+      setSelectedLibraryPosterId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
@@ -384,6 +404,27 @@ const PromptBar = () => {
         <div className="max-w-full sm:max-w-lg md:max-w-2xl mx-auto">
           <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-4 sm:p-6">
             <div className="space-y-4">
+              {/* Selected library poster banner */}
+              {selectedLibraryPoster && (
+                <div className="flex items-center justify-between bg-indigo-50/80 border border-indigo-100 rounded-xl px-3 py-2">
+                  <div className="flex items-center gap-3">
+                    <img src={selectedLibraryPoster.imageUrl} alt={selectedLibraryPoster.title} className="w-10 h-10 object-cover rounded-lg border border-indigo-200" />
+                    <span className="text-sm text-indigo-900">Affiche sélectionnée : {selectedLibraryPoster.title}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedLibraryPosterId(null);
+                      const p = new URLSearchParams(searchParams);
+                      p.delete('selectedPoster');
+                      setSearchParams(p);
+                    }}
+                    className="text-indigo-700 hover:text-indigo-900"
+                    aria-label="Retirer l'affiche sélectionnée"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -397,14 +438,20 @@ const PromptBar = () => {
               <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4">
                 {/* Sélecteur de template (à gauche) */}
                 <div className="w-full sm:w-auto flex items-center gap-1 text-sm text-gray-800">
-                  {selectedTemplate ? (
+                  {selectedLibraryPoster ? (
+                    <>
+                      <span className="text-gray-600 italic">Le sélecteur de template est désactivé (affiche sélectionnée)</span>
+                    </>
+                  ) : selectedTemplate ? (
                     <>
                       Template : <strong className="font-semibold text-gray-900">{currentTemplate.name}</strong>
                     </>
                   ) : (
                     <span className="text-orange-600">⚠️ Sélectionnez un template</span>
                   )}
-                  <TemplateDropdown onUpgrade={() => setShowUpgrade(true)} isPaid={isPaid} />
+                  {!selectedLibraryPoster && (
+                    <TemplateDropdown onUpgrade={() => setShowUpgrade(true)} isPaid={isPaid} />
+                  )}
                 </div>
 
                 {/* Upload image - Design amélioré */}
