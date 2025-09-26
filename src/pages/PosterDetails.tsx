@@ -3,11 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { findPosterById } from '@/lib/posterCatalog';
 import { usePosterStore, Format, Quality } from '@/store/usePosterStore';
 import { motion } from 'framer-motion';
-import { Star, ArrowLeft, Sparkles, ShoppingCart } from 'lucide-react';
+import { Star, ArrowLeft, Sparkles, ShoppingCart, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getPriceCents, SHIPPING_FEE_CENTS } from '@/lib/pricing';
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical, truncate } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 function formatPriceEUR(cents: number): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(cents / 100);
@@ -144,13 +145,15 @@ export default function PosterDetails() {
             <div className="mt-6 space-y-4">
               <div>
                 <p className="text-sm text-gray-600 leading-snug">
-                  Recréez cette affiche avec vos idées, paysages ou personnages grâce à Neoma IA.
+                Recréez votre propre affiche dans ce même style visuel: décrivez précisément le contenu (lieu, destinations, sujet, personnes…) — seul le style est copié 
                 </p>
                 <div className="mt-2">
-                  <Button onClick={handleCustomize} className="bg-indigo-600 hover:bg-indigo-700">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Copier le style avec Neoma
+                
+                  <Button onClick={handleCustomize} className="bg-indigo-600 hover:bg-indigo-700 inline-flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Copier le style avec Neoma</span>
                   </Button>
+                  
                 </div>
               </div>
               <p className="text-sm text-gray-500">

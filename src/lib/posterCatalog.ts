@@ -1,6 +1,7 @@
 export interface PosterCatalogItem {
   id: string;
   title: string;
+  styleName?: string; // short style label used in UI
   priceCents: number;
   imageUrl: string;
   rating: number; // 0–5
@@ -182,6 +183,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'surfTorch',
     title: 'Surf à la Torch',
+    styleName: 'Vintage Neoma',
     priceCents: 4499,
     imageUrl: '/images/poster666.png',
     rating: 4.8,
@@ -192,6 +194,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'rolandgarros',
     title: 'Tennis à Roland Garros',
+    styleName: 'Vintage Cadre Blanc',
     priceCents: 4499,
     imageUrl: '/images/poster777.png',
     rating: 4.5,
@@ -202,6 +205,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'rando-mont-fuji',
     title: 'Randonné au Mont Fuji ',
+    styleName: 'Vintage Neoma',
     priceCents: 4499,
     imageUrl: '/images/poster111.png',
     rating: 4.8,
@@ -212,6 +216,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'plongeon-zurich',
     title: 'Plongeon de Zurich',
+    styleName: 'Vintage Neoma',
     priceCents: 4499,                  // affichage seulement, le paiement reste format×qualité
     imageUrl: '/images/poster555.png',
     rating: 4.6,
@@ -222,6 +227,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'tennis-paris',
     title: 'Tennis à Paris',
+    styleName: 'Épuré',
     priceCents: 4499,
     imageUrl: '/images/poster999.png',
     rating: 4.7,
@@ -233,6 +239,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'plongee-koh-tao',
     title: 'Plongée a Koh Tao',
+    styleName: 'Vintage Neoma',
     priceCents: 4499,
     imageUrl: '/images/poster444.png',
     rating: 4.7,
@@ -243,6 +250,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'reserve-afrique-sud',
     title: 'Réserve Afrique du Sud',
+    styleName: 'Vintage Neoma',
     priceCents: 4499,
     imageUrl: '/images/poster888.png',
     rating: 4.4,
@@ -253,6 +261,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'football-paris',
     title: 'Football à Paris',
+    styleName: 'Épuré',
     priceCents: 4499,
     imageUrl: '/images/poster1212.png',
     rating: 4.7,
@@ -265,6 +274,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'wing-foil-boston',
     title: 'Wing Foil à Boston',
+    styleName: 'Vintage Neoma',
     priceCents: 4499,
     imageUrl: '/images/poster1010.png',
     rating: 4.5,
@@ -275,6 +285,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'plongee-corse',
     title: 'Plongée en Corse',
+    styleName: 'Vintage Cadre Blanc',
     priceCents: 4499,
     imageUrl: '/images/poster1111.png',
     rating: 4.3,
@@ -285,6 +296,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'surfeurs-vintage',
     title: '2 surfeurs vintage',
+    styleName: 'Vintage Cadre Blanc',
     priceCents: 4499,
     imageUrl: '/images/poster222.png',
     rating: 4.6,
@@ -295,6 +307,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'Surf-californie',
     title: 'Surf en Californie',
+    styleName: 'Vintage Cadre Blanc',
     priceCents: 4499,
     imageUrl: '/images/poster1313.png',
     rating: 4.1,
@@ -306,6 +319,7 @@ export const posterCatalog: PosterCatalogItem[] = [
   {
     id: 'montagne-alpes',
     title: '4x4 au milieu des montagnes',
+    styleName: 'Rétro Montagnes',
     priceCents: 4499,
     imageUrl: '/images/poster333.png',
     rating: 4.5,

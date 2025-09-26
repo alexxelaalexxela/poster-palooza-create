@@ -3,13 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { posterCatalog } from '@/lib/posterCatalog';
 import { usePosterStore } from '@/store/usePosterStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Search, Loader2 } from 'lucide-react';
+import { Star, Search, Loader2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 // import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SHIPPING_FEE_CENTS } from '@/lib/pricing';
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical, truncate } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 function formatPriceEUR(cents: number): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(cents / 100);
@@ -171,44 +172,55 @@ export default function Library() {
                       }`}>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                       </div>
+                      {/* Top-left rating overlay (all breakpoints) */}
+                      <div className="absolute top-0 left-0 right-0 pointer-events-none">
+                        <div className="bg-gradient-to-b from-black/75 via-black/30 to-transparent px-3 pt-3 pb-8">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-0.5">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={12}
+                                  className={`${i < Math.round(item.rating) ? 'text-yellow-400' : 'text-white/40'}`}
+                                  fill={i < Math.round(item.rating) ? 'currentColor' : 'none'}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-[11px] text-white/90">{item.rating} ({item.ratingCount})</span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Bottom overlay: price + acheter (all breakpoints) */}
+                      <div className="absolute bottom-0 left-0 right-0 pointer-events-none">
+                        <div className="bg-gradient-to-t from-black/80 via-black/20 to-transparent px-3 pb-3 pt-8">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-white font-semibold text-sm whitespace-nowrap">
+                              {formatPriceEUR(Math.max(0, item.priceCents - SHIPPING_FEE_CENTS))}
+                            </div>
+                            <Button
+                              onClick={(e) => { e.stopPropagation(); handleView(item.id); }}
+                              size="sm"
+                              className="h-8 px-2 text-xs rounded-full bg-white/90 text-gray-900 hover:bg-white shadow pointer-events-auto"
+                            >
+                              Acheter
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
                       
                     {/* Top area cleaned (no badges/likes) */}
                     </div>
 
                     {/* Content */}
-                    <div className="p-4 lg:p-5 flex flex-col flex-1">
-                      {/* Rating on top */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star
-                              key={i}
-                              size={14}
-                              className={`${i < Math.round(item.rating) ? 'text-yellow-400' : 'text-gray-300'} transition-colors`}
-                              fill={i < Math.round(item.rating) ? 'currentColor' : 'none'}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-xs sm:text-sm text-gray-600">{item.rating} ({item.ratingCount} avis)</span>
-                      </div>
+                    <div className="p-3 sm:p-5 flex flex-col flex-1">
+                      {/* Rating moved into image overlays */}
+                      <div className="hidden" />
 
-                      {/* Price and primary action (stacked on mobile) */}
-                      <div className="mb-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
-                        <div className="text-indigo-700 font-bold text-base sm:text-lg whitespace-nowrap">
-                          {formatPriceEUR(Math.max(0, item.priceCents - SHIPPING_FEE_CENTS))}
-                        </div>
-                        <Button
-                          onClick={(e) => { e.stopPropagation(); handleView(item.id); }}
-                          variant="outline"
-                          size="sm"
-                          className="h-10 w-full sm:w-auto border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                        >
-                          Acheter
-                        </Button>
-                      </div>
+                      {/* Price and action moved into image overlays */}
+                      <div className="hidden" />
 
-                      {/* Helper text */}
-                      <p className="text-xs text-gray-600 leading-snug mb-3 line-clamp-2">
+                      {/* Helper text (visible on mobile, above the button) */}
+                      <p className="block text-xs text-gray-600 leading-snug mb-3 line-clamp-2">
                         Créez le vôtre dans ce style avec Neoma IA.
                       </p>
 
@@ -217,9 +229,24 @@ export default function Library() {
                         <Button
                           onClick={(e) => { e.stopPropagation(); handleCustomize(item.id); }}
                           size="sm"
-                          className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white"
+                          variant="ghost"
+                          className="w-full h-9 sm:h-10 rounded-md bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-200 shadow-none inline-flex items-center justify-center gap-2"
                         >
-                          Copier le style
+                          <span>Copier le style</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span
+                                onClick={(e) => e.stopPropagation()}
+                                className="hidden sm:inline-flex items-center justify-center rounded-full w-5 h-5 bg-gray-100 text-gray-600"
+                                aria-label="Infos sur Copier le style"
+                              >
+                                <Info size={14} />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs text-xs">Seul le style visuel est copié (couleurs, composition). Décrivez votre propre scène: lieux, personnages, voyage…</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </Button>
                       </div>
                     </div>

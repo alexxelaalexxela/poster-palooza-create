@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 // shadcn/ui components
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock, X, Info } from "lucide-react";
 import { useTypingPlaceholder } from "./useTypingPlaceholder";
 import { useFingerprint } from "@/hooks/useFingerprint";
 
@@ -251,6 +251,7 @@ const PromptBar = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const typingPlaceholder = useTypingPlaceholder(examples, prompt !== "");
+  const [showStyleInfo, setShowStyleInfo] = useState(false);
 
 
 
@@ -406,10 +407,34 @@ const PromptBar = () => {
             <div className="space-y-4">
               {/* Selected library poster banner */}
               {selectedLibraryPoster && (
-                <div className="flex items-center justify-between bg-indigo-50/80 border border-indigo-100 rounded-xl px-3 py-2">
+                <div className="bg-indigo-50/80 border border-indigo-100 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2">
+                  <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <img src={selectedLibraryPoster.imageUrl} alt={selectedLibraryPoster.title} className="w-10 h-10 object-cover rounded-lg border border-indigo-200" />
-                    <span className="text-sm text-indigo-900">Affiche sélectionnée : {selectedLibraryPoster.title}</span>
+                    <img src={selectedLibraryPoster.imageUrl} alt={selectedLibraryPoster.title} className="w-8 h-8 sm:w-10 sm:h-10 object-cover rounded-lg border border-indigo-200" />
+                    <div className="flex flex-col">
+                      <span className="text-xs sm:text-sm text-indigo-900 inline-flex items-center gap-2">
+                        <strong className="font-semibold">Style sélectionné : </strong>
+                        <span className="text-indigo-800/80 truncate max-w-[140px] sm:max-w-none">{selectedLibraryPoster.styleName || selectedLibraryPoster.title}</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowStyleInfo((v) => !v)}
+                          className="hidden sm:inline-flex items-center gap-1 text-[11px] text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded whitespace-normal break-words cursor-pointer"
+                          title="En savoir plus"
+                        >
+                          <Info size={12} />
+                          <span>Seul le style est appliqué</span>
+                        </button>
+                      </span>
+                      {/* Mobile info toggler */}
+                      <button
+                        type="button"
+                        onClick={() => setShowStyleInfo((v) => !v)}
+                        className="sm:hidden inline-flex items-center justify-start gap-1 text-[11px] text-indigo-800 mt-1"
+                      >
+                        <Info size={12} />
+                        <span>En savoir plus</span>
+                      </button>
+                    </div>
                   </div>
                   <button
                     onClick={() => {
@@ -418,11 +443,17 @@ const PromptBar = () => {
                       p.delete('selectedPoster');
                       setSearchParams(p);
                     }}
-                    className="text-indigo-700 hover:text-indigo-900"
+                    className="text-indigo-700 hover:text-indigo-900 text-xs sm:text-sm"
                     aria-label="Retirer l'affiche sélectionnée"
                   >
                     <X size={16} />
                   </button>
+                  </div>
+                  {showStyleInfo && (
+                    <p className="mt-2 text-xs text-indigo-900 whitespace-normal break-words max-w-none sm:max-w-3xl">
+                      Seul le style visuel s’applique à votre poster. Décrivez votre propre scène (lieu, ambiance, personnages).
+                    </p>
+                  )}
                 </div>
               )}
               <textarea
@@ -444,7 +475,7 @@ const PromptBar = () => {
                     </>
                   ) : selectedTemplate ? (
                     <>
-                      Template : <strong className="font-semibold text-gray-900">{currentTemplate.name}</strong>
+                      Style : <strong className="font-semibold text-gray-900">{currentTemplate.name}</strong>
                     </>
                   ) : (
                     <span className="text-orange-600">⚠️ Sélectionnez un template</span>
