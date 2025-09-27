@@ -59,17 +59,19 @@ export default function PosterGallery() {
   if (noPosters) {
     return (
       <motion.section
-        initial={{ opacity: 0, y: 40 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="space-y-5 md:space-y-6"
+        transition={{ duration: 0.6 }}
+        className="mt-8 sm:mt-12 space-y-3 md:space-y-4"
       >
-        <h2 className="mt-8 text-xl sm:text-2xl md:text-3xl font-bold text-center text-gray-900">
-          No posters generated yet
-        </h2>
-        <p className="text-center text-sm md:text-base text-gray-600">
-          Generate your first poster using the prompt input above!
-        </p>
+        <div className="mx-auto max-w-xl rounded-2xl border border-gray-200 bg-white/80 backdrop-blur px-4 py-6 shadow-sm text-center">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">
+            Aucun poster généré pour le moment
+          </h2>
+          <p className="mt-2 text-sm md:text-base text-gray-600">
+            Utilise le champ au-dessus pour décrire ton idée et lancer la génération.
+          </p>
+        </div>
       </motion.section>
     );
   }

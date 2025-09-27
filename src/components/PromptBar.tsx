@@ -7,8 +7,9 @@ import { useToast } from "@/hooks/use-toast";
 // shadcn/ui components
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock, X, Info } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock, X, Info, ArrowUp } from "lucide-react";
 import { useTypingPlaceholder } from "./useTypingPlaceholder";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useFingerprint } from "@/hooks/useFingerprint";
 
 import { UpgradeModal } from "@/components/UpgradeModal";
@@ -152,9 +153,10 @@ const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid
         <PopoverTrigger asChild>
           <button
             aria-label="Changer le template"
-            className="inline-flex items-center justify-center rounded-lg p-1.5 hover:bg-indigo-100/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
+            className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1.5 text-xs sm:text-sm font-medium border border-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
           >
-            <ChevronDown size={20} className="text-indigo-600" />
+            <span>Style</span>
+            <ChevronDown size={16} className="text-gray-700" />
           </button>
         </PopoverTrigger>
 
@@ -252,6 +254,9 @@ const PromptBar = () => {
 
   const typingPlaceholder = useTypingPlaceholder(examples, prompt !== "");
   const [showStyleInfo, setShowStyleInfo] = useState(false);
+  const isMobile = useIsMobile();
+  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
+  const [maxAttempts, setMaxAttempts] = useState<number>(3);
 
 
 
@@ -373,6 +378,49 @@ const PromptBar = () => {
 
   // Hydration on homepage: only from URL param, otherwise clear selection
   useEffect(() => {
+    // Listen for AttemptsCounter refresh events to stay in sync
+    const onRefresh = (e?: any) => {
+      try {
+        const detail = (e as CustomEvent)?.detail as { attemptsRemaining?: number; maxAttempts?: number } | undefined;
+        if (detail?.attemptsRemaining !== undefined) setAttemptsRemaining(detail.attemptsRemaining);
+        if (detail?.maxAttempts !== undefined) setMaxAttempts(detail.maxAttempts);
+      } catch {}
+    };
+    window.addEventListener('attempts:update', onRefresh);
+    return () => window.removeEventListener('attempts:update', onRefresh);
+  }, []);
+
+  // Fallback: read from profile when available
+  useEffect(() => {
+    if (profile) {
+      setMaxAttempts(profile.is_paid ? 15 : 3);
+      if (typeof profile.generations_remaining === 'number') {
+        setAttemptsRemaining(profile.generations_remaining);
+      }
+    }
+  }, [profile]);
+
+  // Initial fetch attempts from Edge function for anonymous and logged users
+  useEffect(() => {
+    const fetchAttempts = async () => {
+      if (!visitorId) return;
+      try {
+        const resp = await supabase.functions.invoke('get-attempts', {
+          body: { visitorId },
+        });
+        if (resp.data?.success) {
+          const remaining = resp.data.attemptsRemaining ?? 0;
+          const paid = !!resp.data.isPaid;
+          setAttemptsRemaining(remaining);
+          setMaxAttempts(paid ? 15 : 3);
+        }
+      } catch {}
+    };
+    fetchAttempts();
+  }, [visitorId]);
+
+  // Hydrate selection from URL on first render
+  useEffect(() => {
     const idFromUrl = searchParams.get('selectedPoster');
     if (idFromUrl) {
       setSelectedLibraryPosterId(idFromUrl);
@@ -384,27 +432,57 @@ const PromptBar = () => {
 
   return (
     <>
-      <motion.section initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className="space-y-6">
+      <motion.section initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className="space-y-4 sm:space-y-6">
         <h2
           className="
           relative z-20
           text-2xl sm:text-3xl md:text-4xl font-extrabold
           text-white
           drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]
-          text-center mb-6
+          text-center mb-1 sm:mb-2
         "
         >
-          Décrivez votre idée de poster
+          Crée ton oeuvre Neoma !
         </h2>
+        <p
+          className="
+          text-center text-white/90 text-sm sm:text-base font-medium
+          drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]
+          mb-6 sm:mb-8
+        "
+        >
+          Décris ton idée et reçois ton poster
+        </p>
+        <div aria-hidden="true" className="h-6 sm:h-10"></div>
+        
 
-        {/* Compteur de tentatives */}
-        <div className="max-w-full sm:max-w-lg md:max-w-2xl mx-auto">
-          <AttemptsCounter />
-        </div>
+        {/* Compteur intégré dans la barre ci-dessous */}
 
-        <div className="max-w-full sm:max-w-lg md:max-w-2xl mx-auto">
-          <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-4 sm:p-6">
-            <div className="space-y-4">
+        <div className="w-full sm:max-w-lg md:max-w-2xl px-0 sm:px-0 mx-auto">
+          <div className="relative bg-white/70 backdrop-blur rounded-3xl ring-1 ring-[#c8d9f2] p-2 sm:p-3">
+            {/* Attempts pill in top-right */}
+            {attemptsRemaining !== null && (
+              <div className="absolute top-2 right-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold border shadow-sm
+                        ${((attemptsRemaining / Math.max(1, maxAttempts)) * 100) > 66 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : ((attemptsRemaining / Math.max(1, maxAttempts)) * 100) > 33 ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'}`}
+                      aria-label={`Tentatives restantes ${attemptsRemaining} sur ${maxAttempts}`}
+                    >
+                      {attemptsRemaining}/{maxAttempts}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" sideOffset={6} className="px-3 py-2 text-sm">
+                    <span className="font-medium text-gray-800">{attemptsRemaining} tentatives restantes</span>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+            <div className="space-y-1.5 sm:space-y-3">
               {/* Selected library poster banner */}
               {selectedLibraryPoster && (
                 <div className="bg-indigo-50/80 border border-indigo-100 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2">
@@ -456,37 +534,27 @@ const PromptBar = () => {
                   )}
                 </div>
               )}
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={typingPlaceholder}
-                className="w-full p-3 sm:p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none transition-all text-base"
-                rows={3}
-                disabled={isGenerating}
-              />
+              {/* Composer */}
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={typingPlaceholder}
+                  className="flex-1 bg-transparent border-none focus:border-none focus:ring-0 outline-none resize-none px-2.5 sm:px-4 pt-8 sm:pt-7 pb-2.5 sm:pb-4 text-sm sm:text-base"
+                  rows={isMobile ? 2 : 3}
+                  disabled={isGenerating}
+                />
+              </div>
 
-              <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4">
-                {/* Sélecteur de template (à gauche) */}
-                <div className="w-full sm:w-auto flex items-center gap-1 text-sm text-gray-800">
-                  {selectedLibraryPoster ? (
-                    <>
-                      <span className="text-gray-600 italic">Le sélecteur de template est désactivé (affiche sélectionnée)</span>
-                    </>
-                  ) : selectedTemplate ? (
-                    <>
-                      Style : <strong className="font-semibold text-gray-900">{currentTemplate.name}</strong>
-                    </>
-                  ) : (
-                    <span className="text-orange-600">⚠️ Sélectionnez un template</span>
-                  )}
+              {/* Inline options below text, same surface */}
+              <div className="flex items-center justify-between px-1.5 sm:px-2 pb-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {/* Style pill (opens dropdown) */}
                   {!selectedLibraryPoster && (
                     <TemplateDropdown onUpgrade={() => setShowUpgrade(true)} isPaid={isPaid} />
                   )}
-                </div>
-
-                {/* Upload image - Design amélioré */}
-                <div className="w-full sm:w-auto">
+                  {/* Photo pill */}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -494,59 +562,39 @@ const PromptBar = () => {
                     className="hidden"
                     onChange={handleFileChange}
                   />
-                  <Button
+                  <button
+                    type="button"
                     onClick={handleUploadClick}
-                    variant="secondary"
-                    className={`
-                      w-full sm:w-auto px-5 py-3 font-medium rounded-xl transition-all duration-300 
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium border 
                       ${isPaid 
-                        ? 'bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 hover:from-emerald-100 hover:to-teal-100 border-2 border-emerald-200 hover:border-emerald-300 shadow-md hover:shadow-lg' 
-                        : 'bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 hover:from-amber-100 hover:to-orange-100 border-2 border-amber-200 hover:border-amber-300 shadow-md hover:shadow-lg'
-                      }
-                      group relative overflow-hidden
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' 
+                        : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'}
                     `}
                   >
-                    {/* Background shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                    
-                    {isPaid ? (
-                      <span className="relative inline-flex items-center gap-2">
-                        <div className="p-1 bg-emerald-200/50 rounded-lg">
-                          <ImageIcon size={16} />
-                        </div>
-                        <span className="font-semibold">Ajouter une image</span>
-                      </span>
-                    ) : (
-                      <span className="relative inline-flex items-center gap-2">
-                        <div className="p-1 bg-amber-200/50 rounded-lg">
-                          <Lock size={16} />
-                        </div>
-                        <span className="font-semibold">Ajouter photo (premium) </span>
-                      </span>
-                    )}
-                  </Button>
+                    {isPaid ? <ImageIcon size={14} /> : <Lock size={14} />}
+                    <span>Photo</span>
+                  </button>
                 </div>
-
-                {/* Bouton Générer */}
                 {!isGenerating && (
-                  <Button
+                  <button
                     onClick={handleGenerate}
                     disabled={!prompt.trim() && !imageDataUrl}
-                    className="w-full sm:w-auto px-6 py-3 font-medium bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:text-white/70 disabled:cursor-not-allowed rounded-xl"
+                    aria-label="Générer"
+                    className="shrink-0 inline-flex items-center justify-center rounded-full bg-indigo-600 text-white w-9 h-9 sm:w-11 sm:h-11 shadow-md hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed"
                   >
-                    {"Générer les posters"}
-                  </Button>
+                    <ArrowUp size={18} />
+                  </button>
                 )}
               </div>
               {imageDataUrl && (
                 <div className="flex items-center justify-between bg-indigo-50/80 border border-indigo-100 rounded-xl px-3 py-2">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <img src={imageDataUrl} alt="Image sélectionnée" className="w-10 h-10 object-cover rounded-lg border border-indigo-200" />
-                    <span className="text-sm text-indigo-900">Image ajoutée – incluse dans la génération</span>
+                    <span className="text-xs sm:text-sm text-indigo-900 truncate">Image ajoutée – incluse dans la génération</span>
                   </div>
                   <button
                     onClick={() => setImageDataUrl(null)}
-                    className="text-sm text-indigo-700 hover:underline"
+                    className="text-xs sm:text-sm text-indigo-700 hover:underline"
                   >
                     Retirer
                   </button>

@@ -29,8 +29,11 @@ export const AttemptsCounter = ({ className = '' }: AttemptsCounterProps) => {
       });
 
       if (resp.data?.success) {
-        setAttemptsRemaining(resp.data.attemptsRemaining ?? 0);
-        setIsPaid(!!resp.data.isPaid);
+        const remaining = resp.data.attemptsRemaining ?? 0;
+        const paid = !!resp.data.isPaid;
+        setAttemptsRemaining(remaining);
+        setIsPaid(paid);
+        try { window.dispatchEvent(new CustomEvent('attempts:update', { detail: { attemptsRemaining: remaining, maxAttempts: paid ? 15 : 3 } })); } catch {}
         return;
       }
 
@@ -42,8 +45,11 @@ export const AttemptsCounter = ({ className = '' }: AttemptsCounterProps) => {
           .eq('id', user.id)
           .single();
         if (error) throw error;
-        setAttemptsRemaining(profile?.generations_remaining ?? 0);
-        setIsPaid(!!profile?.is_paid);
+        const remaining = profile?.generations_remaining ?? 0;
+        const paid = !!profile?.is_paid;
+        setAttemptsRemaining(remaining);
+        setIsPaid(paid);
+        try { window.dispatchEvent(new CustomEvent('attempts:update', { detail: { attemptsRemaining: remaining, maxAttempts: paid ? 15 : 3 } })); } catch {}
       } else if (visitorId) {
         const { data: visitorData, error } = await supabase
           .from('visitor_user_links')
@@ -52,8 +58,10 @@ export const AttemptsCounter = ({ className = '' }: AttemptsCounterProps) => {
           .single();
         if (error && (error as any).code !== 'PGRST116') throw error;
         const used = visitorData?.generation_count ?? 0;
-        setAttemptsRemaining(Math.max(0, 3 - used));
+        const remaining = Math.max(0, 3 - used);
+        setAttemptsRemaining(remaining);
         setIsPaid(false);
+        try { window.dispatchEvent(new CustomEvent('attempts:update', { detail: { attemptsRemaining: remaining, maxAttempts: 3 } })); } catch {}
       }
     } catch (e) {
       console.error('get_attempts error', e);

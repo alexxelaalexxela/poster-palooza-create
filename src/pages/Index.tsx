@@ -195,23 +195,24 @@ const Index = () => {
           {/* Barre de prompt → premier élément visible */}
           <PromptBar />
 
-          {/* Bouton toggle templates - Style amélioré */}
+          {/* Bouton toggle templates - Style épuré */}
           <motion.button
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.05 }}
+            type="button"
+            aria-expanded={showTemplates}
+            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.01 }}
             className="
-              mx-auto flex items-center gap-3
-              bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700
-              text-white font-semibold px-8 py-4 rounded-2xl shadow-2xl
-              border border-white/20 backdrop-blur-sm
-              transition-all duration-300
+              mx-auto inline-flex items-center gap-2 sm:gap-2.5
+              rounded-full border border-gray-200/70 bg-white/80 backdrop-blur
+              text-gray-800 px-4 py-2 sm:px-5 sm:py-2.5 shadow-sm hover:bg-white/90 hover:shadow
+              transition-colors
             "
             onClick={() => setShowTemplates((p) => !p)}
           >
-            <div className="p-1 bg-white/20 rounded-full">
+            <span className="inline-flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 p-1.5">
               {showTemplates ? <ChevronUp size={16} /> : <ChevronRight size={16} />}
-            </div>
-            <span className="text-lg">
+            </span>
+            <span className="text-sm sm:text-base font-medium">
               {showTemplates ? 'Masquer les exemples' : 'Voir des exemples'}
             </span>
           </motion.button>
