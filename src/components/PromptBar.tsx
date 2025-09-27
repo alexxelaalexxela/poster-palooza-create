@@ -541,7 +541,7 @@ const PromptBar = () => {
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder={typingPlaceholder}
-                  className="flex-1 bg-transparent border-none focus:border-none focus:ring-0 outline-none resize-none px-2.5 sm:px-4 pt-8 sm:pt-7 pb-2.5 sm:pb-4 text-sm sm:text-base"
+                  className="flex-1 bg-transparent border-none focus:border-none focus:ring-0 outline-none resize-none px-2.5 sm:px-4 pt-8 sm:pt-7 pb-2.5 sm:pb-4 text-[16px] sm:text-base leading-relaxed"
                   rows={isMobile ? 2 : 3}
                   disabled={isGenerating}
                 />
