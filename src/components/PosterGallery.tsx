@@ -135,8 +135,8 @@ export default function PosterGallery() {
                       <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
                     )}
                     <img
-                      src={buildNetlifyImageUrl(url, { width: 800, quality: 75, fit: 'cover' })}
-                      srcSet={buildNetlifySrcSet(url, [400, 600, 800, 1000, 1200], { quality: 75, fit: 'cover' })}
+                      src={buildNetlifyImageUrl(url, { width: 800, quality: 75, fit: 'inside' })}
+                      srcSet={buildNetlifySrcSet(url, [400, 600, 800, 1000, 1200], { quality: 75, fit: 'inside' })}
                       sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 25vw"
                       alt={`Generated poster ${idx + 1}`}
                       className="w-full h-full object-contain select-none pointer-events-none"
@@ -321,8 +321,8 @@ export default function PosterGallery() {
                 <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
               )}
               <img
-                src={buildNetlifyImageUrl(mergedUrls[lightboxIdx!], { width: 1000, quality: 80, fit: 'cover' })}
-                srcSet={buildNetlifySrcSet(mergedUrls[lightboxIdx!], [600, 800, 1000, 1200], { quality: 80, fit: 'cover' })}
+                src={buildNetlifyImageUrl(mergedUrls[lightboxIdx!], { width: 1000, quality: 80, fit: 'inside' })}
+                srcSet={buildNetlifySrcSet(mergedUrls[lightboxIdx!], [600, 800, 1000, 1200], { quality: 80, fit: 'inside' })}
                 sizes="90vw"
                 alt="Large preview"
                 className="w-full h-auto object-contain select-none pointer-events-none"

@@ -188,8 +188,8 @@ const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid
                     } ${!isAllowed ? 'opacity-70' : ''}`}
                   >
                     <img
-                      src={buildNetlifyImageUrl(tpl.thumbnail, { width: 320, quality: 75, fit: 'cover' })}
-                      srcSet={buildNetlifySrcSet(tpl.thumbnail, [160, 240, 320, 480], { quality: 75, fit: 'cover' })}
+                      src={buildNetlifyImageUrl(tpl.thumbnail, { width: 320, quality: 75, fit: 'inside' })}
+                      srcSet={buildNetlifySrcSet(tpl.thumbnail, [160, 240, 320, 480], { quality: 75, fit: 'inside' })}
                       sizes="(max-width: 640px) 28vw, 200px"
                       alt={tpl.name}
                       className={`object-contain w-full h-full ${!isAllowed ? 'grayscale' : ''}`}
