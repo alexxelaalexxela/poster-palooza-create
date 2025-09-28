@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { buildNetlifyImageUrl, buildNetlifySrcSet } from "@/lib/utils";
 
 interface Template {
   id: number;
@@ -72,11 +73,18 @@ const TemplateCard = ({ template }: TemplateCardProps) => {
           <div className="relative bg-gradient-to-br from-amber-50 to-stone-100 p-3 shadow-inner" style={{ borderRadius: '2px' }}>
             {/* Image du poster */}
             <div className="relative aspect-[2/3] overflow-hidden bg-white shadow-sm">
-              <img
-                src={template.image}
-                alt="Exemple de poster"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
+            <img
+              src={buildNetlifyImageUrl(template.image, { width: 400, quality: 75, fit: 'cover' })}
+              srcSet={buildNetlifySrcSet(template.image, [200, 300, 400, 600], { quality: 75, fit: 'cover' })}
+              sizes="(max-width: 640px) 40vw, 176px"
+              alt="Exemple de poster"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
+              width={400}
+              height={600}
+            />
             </div>
           </div>
 

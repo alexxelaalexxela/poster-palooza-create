@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SHIPPING_FEE_CENTS } from '@/lib/pricing';
 import { Helmet } from 'react-helmet-async';
-import { buildCanonical, truncate } from '@/lib/utils';
+import { buildCanonical, truncate, buildNetlifyImageUrl, buildNetlifySrcSet } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 function formatPriceEUR(cents: number): string {
@@ -152,18 +152,25 @@ export default function Library() {
                     } bg-white shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col transform hover:-translate-y-1`}
                   >
                     {/* Image Container */}
-                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100" style={{ contentVisibility: 'auto', containIntrinsicSize: '300px 400px' }}>
                       {imageLoadingStates[item.id] && (
                         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
                           <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
                         </div>
                       )}
                       <img 
-                        src={item.imageUrl} 
+                        src={buildNetlifyImageUrl(item.imageUrl, { width: 640, quality: 75, fit: 'cover' })} 
+                        srcSet={buildNetlifySrcSet(item.imageUrl, [320, 480, 640, 768, 960, 1200], { quality: 75, fit: 'cover' })}
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         alt={item.title} 
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
                         onLoadStart={() => handleImageLoadStart(item.id)}
                         onLoad={() => handleImageLoad(item.id)}
+                        loading={idx < 4 ? 'eager' : 'lazy'}
+                        fetchPriority={idx < 2 ? 'high' : 'auto'}
+                        decoding="async"
+                        width={600}
+                        height={800}
                       />
                       
                       {/* Overlay on hover */}
