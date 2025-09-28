@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { buildNetlifyImageUrl, buildNetlifySrcSet } from "@/lib/utils";
 
 interface Template {
   id: number;
@@ -74,11 +73,9 @@ const TemplateCard = ({ template }: TemplateCardProps) => {
             {/* Image du poster */}
             <div className="relative aspect-[2/3] overflow-hidden bg-white shadow-sm">
             <img
-              src={buildNetlifyImageUrl(template.image, { width: 400, quality: 75, fit: 'inside' })}
-              srcSet={buildNetlifySrcSet(template.image, [200, 300, 400, 600], { quality: 75, fit: 'inside' })}
-              sizes="(max-width: 640px) 40vw, 176px"
+              src={template.image}
               alt="Exemple de poster"
-              className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
               decoding="async"
               fetchPriority="low"

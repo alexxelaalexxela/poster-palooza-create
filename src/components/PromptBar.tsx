@@ -9,7 +9,6 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock, X, Info, ArrowUp } from "lucide-react";
 import { useTypingPlaceholder } from "./useTypingPlaceholder";
-import { buildNetlifyImageUrl, buildNetlifySrcSet } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFingerprint } from "@/hooks/useFingerprint";
 
@@ -188,9 +187,7 @@ const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid
                     } ${!isAllowed ? 'opacity-70' : ''}`}
                   >
                     <img
-                      src={buildNetlifyImageUrl(tpl.thumbnail, { width: 320, quality: 75, fit: 'inside' })}
-                      srcSet={buildNetlifySrcSet(tpl.thumbnail, [160, 240, 320, 480], { quality: 75, fit: 'inside' })}
-                      sizes="(max-width: 640px) 28vw, 200px"
+                      src={tpl.thumbnail}
                       alt={tpl.name}
                       className={`object-contain w-full h-full ${!isAllowed ? 'grayscale' : ''}`}
                       loading="lazy"

@@ -2,7 +2,6 @@
 import { motion } from 'framer-motion';
 import Watermark from '@/components/Watermark';
 import { useProfile } from '@/hooks/useProfile';
-import { buildNetlifyImageUrl, buildNetlifySrcSet } from '@/lib/utils';
 
 interface PosterResult {
   id: number;
@@ -30,16 +29,12 @@ const PosterResultCard = ({ result, index }: PosterResultCardProps) => {
           <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
         )}
         <img
-          src={buildNetlifyImageUrl(result.url, { width: 800, quality: 75, fit: 'cover' })}
-          srcSet={buildNetlifySrcSet(result.url, [400, 600, 800, 1000], { quality: 75, fit: 'cover' })}
-          sizes="(max-width: 1024px) 50vw, 33vw"
+          src={result.url}
           alt={`Generated poster ${result.id}`}
           className="w-full h-full object-cover select-none pointer-events-none"
           onContextMenu={(e) => e.preventDefault()}
           style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
           draggable={false}
-          loading="lazy"
-          decoding="async"
         />
       </div>
       <div className="p-4">

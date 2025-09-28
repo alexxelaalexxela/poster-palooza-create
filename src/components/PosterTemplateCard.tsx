@@ -1,6 +1,5 @@
 
 import { motion } from 'framer-motion';
-import { buildNetlifyImageUrl, buildNetlifySrcSet } from '@/lib/utils';
 
 interface Template {
   id: number;
@@ -28,9 +27,7 @@ const PosterTemplateCard = ({ template, isSelected, onSelect }: PosterTemplateCa
     >
       <div className="aspect-[3/4] overflow-hidden">
         <img
-          src={buildNetlifyImageUrl(template.image, { width: 400, quality: 75, fit: 'cover' })}
-          srcSet={buildNetlifySrcSet(template.image, [200, 300, 400, 600], { quality: 75, fit: 'cover' })}
-          sizes="(max-width: 640px) 45vw, 256px"
+          src={template.image}
           alt={template.name}
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
           loading="lazy"
