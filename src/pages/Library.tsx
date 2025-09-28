@@ -159,11 +159,11 @@ export default function Library() {
                         </div>
                       )}
                       <img 
-                        src={buildNetlifyImageUrl(item.imageUrl, { width: 640, quality: 75, fit: 'cover' })} 
-                        srcSet={buildNetlifySrcSet(item.imageUrl, [320, 480, 640, 768, 960, 1200], { quality: 75, fit: 'cover' })}
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        src={buildNetlifyImageUrl(item.imageUrl, { width: 640, quality: 75, fit: 'inside' })} 
+                        srcSet={buildNetlifySrcSet(item.imageUrl, [320, 480, 640, 768, 960, 1200], { quality: 75, fit: 'inside' })}
+                        sizes="(max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                         alt={item.title} 
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110" 
                         onLoadStart={() => handleImageLoadStart(item.id)}
                         onLoad={() => handleImageLoad(item.id)}
                         loading={idx < 4 ? 'eager' : 'lazy'}
