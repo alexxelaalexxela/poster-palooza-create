@@ -9,7 +9,6 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock, X, Info, ArrowUp } from "lucide-react";
 import { useTypingPlaceholder } from "./useTypingPlaceholder";
-import { buildNetlifyImageUrl, buildNetlifySrcSet } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFingerprint } from "@/hooks/useFingerprint";
 
@@ -170,7 +169,7 @@ const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid
             <div
               ref={scrollRef}
               className="flex gap-4 overflow-x-scroll md:overflow-visible md:justify-center px-2 md:px-0"
-              style={{ touchAction: "pan-x", contentVisibility: 'auto', containIntrinsicSize: '224px 336px' }}
+              style={{ touchAction: "pan-x" }}
             >
               {Object.entries(templates).map(([id, tpl]) => {
                 const tplId = Number(id);
