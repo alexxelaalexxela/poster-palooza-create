@@ -158,12 +158,23 @@ export default function Library() {
                           <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
                         </div>
                       )}
+                      {/* Background fill: cover + blur to avoid letterboxing while main stays contain */}
+                      <img
+                        src={buildNetlifyImageUrl(item.imageUrl, { width: 640, quality: 60, fit: 'cover' })}
+                        srcSet={buildNetlifySrcSet(item.imageUrl, [320, 480, 640, 768, 960], { quality: 60, fit: 'cover' })}
+                        sizes="(max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-sm scale-105 opacity-70 pointer-events-none"
+                        loading="lazy"
+                        decoding="async"
+                      />
                       <img 
-                        src={buildNetlifyImageUrl(item.imageUrl, { width: 640, quality: 75, fit: 'cover' })}
-                        srcSet={buildNetlifySrcSet(item.imageUrl, [320, 480, 640, 768, 960, 1200], { quality: 75, fit: 'cover' })}
+                        src={buildNetlifyImageUrl(item.imageUrl, { width: 640, quality: 75, fit: 'inside' })}
+                        srcSet={buildNetlifySrcSet(item.imageUrl, [320, 480, 640, 768, 960, 1200], { quality: 75, fit: 'inside' })}
                         sizes="(max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                         alt={item.title} 
-                        className="w-full h-full object-cover transition-transform duration-500" 
+                        className="relative w-full h-full object-contain transition-transform duration-500 will-change-transform group-hover:scale-105" 
                         onLoadStart={() => handleImageLoadStart(item.id)}
                         onLoad={() => handleImageLoad(item.id)}
                         onError={(e) => {
