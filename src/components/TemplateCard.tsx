@@ -74,7 +74,9 @@ const TemplateCard = ({ template }: TemplateCardProps) => {
             {/* Image du poster */}
             <div className="relative aspect-[2/3] overflow-hidden bg-white shadow-sm">
             <img
-              src={template.image}
+              src={buildNetlifyImageUrl(template.image, { width: 400, quality: 75, fit: 'inside' })}
+              srcSet={buildNetlifySrcSet(template.image, [200, 300, 400, 600], { quality: 75, fit: 'inside' })}
+              sizes="(max-width: 640px) 40vw, 176px"
               alt="Exemple de poster"
               className="w-full h-full object-contain"
               loading="lazy"
@@ -82,6 +84,12 @@ const TemplateCard = ({ template }: TemplateCardProps) => {
               fetchPriority="low"
               width={400}
               height={600}
+              onError={(e) => {
+                const img = e.currentTarget as HTMLImageElement;
+                img.src = template.image;
+                try { (img as any).srcset = ''; } catch {}
+                try { (img as any).sizes = ''; } catch {}
+              }}
             />
             </div>
           </div>
