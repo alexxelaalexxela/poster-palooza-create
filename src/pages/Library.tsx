@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SHIPPING_FEE_CENTS } from '@/lib/pricing';
 import { Helmet } from 'react-helmet-async';
-import { buildCanonical, truncate } from '@/lib/utils';
+import { buildCanonical, truncate, buildNetlifyImageUrl, buildNetlifySrcSet } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 function formatPriceEUR(cents: number): string {
@@ -159,9 +159,9 @@ export default function Library() {
                         </div>
                       )}
                       <img 
-                        src={item.imageUrl} 
+                        src={item.imageUrl}
                         alt={item.title} 
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                        className="w-full h-full object-contain transition-transform duration-500" 
                         onLoadStart={() => handleImageLoadStart(item.id)}
                         onLoad={() => handleImageLoad(item.id)}
                         loading={idx < 4 ? 'eager' : 'lazy'}

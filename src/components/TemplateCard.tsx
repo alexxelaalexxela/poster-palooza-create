@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { buildNetlifyImageUrl, buildNetlifySrcSet } from "@/lib/utils";
 
 interface Template {
   id: number;
@@ -75,7 +76,7 @@ const TemplateCard = ({ template }: TemplateCardProps) => {
             <img
               src={template.image}
               alt="Exemple de poster"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              className="w-full h-full object-contain"
               loading="lazy"
               decoding="async"
               fetchPriority="low"

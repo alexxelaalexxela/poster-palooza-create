@@ -10,6 +10,7 @@ import { UpgradeModal } from "@/components/UpgradeModal";
 import { useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 import Watermark from "@/components/Watermark";
+import { buildNetlifyImageUrl, buildNetlifySrcSet } from "@/lib/utils";
 
 export default function PosterGallery() {
   const {
@@ -134,13 +135,23 @@ export default function PosterGallery() {
                       <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
                     )}
                     <img
-                      src={url}
+                      src={buildNetlifyImageUrl(url, { width: 800, quality: 75, fit: 'inside' })}
+                      srcSet={buildNetlifySrcSet(url, [400, 600, 800, 1000, 1200], { quality: 75, fit: 'inside' })}
+                      sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 25vw"
                       alt={`Generated poster ${idx + 1}`}
                       className="w-full h-full object-contain select-none pointer-events-none"
                       onContextMenu={(e) => e.preventDefault()}
                       style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                       draggable={false}
-                      loading="lazy"
+                      loading={idx === 0 ? 'eager' : 'lazy'}
+                      fetchPriority={idx === 0 ? 'high' : 'auto'}
+                      decoding="async"
+                      onError={(e) => {
+                        const img = e.currentTarget as HTMLImageElement;
+                        img.src = url;
+                        try { (img as any).srcset = ''; } catch {}
+                        try { (img as any).sizes = ''; } catch {}
+                      }}
                     />
                   </div>
                 </motion.div>
@@ -177,13 +188,16 @@ export default function PosterGallery() {
                   <div className="relative aspect-[3/4] mb-2 md:mb-3 overflow-hidden rounded-lg bg-gray-100">
                       {/* Real poster preview, slightly less blurred with tint */}
                       <img
-                        src={basePreviewUrl}
+                        src={buildNetlifyImageUrl(basePreviewUrl, { width: 800, quality: 60, fit: 'cover' })}
+                        srcSet={buildNetlifySrcSet(basePreviewUrl, [400, 600, 800, 1000], { quality: 60, fit: 'cover' })}
+                        sizes="(max-width: 1024px) 45vw, 25vw"
                         alt="Aperçu floutté — déverrouillez pour voir les détails"
                         className={`w-full h-full object-cover scale-110 blur-lg ${tintImageClasses} select-none pointer-events-none`}
                         onContextMenu={(e) => e.preventDefault()}
                         style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                         draggable={false}
                         loading="lazy"
+                        decoding="async"
                       />
                       {/* Soft gradient veil to ensure no details are visible */}
                       <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-black/30" />
@@ -313,12 +327,23 @@ export default function PosterGallery() {
                 <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
               )}
               <img
-                src={mergedUrls[lightboxIdx!]}
+                src={buildNetlifyImageUrl(mergedUrls[lightboxIdx!], { width: 1000, quality: 80, fit: 'inside' })}
+                srcSet={buildNetlifySrcSet(mergedUrls[lightboxIdx!], [600, 800, 1000, 1200], { quality: 80, fit: 'inside' })}
+                sizes="90vw"
                 alt="Large preview"
                 className="w-full h-auto object-contain select-none pointer-events-none"
                 onContextMenu={(e) => e.preventDefault()}
                 style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                 draggable={false}
+                loading="lazy"
+                decoding="async"
+                onError={(e) => {
+                  const img = e.currentTarget as HTMLImageElement;
+                  const fallback = mergedUrls[lightboxIdx!];
+                  img.src = fallback;
+                  try { (img as any).srcset = ''; } catch {}
+                  try { (img as any).sizes = ''; } catch {}
+                }}
               />
             </motion.div>
           </motion.div>

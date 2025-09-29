@@ -1,5 +1,6 @@
 
 import { motion } from 'framer-motion';
+import { buildNetlifyImageUrl, buildNetlifySrcSet } from '@/lib/utils';
 
 interface Template {
   id: number;
@@ -27,7 +28,9 @@ const PosterTemplateCard = ({ template, isSelected, onSelect }: PosterTemplateCa
     >
       <div className="aspect-[3/4] overflow-hidden">
         <img
-          src={template.image}
+          src={buildNetlifyImageUrl(template.image, { width: 400, quality: 75, fit: 'cover' })}
+          srcSet={buildNetlifySrcSet(template.image, [200, 300, 400, 600], { quality: 75, fit: 'cover' })}
+          sizes="(max-width: 640px) 45vw, 256px"
           alt={template.name}
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
           loading="lazy"
@@ -35,6 +38,12 @@ const PosterTemplateCard = ({ template, isSelected, onSelect }: PosterTemplateCa
           fetchPriority="low"
           width={400}
           height={533}
+          onError={(e) => {
+            const img = e.currentTarget as HTMLImageElement;
+            img.src = template.image;
+            try { (img as any).srcset = ''; } catch {}
+            try { (img as any).sizes = ''; } catch {}
+          }}
         />
       </div>
       <div className={`p-4 ${isSelected ? 'bg-light-green' : 'bg-white'}`}>
