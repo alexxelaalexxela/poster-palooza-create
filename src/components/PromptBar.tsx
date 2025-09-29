@@ -198,6 +198,12 @@ const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid
                       fetchPriority="low"
                       width={200}
                       height={300}
+                      onError={(e) => {
+                        const img = e.currentTarget as HTMLImageElement;
+                        img.src = tpl.thumbnail;
+                        try { (img as any).srcset = ''; } catch {}
+                        try { (img as any).sizes = ''; } catch {}
+                      }}
                     />
                     
                     <div className={`absolute bottom-0 inset-x-0 text-white text-[0.65rem] font-medium py-1 text-center tracking-wide ${
