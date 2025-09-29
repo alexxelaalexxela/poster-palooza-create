@@ -188,22 +188,12 @@ const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid
                     } ${!isAllowed ? 'opacity-70' : ''}`}
                   >
                     <img
-                      src={buildNetlifyImageUrl(tpl.thumbnail, { width: 320, quality: 75, fit: 'inside' })}
-                      srcSet={buildNetlifySrcSet(tpl.thumbnail, [160, 240, 320, 480], { quality: 75, fit: 'inside' })}
-                      sizes="(max-width: 640px) 28vw, 200px"
+                      src={tpl.thumbnail}
                       alt={tpl.name}
                       className={`object-contain w-full h-full ${!isAllowed ? 'grayscale' : ''}`}
                       loading="lazy"
                       decoding="async"
-                      fetchPriority="low"
-                      width={200}
-                      height={300}
-                      onError={(e) => {
-                        const img = e.currentTarget as HTMLImageElement;
-                        img.src = tpl.thumbnail;
-                        try { (img as any).srcset = ''; } catch {}
-                        try { (img as any).sizes = ''; } catch {}
-                      }}
+                      
                     />
                     
                     <div className={`absolute bottom-0 inset-x-0 text-white text-[0.65rem] font-medium py-1 text-center tracking-wide ${
