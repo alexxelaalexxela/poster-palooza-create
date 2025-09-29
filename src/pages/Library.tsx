@@ -159,11 +159,19 @@ export default function Library() {
                         </div>
                       )}
                       <img 
-                        src={item.imageUrl}
+                        src={buildNetlifyImageUrl(item.imageUrl, { width: 640, quality: 75, fit: 'cover' })}
+                        srcSet={buildNetlifySrcSet(item.imageUrl, [320, 480, 640, 768, 960, 1200], { quality: 75, fit: 'cover' })}
+                        sizes="(max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                         alt={item.title} 
-                        className="w-full h-full object-contain transition-transform duration-500" 
+                        className="w-full h-full object-cover transition-transform duration-500" 
                         onLoadStart={() => handleImageLoadStart(item.id)}
                         onLoad={() => handleImageLoad(item.id)}
+                        onError={(e) => {
+                          const img = e.currentTarget as HTMLImageElement;
+                          img.src = item.imageUrl;
+                          try { (img as any).srcset = ''; } catch {}
+                          try { (img as any).sizes = ''; } catch {}
+                        }}
                         loading={idx < 4 ? 'eager' : 'lazy'}
                         fetchPriority={idx < 2 ? 'high' : 'auto'}
                         decoding="async"
