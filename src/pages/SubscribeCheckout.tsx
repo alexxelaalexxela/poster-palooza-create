@@ -67,11 +67,28 @@ const SubscribeCheckout = () => {
       setIsLoading(true);
       // Meta Pixel: InitiateCheckout for plan + store value
       try {
-        trackEvent('InitiateCheckout', { value: totalWithShipping, currency: 'EUR' });
-        trackTikTokEvent('InitiateCheckout', { value: totalWithShipping, currency: 'EUR' });
+        const contentId = `plan-${selectedFormat}-${selectedQuality}`;
+        const contentType = 'subscription';
+        trackEvent('InitiateCheckout', {
+          value: totalWithShipping,
+          currency: 'EUR',
+          content_ids: [contentId],
+          content_type: contentType,
+        });
+        trackTikTokEvent('InitiateCheckout', {
+          value: totalWithShipping,
+          currency: 'EUR',
+          content_id: contentId,
+          content_type: contentType,
+          contents: [
+            { content_id: contentId, content_type: contentType, quantity: 1, price: totalWithShipping },
+          ],
+        });
         localStorage.setItem('fb_last_purchase_value', String(totalWithShipping));
         localStorage.setItem('fb_last_purchase_currency', 'EUR');
         localStorage.setItem('fb_last_purchase_type', 'plan');
+        localStorage.setItem('fb_last_content_id', contentId);
+        localStorage.setItem('fb_last_content_type', contentType);
       } catch {}
       // Créer la session Stripe pour un forfait (plan)
       const { data: { session } } = await supabase.auth.getSession();

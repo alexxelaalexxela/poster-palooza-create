@@ -79,11 +79,33 @@ const Order = () => {
 
       // Meta Pixel: InitiateCheckout + store value for Purchase on success
       try {
-        trackEvent('InitiateCheckout', { value: totalWithShipping, currency: 'EUR' });
-        trackTikTokEvent('InitiateCheckout', { value: totalWithShipping, currency: 'EUR' });
+        const contentId = `poster-${selectedPoster ?? 'na'}-${selectedFormat}-${selectedQuality}`;
+        const contentType = 'product';
+        trackEvent('InitiateCheckout', {
+          value: totalWithShipping,
+          currency: 'EUR',
+          content_ids: [contentId],
+          content_type: contentType,
+        });
+        trackTikTokEvent('InitiateCheckout', {
+          value: totalWithShipping,
+          currency: 'EUR',
+          content_id: contentId,
+          content_type: contentType,
+          contents: [
+            {
+              content_id: contentId,
+              content_type: contentType,
+              quantity: 1,
+              price: totalWithShipping,
+            },
+          ],
+        });
         localStorage.setItem('fb_last_purchase_value', String(totalWithShipping));
         localStorage.setItem('fb_last_purchase_currency', 'EUR');
         localStorage.setItem('fb_last_purchase_type', 'poster');
+        localStorage.setItem('fb_last_content_id', contentId);
+        localStorage.setItem('fb_last_content_type', contentType);
       } catch {}
 
       // Default one-off poster purchase via Stripe

@@ -20,8 +20,32 @@ const PosterSuccess = () => {
     try {
       const value = Number(localStorage.getItem('fb_last_purchase_value') || '0');
       const currency = localStorage.getItem('fb_last_purchase_currency') || 'EUR';
-      trackEvent('Purchase', { value, currency });
-      trackTikTokEvent('CompletePayment', { value, currency });
+      const contentId = localStorage.getItem('fb_last_content_id') || undefined;
+      const contentType = localStorage.getItem('fb_last_content_type') || undefined;
+      trackEvent('Purchase', {
+        value,
+        currency,
+        ...(contentId ? { content_ids: [contentId] } : {}),
+        ...(contentType ? { content_type: contentType } : {}),
+      });
+      trackTikTokEvent('CompletePayment', {
+        value,
+        currency,
+        ...(contentId ? { content_id: contentId } : {}),
+        ...(contentType ? { content_type: contentType } : {}),
+        ...(contentId
+          ? {
+              contents: [
+                {
+                  content_id: contentId,
+                  content_type: contentType,
+                  quantity: 1,
+                  price: value,
+                },
+              ],
+            }
+          : {}),
+      });
     } catch {}
 
     // Simuler un délai pour l'animation
