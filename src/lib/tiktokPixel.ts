@@ -87,7 +87,14 @@ export function initTikTokPixel(options: TikTokPixelOptions): void {
 
 export function trackTikTokPage(): void {
   if (typeof window === 'undefined') return;
-  window.ttq?.page();
+  try {
+    // Call immediately (queued if library not yet loaded)
+    window.ttq?.page();
+    // Also register a ready callback to ensure it fires after the library loads
+    window.ttq?.ready?.(() => {
+      try { window.ttq?.page(); } catch {}
+    });
+  } catch {}
 }
 
 export function trackTikTokEvent(eventName: TikTokTrackEvent, params?: Record<string, unknown>): void {

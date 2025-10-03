@@ -66,7 +66,7 @@ function TikTokPixelTracker() {
   useEffect(() => {
     const pixelId = import.meta.env.VITE_TIKTOK_PIXEL_ID;
     if (!pixelId) return;
-    initTikTokPixel({ pixelId });
+    initTikTokPixel({ pixelId, autoPageView: false });
     trackTikTokPage();
   }, [pathname]);
   return null;
