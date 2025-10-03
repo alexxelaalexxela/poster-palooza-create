@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft, Check, CreditCard, MapPin, User, Package, Star, Shield, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { usePosterStore } from '@/store/usePosterStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,10 +39,14 @@ const Order = () => {
   const totalDisplay = hasIncludedPlanActive ? 0 : totalWithShipping;
   const canCheckout = !!user || !!visitorId;
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
+      if (isSubmitting) return; // prevent double click
+      setIsSubmitting(true);
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -80,7 +85,7 @@ const Order = () => {
       // Meta Pixel: InitiateCheckout + store value for Purchase on success
       try {
         const contentId = `poster-${selectedPoster ?? 'na'}-${selectedFormat}-${selectedQuality}`;
-        const contentType = 'product';
+        const contentType = 'product'; // TikTok only accepts 'product' or 'product_group'
         trackEvent('InitiateCheckout', {
           value: totalWithShipping,
           currency: 'EUR',
@@ -91,11 +96,11 @@ const Order = () => {
           value: totalWithShipping,
           currency: 'EUR',
           content_id: contentId,
-          content_type: contentType,
+          content_type: 'product',
           contents: [
             {
               content_id: contentId,
-              content_type: contentType,
+              content_type: 'product',
               quantity: 1,
               price: totalWithShipping,
             },
@@ -142,6 +147,7 @@ const Order = () => {
         description: String(err),
         variant: 'destructive',
       });
+      setIsSubmitting(false);
     }
   };
 
@@ -336,7 +342,7 @@ const Order = () => {
                   {/* Order Button */}
                   <Button
                     onClick={handleSubmitOrder}
-                    disabled={!canCheckout}
+                    disabled={!canCheckout || isSubmitting}
                     className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed group"
                   >
                     {canCheckout ? (

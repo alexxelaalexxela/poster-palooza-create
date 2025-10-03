@@ -21,7 +21,7 @@ const PosterSuccess = () => {
       const value = Number(localStorage.getItem('fb_last_purchase_value') || '0');
       const currency = localStorage.getItem('fb_last_purchase_currency') || 'EUR';
       const contentId = localStorage.getItem('fb_last_content_id') || undefined;
-      const contentType = localStorage.getItem('fb_last_content_type') || undefined;
+      const contentType = 'product';
       trackEvent('Purchase', {
         value,
         currency,
@@ -32,13 +32,13 @@ const PosterSuccess = () => {
         value,
         currency,
         ...(contentId ? { content_id: contentId } : {}),
-        ...(contentType ? { content_type: contentType } : {}),
+        content_type: 'product',
         ...(contentId
           ? {
               contents: [
                 {
                   content_id: contentId,
-                  content_type: contentType,
+                  content_type: 'product',
                   quantity: 1,
                   price: value,
                 },

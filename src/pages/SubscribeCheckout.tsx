@@ -50,6 +50,8 @@ const SubscribeCheckout = () => {
   const { checks, score } = getPasswordStrength(password);
   const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleConfirm = async () => {
     try {
       setError('');
@@ -64,11 +66,13 @@ const SubscribeCheckout = () => {
         return;
       }
       
+      if (isSubmitting) return;
       setIsLoading(true);
+      setIsSubmitting(true);
       // Meta Pixel: InitiateCheckout for plan + store value
       try {
         const contentId = `plan-${selectedFormat}-${selectedQuality}`;
-        const contentType = 'subscription';
+        const contentType = 'product'; // TikTok requires 'product' or 'product_group'
         trackEvent('InitiateCheckout', {
           value: totalWithShipping,
           currency: 'EUR',
@@ -79,9 +83,9 @@ const SubscribeCheckout = () => {
           value: totalWithShipping,
           currency: 'EUR',
           content_id: contentId,
-          content_type: contentType,
+          content_type: 'product',
           contents: [
-            { content_id: contentId, content_type: contentType, quantity: 1, price: totalWithShipping },
+            { content_id: contentId, content_type: 'product', quantity: 1, price: totalWithShipping },
           ],
         });
         localStorage.setItem('fb_last_purchase_value', String(totalWithShipping));
@@ -119,6 +123,7 @@ const SubscribeCheckout = () => {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue');
     } finally {
       setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
