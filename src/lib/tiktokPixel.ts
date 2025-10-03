@@ -90,9 +90,13 @@ export function trackTikTokPage(): void {
   try {
     // Call immediately (queued if library not yet loaded)
     window.ttq?.page();
+    window.ttq?.track?.('PageView');
     // Also register a ready callback to ensure it fires after the library loads
     window.ttq?.ready?.(() => {
-      try { window.ttq?.page(); } catch {}
+      try {
+        window.ttq?.page();
+        window.ttq?.track?.('PageView');
+      } catch {}
     });
   } catch {}
 }
