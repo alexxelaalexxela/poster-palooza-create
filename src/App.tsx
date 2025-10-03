@@ -31,7 +31,9 @@ import VerifyEmail from "@/pages/VerifyEmail";
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
 import { initMetaPixel, trackPageView } from '@/lib/metaPixel';
-import { initTikTokPixel, trackTikTokPage } from '@/lib/tiktokPixel';
+import { initTikTokPixel, trackTikTokPage, identifyTikTokUser } from '@/lib/tiktokPixel';
+import { useAuth } from '@/hooks/useAuth';
+import { useFingerprint } from '@/hooks/useFingerprint';
 
 const queryClient = new QueryClient();
 
@@ -63,11 +65,29 @@ function MetaPixelTracker() {
 
 function TikTokPixelTracker() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
+  const visitorId = useFingerprint();
   useEffect(() => {
     const pixelId = import.meta.env.VITE_TIKTOK_PIXEL_ID;
     if (!pixelId) return;
     initTikTokPixel({ pixelId, autoPageView: false });
     trackTikTokPage();
+    // Advanced Matching (hashed identifiers)
+    try {
+      const email = user?.email?.trim().toLowerCase();
+      const externalId = user?.id ?? visitorId ?? undefined;
+      const emailHash = email ? crypto?.subtle ? null : null : undefined;
+      // Fallback simple SHA-256 hashing using Web Crypto if available
+      async function sha256Hex(input: string): Promise<string> {
+        const enc = new TextEncoder().encode(input);
+        const buf = await crypto.subtle.digest('SHA-256', enc);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+      (async () => {
+        const hashedEmail = email ? await sha256Hex(email) : undefined;
+        identifyTikTokUser({ emailHash: hashedEmail, externalId });
+      })();
+    } catch {}
   }, [pathname]);
   return null;
 }

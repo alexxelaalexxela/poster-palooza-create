@@ -110,4 +110,19 @@ export function trackTikTokEvent(eventName: TikTokTrackEvent, params?: Record<st
   }
 }
 
+export function identifyTikTokUser(props: {
+  emailHash?: string;
+  phoneHash?: string;
+  externalId?: string;
+}): void {
+  if (typeof window === 'undefined') return;
+  const payload: Record<string, string> = {};
+  if (props.emailHash) payload.email = props.emailHash;
+  if (props.phoneHash) payload.phone_number = props.phoneHash;
+  if (props.externalId) payload.external_id = props.externalId;
+  if (Object.keys(payload).length > 0) {
+    try { window.ttq?.identify?.(payload); } catch {}
+  }
+}
+
 
