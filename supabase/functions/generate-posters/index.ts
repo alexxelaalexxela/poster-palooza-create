@@ -345,6 +345,7 @@ Return 4 slightly different from each other prompts, one prompt per line so that
     •\tRigorously maintain the "${templateDescription}" aesthetic.
     •\tInclude the main title "${mainTitle}" prominently, and directly underneath include the subtitle "${subtitle}" in smaller letters (at least half the size of the main title). IMPORTANT: Do not include any comma in the rendered titles.
     ${date && date.trim() ? `•\tUnder the subtitle, include the date "${date.trim()}" in very small letters (smaller than the subtitle), aligned with the text block.` : ''}
+    •\tIf the "${mainTitle}" corresponds to a place, monument, or specific location, make sure the generated image prompt visually reflects that setting.
     •\tDo not include any other title than these two${date && date.trim() ? ' (the date is not a title)' : ''}.
     •\tOffer unique, creative variations of the original idea.
     •\tIncorporate the user's prompt that will follow.

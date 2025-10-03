@@ -266,6 +266,7 @@ const PromptBar = () => {
   const [manualTitle, setManualTitle] = useState<string>("");
   const [manualSubtitle, setManualSubtitle] = useState<string>("");
   const [manualDate, setManualDate] = useState<string>("");
+  const hasManualOptions = !!((manualTitle && manualTitle.trim()) || (manualSubtitle && manualSubtitle.trim()) || (manualDate && manualDate.trim()));
 
 
   const handleGenerate = async () => {
@@ -592,11 +593,15 @@ const PromptBar = () => {
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium border bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200"
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium border 
+                      ${hasManualOptions
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200'}
+                    `}
                   >
                     <Settings size={14} />
                     <span>Options</span>
-                    <ChevronDown size={16} className="text-gray-700" />
+                    <ChevronDown size={16} className={`${hasManualOptions ? 'text-emerald-700' : 'text-gray-700'}`} />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align="start" sideOffset={8} className="w-[22rem] p-4 sm:p-5 bg-white/80 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2]/60 shadow-md">
@@ -608,7 +613,7 @@ const PromptBar = () => {
                         value={manualTitle}
                         onChange={(e) => setManualTitle(e.target.value)}
                         placeholder="Ex: Paris"
-                        className="w-full rounded-xl border border-gray-200 bg-white/90 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c8d9f2] focus:border-transparent"
+                        className="w-full rounded-xl border border-gray-200 bg-white/90 px-3 py-2.5 text-[16px] sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#c8d9f2] focus:border-transparent"
                       />
                     </div>
                     <div className="space-y-1">
@@ -618,7 +623,7 @@ const PromptBar = () => {
                         value={manualSubtitle}
                         onChange={(e) => setManualSubtitle(e.target.value)}
                         placeholder="Ex: France"
-                        className="w-full rounded-xl border border-gray-200 bg-white/90 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c8d9f2] focus:border-transparent"
+                        className="w-full rounded-xl border border-gray-200 bg-white/90 px-3 py-2.5 text-[16px] sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#c8d9f2] focus:border-transparent"
                       />
                     </div>
                     <div className="space-y-1">
@@ -628,7 +633,7 @@ const PromptBar = () => {
                         value={manualDate}
                         onChange={(e) => setManualDate(e.target.value)}
                         placeholder="Ex: 20/03/2024"
-                        className="w-full rounded-xl border border-gray-200 bg-white/90 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c8d9f2] focus:border-transparent"
+                        className="w-full rounded-xl border border-gray-200 bg-white/90 px-3 py-2.5 text-[16px] sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#c8d9f2] focus:border-transparent"
                       />
                     </div>
                     <div className="flex items-center justify-between pt-1">
@@ -644,7 +649,7 @@ const PromptBar = () => {
                         onClick={() => setParamsOpen(false)}
                         className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200"
                       >
-                        Fermer
+                        Enregistrer
                       </button>
                     </div>
                   </div>
