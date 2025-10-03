@@ -3,12 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { findPosterById } from '@/lib/posterCatalog';
 import { usePosterStore, Format, Quality } from '@/store/usePosterStore';
 import { motion } from 'framer-motion';
-import { Star, ArrowLeft, Sparkles, ShoppingCart, Info } from 'lucide-react';
+import { Star, ArrowLeft, Sparkles, ShoppingCart, Info, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getPriceCents, SHIPPING_FEE_CENTS } from '@/lib/pricing';
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical, truncate } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 function formatPriceEUR(cents: number): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(cents / 100);
@@ -180,7 +180,48 @@ export default function PosterDetails() {
 
             {/* Quality */}
             <div className="mt-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Qualité</h2>
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-lg font-semibold text-gray-900">Qualité</h2>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-full w-6 h-6 bg-gray-100 text-gray-600 hover:text-gray-800 hover:bg-gray-200 transition"
+                      aria-label="Infos sur les qualités"
+                    >
+                      <Info size={14} />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" align="start" className="w-80 rounded-xl p-4 shadow-lg">
+                    <div className="space-y-3">
+                      <div className="text-sm font-medium text-gray-900">Qualités d'impression</div>
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-2">
+                          <Check className="mt-0.5 text-gray-400" size={16} />
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">Classic</div>
+                            <div className="text-xs text-gray-600">Papier 250 g/m² — bonne qualité standard.</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <Check className="mt-0.5 text-gray-400" size={16} />
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">Premium</div>
+                            <div className="text-xs text-gray-600">250 g/m² + laminé mat — anti‑reflets, couleurs plus denses.</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <Check className="mt-0.5 text-gray-400" size={16} />
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">Museum</div>
+                            <div className="text-xs text-gray-600">Papier premium 250 g/m² — rendu artistique, meilleure durabilité.</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 {(['classic','premium','museum'] as Quality[]).map((q) => (
                   <button

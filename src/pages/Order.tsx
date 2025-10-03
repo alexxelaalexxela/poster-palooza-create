@@ -17,6 +17,8 @@ import Watermark from '@/components/Watermark';
 import { createWatermarkedPreview } from '@/lib/watermarkPreview';
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
+import { trackEvent } from '@/lib/metaPixel';
+import { trackTikTokEvent } from '@/lib/tiktokPixel';
 
 const Order = () => {
   const { selectedPoster, selectedPosterUrl, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
@@ -74,6 +76,15 @@ const Order = () => {
         window.location.href = '/order/confirmation';
         return;
       }
+
+      // Meta Pixel: InitiateCheckout + store value for Purchase on success
+      try {
+        trackEvent('InitiateCheckout', { value: totalWithShipping, currency: 'EUR' });
+        trackTikTokEvent('InitiateCheckout', { value: totalWithShipping, currency: 'EUR' });
+        localStorage.setItem('fb_last_purchase_value', String(totalWithShipping));
+        localStorage.setItem('fb_last_purchase_currency', 'EUR');
+        localStorage.setItem('fb_last_purchase_type', 'poster');
+      } catch {}
 
       // Default one-off poster purchase via Stripe
       const res = await fetch(

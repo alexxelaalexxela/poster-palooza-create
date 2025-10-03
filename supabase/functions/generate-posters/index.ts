@@ -24,6 +24,9 @@ interface GenerateRequest {
   hasImage?: boolean;
   imageDataUrl?: string;
   visitorId?: string;
+  manualTitle?: string;
+  manualSubtitle?: string;
+  manualDate?: string;
 }
 
 serve(async (req) => {
@@ -32,7 +35,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, templateName, templateDescription, libraryPosterId, hasImage, imageDataUrl, visitorId }: GenerateRequest = await req.json();
+    const { prompt, templateName, templateDescription, libraryPosterId, hasImage, imageDataUrl, visitorId, manualTitle, manualSubtitle, manualDate }: GenerateRequest = await req.json();
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const authHeader = req.headers.get('Authorization')!;
@@ -108,31 +111,43 @@ serve(async (req) => {
       }
     }
 
-    // Generate a title based on the user's prompt
-    console.log('Generating title from prompt...');
-    const generatedTitle = await generateTitle(effectivePrompt);
-    console.log('Generated title:', generatedTitle);
-    // Split title into main and subtitle around the first comma
+    // Determine titles based on manual inputs
     let mainTitle = '';
     let subtitle = '';
-    if (generatedTitle && typeof generatedTitle === 'string') {
-      const [rawMain, ...rest] = generatedTitle.split(',');
-      mainTitle = (rawMain || '').trim().replace(/^['"]|['"]$/g, '');
-      subtitle = (rest.join(',') || '').trim().replace(/^['"]|['"]$/g, '');
-      // If no main title found, fallback to whole string
-      if (!mainTitle && subtitle) {
-        mainTitle = subtitle;
-        subtitle = '';
+    const hasManualTitle = !!(manualTitle && manualTitle.trim());
+    const hasManualSubtitle = !!(manualSubtitle && manualSubtitle.trim());
+    const normalizedDate = (manualDate || '').trim();
+
+    if (hasManualTitle) {
+      // 1) User provided a title -> do not generate
+      mainTitle = manualTitle!.trim();
+      subtitle = hasManualSubtitle ? manualSubtitle!.trim() : '';
+    } else {
+      // 2) No manual title: generate, then optionally override subtitle, and add date later in prompt composition
+      console.log('Generating title from prompt...');
+      const generatedTitle = await generateTitle(effectivePrompt);
+      console.log('Generated title:', generatedTitle);
+      if (generatedTitle && typeof generatedTitle === 'string') {
+        const [rawMain, ...rest] = generatedTitle.split(',');
+        mainTitle = (rawMain || '').trim().replace(/^['"]|['"]$/g, '');
+        subtitle = (rest.join(',') || '').trim().replace(/^['"]|['"]$/g, '');
+        if (!mainTitle && subtitle) {
+          mainTitle = subtitle;
+          subtitle = '';
+        }
+      }
+      if (hasManualSubtitle) {
+        subtitle = manualSubtitle!.trim();
       }
     }
-    console.log('Parsed titles => mainTitle:', mainTitle, '| subtitle:', subtitle);
+    console.log('Parsed titles => mainTitle:', mainTitle, '| subtitle:', subtitle, '| date:', normalizedDate);
 
     // Determine final style description: if a library poster is selected, treat its description as the only style source (ignore old templates)
     const styleDescription = templateDescription || '';
 
     // Generate 4 different prompts using GPT-4
     console.log('template description');
-    const promptVariations = await generatePromptVariations(effectivePrompt, styleDescription, mainTitle, subtitle);
+    const promptVariations = await generatePromptVariations(effectivePrompt, styleDescription, mainTitle, subtitle, normalizedDate);
     console.log('Generated prompt variationsss:', promptVariations);
 
     // Decide how many images to generate depending on user status
@@ -311,7 +326,7 @@ async function generateTitle(prompt: string): Promise<string> {
   return title;
 }
 
-async function generatePromptVariations(originalPrompt: string, templateDescription: string, mainTitle: string, subtitle: string): Promise<string[]> {
+async function generatePromptVariations(originalPrompt: string, templateDescription: string, mainTitle: string, subtitle: string, date?: string): Promise<string[]> {
   const systemPromptOld = `You are a creative poster design expert. Given a user's prompt and template style, create 4 prompts for gpt-image to generate posters in the "${templateDescription}" style.
 
 Each prompt should:
@@ -323,15 +338,16 @@ Each prompt should:
 The objective is to take the following idea and very importantly to make it in the aesthetic of "${templateDescription}" !
 Return 4 slightly different from each other prompts, one prompt per line so that i can separate after, no numbering or formatting.`;
 
-  const systemPrompt = `You are a creative poster-design expert. Given a user's prompt, a generated main title and subtitle, and the template style, create 4 prompts for GPT-Image that will generate posters in the "${templateDescription}" style.
+  const systemPrompt = `You are a creative poster-design expert. Given a user's prompt, a main title and subtitle${date && date.trim() ? ' and a date' : ''}, and the template style, create 4 prompts for GPT-Image that will generate posters in the "${templateDescription}" style.
 
   Each prompt must:
-    •	Be specific and detailed for the poster design (composition, colour palette, typography hints).
-    •	Rigorously maintain the "${templateDescription}" aesthetic.
-    •	Include the main title "${mainTitle}" prominently, and directly underneath include the subtitle "${subtitle}" in smaller letters (at least half the size of the main title). IMPORTANT: Do not include any comma in the rendered titles.
-    •	Do not include any other title than these two.
-    •	Offer unique, creative variations of the original idea.
-    •	Incorporate the user's prompt that will follow.
+    •\tBe specific and detailed for the poster design (composition, colour palette, typography hints).
+    •\tRigorously maintain the "${templateDescription}" aesthetic.
+    •\tInclude the main title "${mainTitle}" prominently, and directly underneath include the subtitle "${subtitle}" in smaller letters (at least half the size of the main title). IMPORTANT: Do not include any comma in the rendered titles.
+    ${date && date.trim() ? `•\tUnder the subtitle, include the date "${date.trim()}" in very small letters (smaller than the subtitle), aligned with the text block.` : ''}
+    •\tDo not include any other title than these two${date && date.trim() ? ' (the date is not a title)' : ''}.
+    •\tOffer unique, creative variations of the original idea.
+    •\tIncorporate the user's prompt that will follow.
     The most important is to take the aesthetic described "${templateDescription}" !!
   
    Return 4 slightly different (different background, different perspective, different composition, but same title and subtitle), complete prompts that each describe the entire poster. Output them in a table formatted exactly like ["prompt1", "prompt2", "prompt3", "prompt4"], with one prompt per line and no numbering or extra formatting.`

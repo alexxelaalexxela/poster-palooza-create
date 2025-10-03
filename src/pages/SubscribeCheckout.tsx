@@ -13,6 +13,8 @@ import { Separator } from '@/components/ui/separator';
 import { usePosterStore } from '@/store/usePosterStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { trackEvent } from '@/lib/metaPixel';
+import { trackTikTokEvent } from '@/lib/tiktokPixel';
 
 const SubscribeCheckout = () => {
   const navigate = useNavigate();
@@ -63,6 +65,14 @@ const SubscribeCheckout = () => {
       }
       
       setIsLoading(true);
+      // Meta Pixel: InitiateCheckout for plan + store value
+      try {
+        trackEvent('InitiateCheckout', { value: totalWithShipping, currency: 'EUR' });
+        trackTikTokEvent('InitiateCheckout', { value: totalWithShipping, currency: 'EUR' });
+        localStorage.setItem('fb_last_purchase_value', String(totalWithShipping));
+        localStorage.setItem('fb_last_purchase_currency', 'EUR');
+        localStorage.setItem('fb_last_purchase_type', 'plan');
+      } catch {}
       // Créer la session Stripe pour un forfait (plan)
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token ?? null;

@@ -14,9 +14,9 @@ const qualityOptions: {
   subtitle: string;
   ring: string;
 }[] = [
-    { id: 'classic', name: 'Classic', subtitle: '250 g/m²', ring: 'from-neutral-400/40 via-neutral-500/40 to-neutral-600/40' },
-    { id: 'premium', name: 'Premium', subtitle: '250 g/m² · Laminé Mat', ring: 'from-sky-400/40 via-indigo-500/40 to-indigo-600/40' },
-    { id: 'museum', name: 'Museum', subtitle: '250 g/m² · Premium', ring: 'from-amber-400/40 via-rose-400/40 to-rose-500/40' },
+    { id: 'classic', name: 'Classic', subtitle: 'Papier 250 g/m² — bonne qualité standard.', ring: 'from-neutral-400/40 via-neutral-500/40 to-neutral-600/40' },
+    { id: 'premium', name: 'Premium', subtitle: '250 g/m² + laminé mat — anti‑reflets, couleurs plus denses.', ring: 'from-sky-400/40 via-indigo-500/40 to-indigo-600/40' },
+    { id: 'museum', name: 'Museum', subtitle: 'Papier premium 250 g/m² — rendu artistique, meilleure durabilité.', ring: 'from-amber-400/40 via-rose-400/40 to-rose-500/40' },
   ];
 
 const cardVariants = {

@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 // shadcn/ui components
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock, X, Info, ArrowUp } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock, X, Info, ArrowUp, Settings } from "lucide-react";
 import { useTypingPlaceholder } from "./useTypingPlaceholder";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFingerprint } from "@/hooks/useFingerprint";
@@ -261,6 +261,11 @@ const PromptBar = () => {
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
   const [maxAttempts, setMaxAttempts] = useState<number>(3);
 
+  // Paramètres manuels (titre, sous-titre, date)
+  const [paramsOpen, setParamsOpen] = useState(false);
+  const [manualTitle, setManualTitle] = useState<string>("");
+  const [manualSubtitle, setManualSubtitle] = useState<string>("");
+  const [manualDate, setManualDate] = useState<string>("");
 
 
   const handleGenerate = async () => {
@@ -297,6 +302,10 @@ const PromptBar = () => {
           hasImage: !!imageDataUrl,
           imageDataUrl: imageDataUrl ?? undefined,
           visitorId,
+          // Champs optionnels
+          manualTitle: manualTitle.trim() || undefined,
+          manualSubtitle: manualSubtitle.trim() || undefined,
+          manualDate: manualDate.trim() || undefined,
         },
       });
 
@@ -324,6 +333,7 @@ const PromptBar = () => {
       toast({ title: "Posters générés !", description: "Vos posters sont prêts." });
       setPrompt("");
       setImageDataUrl(null);
+      // Conserver les paramètres manuels pour la session; ne pas reset
       
       // Demande aux composants d'actualiser les compteurs (profils/visiteur)
       try { window.dispatchEvent(new CustomEvent('attempts:refresh')); } catch {}
@@ -577,6 +587,69 @@ const PromptBar = () => {
                     {isPaid ? <ImageIcon size={14} /> : <Lock size={14} />}
                     <span>Photo</span>
                   </button>
+              {/* Paramètre pill */}
+              <Popover open={paramsOpen} onOpenChange={setParamsOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium border bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200"
+                  >
+                    <Settings size={14} />
+                    <span>Options</span>
+                    <ChevronDown size={16} className="text-gray-700" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" sideOffset={8} className="w-[22rem] p-4 sm:p-5 bg-white/80 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2]/60 shadow-md">
+                  <div className="space-y-3.5">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-gray-700">Titre (optionnel)</label>
+                      <input
+                        type="text"
+                        value={manualTitle}
+                        onChange={(e) => setManualTitle(e.target.value)}
+                        placeholder="Ex: Paris"
+                        className="w-full rounded-xl border border-gray-200 bg-white/90 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c8d9f2] focus:border-transparent"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-gray-700">Sous-titre (optionnel)</label>
+                      <input
+                        type="text"
+                        value={manualSubtitle}
+                        onChange={(e) => setManualSubtitle(e.target.value)}
+                        placeholder="Ex: France"
+                        className="w-full rounded-xl border border-gray-200 bg-white/90 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c8d9f2] focus:border-transparent"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-gray-700">Date (optionnel)</label>
+                      <input
+                        type="text"
+                        value={manualDate}
+                        onChange={(e) => setManualDate(e.target.value)}
+                        placeholder="Ex: 20/03/2024"
+                        className="w-full rounded-xl border border-gray-200 bg-white/90 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c8d9f2] focus:border-transparent"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <button
+                        type="button"
+                        onClick={() => { setManualTitle(""); setManualSubtitle(""); setManualDate(""); }}
+                        className="text-xs text-gray-500 hover:text-gray-700"
+                      >
+                        Réinitialiser
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setParamsOpen(false)}
+                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200"
+                      >
+                        Fermer
+                      </button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
                 </div>
                 {!isGenerating && (
                   <button

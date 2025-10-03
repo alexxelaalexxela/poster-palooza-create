@@ -30,6 +30,8 @@ import ResetPassword from "@/pages/ResetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
+import { initMetaPixel, trackPageView } from '@/lib/metaPixel';
+import { initTikTokPixel, trackTikTokPage } from '@/lib/tiktokPixel';
 
 const queryClient = new QueryClient();
 
@@ -48,6 +50,28 @@ function ScrollToTop() {
   return null;
 }
 
+function MetaPixelTracker() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const pixelId = import.meta.env.VITE_META_PIXEL_ID;
+    if (!pixelId) return;
+    initMetaPixel({ pixelId });
+    trackPageView();
+  }, [pathname]);
+  return null;
+}
+
+function TikTokPixelTracker() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const pixelId = import.meta.env.VITE_TIKTOK_PIXEL_ID;
+    if (!pixelId) return;
+    initTikTokPixel({ pixelId });
+    trackTikTokPage();
+  }, [pathname]);
+  return null;
+}
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -56,6 +80,8 @@ const App = () => {
           <AuthProvider> {/* Enveloppez avec le fournisseur d'auth */}
             <PostersBootstrap />
             <ScrollToTop />
+            <MetaPixelTracker />
+            <TikTokPixelTracker />
             <Toaster />
             <Sonner />
             {/* Default fallback meta for non-indexed routes */}

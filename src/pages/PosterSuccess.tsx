@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
+import { trackEvent } from '@/lib/metaPixel';
+import { trackTikTokEvent } from '@/lib/tiktokPixel';
 
 const PosterSuccess = () => {
   const navigate = useNavigate();
@@ -14,6 +16,14 @@ const PosterSuccess = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Meta Pixel: Purchase
+    try {
+      const value = Number(localStorage.getItem('fb_last_purchase_value') || '0');
+      const currency = localStorage.getItem('fb_last_purchase_currency') || 'EUR';
+      trackEvent('Purchase', { value, currency });
+      trackTikTokEvent('CompletePayment', { value, currency });
+    } catch {}
+
     // Simuler un délai pour l'animation
     const timer = setTimeout(() => {
       setIsLoading(false);
