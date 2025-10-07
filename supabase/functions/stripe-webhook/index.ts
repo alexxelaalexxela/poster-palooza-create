@@ -16,6 +16,7 @@ const signupEncKeyB64 = Deno.env.get('SIGNUP_ENC_KEY')!; // same key as in check
 
 const META_PIXEL_ID = Deno.env.get('META_PIXEL_ID') || Deno.env.get('VITE_META_PIXEL_ID');
 const META_CAPI_ACCESS_TOKEN = Deno.env.get('META_CAPI_ACCESS_TOKEN');
+const META_TEST_EVENT_CODE = Deno.env.get('META_TEST_EVENT_CODE');
 
 async function sendMetaEvent(payload: any) {
     if (!META_PIXEL_ID || !META_CAPI_ACCESS_TOKEN) return;
@@ -24,7 +25,7 @@ async function sendMetaEvent(payload: any) {
         const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(META_TEST_EVENT_CODE ? { ...payload, test_event_code: META_TEST_EVENT_CODE } : payload)
         });
         const json = await res.json();
         if (!res.ok) console.error('Meta CAPI error', json);

@@ -261,6 +261,7 @@ serve(async (req) => {
     try {
       const META_PIXEL_ID = Deno.env.get('META_PIXEL_ID') || Deno.env.get('VITE_META_PIXEL_ID');
       const META_CAPI_ACCESS_TOKEN = Deno.env.get('META_CAPI_ACCESS_TOKEN');
+      const META_TEST_EVENT_CODE = Deno.env.get('META_TEST_EVENT_CODE');
       if (!isPaid && visitorId && META_PIXEL_ID && META_CAPI_ACCESS_TOKEN) {
         const userAgent = req.headers.get('user-agent') || undefined;
         const ip = (req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for') || '').split(',')[0] || undefined;
@@ -287,10 +288,26 @@ serve(async (req) => {
             }
           ]
         };
+        const payload: any = payload = {
+          data: [
+            {
+              event_name: 'StartTrial',
+              event_time: Math.floor(Date.now() / 1000),
+              action_source: 'website',
+              event_source_url: pageUrl || 'https://neoma-ai.fr/',
+              event_id: eventId,
+              user_data,
+              custom_data: {
+                content_type: 'product',
+                content_ids: [templateName || 'poster']
+              }
+            }
+          ]
+        };
         await fetch(`https://graph.facebook.com/v18.0/${META_PIXEL_ID}/events?access_token=${META_CAPI_ACCESS_TOKEN}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(META_TEST_EVENT_CODE ? { ...payload, test_event_code: META_TEST_EVENT_CODE } : payload)
         });
       }
     } catch (e) {

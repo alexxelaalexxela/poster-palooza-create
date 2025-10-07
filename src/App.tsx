@@ -30,7 +30,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
-import { initMetaPixel, trackPageView, getFbp, getFbc } from '@/lib/metaPixel';
+import { initMetaPixel, trackPageView, getFbp, getFbc, trackEventWithId } from '@/lib/metaPixel';
 import { initTikTokPixel, trackTikTokPage, identifyTikTokUser } from '@/lib/tiktokPixel';
 import { useAuth } from '@/hooks/useAuth';
 import { useFingerprint } from '@/hooks/useFingerprint';
@@ -64,6 +64,8 @@ function MetaPixelTracker() {
       const fbEventId = crypto.randomUUID();
       const fbp = getFbp();
       const fbc = getFbc();
+      // Pixel ViewContent with same eventID for dedup with CAPI
+      trackEventWithId('ViewContent', undefined, fbEventId);
       fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-capi`, {
         method: 'POST',
         headers: {
