@@ -18,7 +18,7 @@ import Watermark from '@/components/Watermark';
 import { createWatermarkedPreview } from '@/lib/watermarkPreview';
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
-import { trackEvent } from '@/lib/metaPixel';
+import { trackEventWithId, getFbp, getFbc } from '@/lib/metaPixel';
 import { trackTikTokEvent } from '@/lib/tiktokPixel';
 
 const Order = () => {
@@ -86,12 +86,15 @@ const Order = () => {
       try {
         const contentId = `poster-${selectedPoster ?? 'na'}-${selectedFormat}-${selectedQuality}`;
         const contentType = 'product'; // TikTok only accepts 'product' or 'product_group'
-        trackEvent('InitiateCheckout', {
+        // Generate event id for dedupe with CAPI
+        const fbEventId = crypto.randomUUID();
+        localStorage.setItem('fb_event_id', fbEventId);
+        trackEventWithId('InitiateCheckout', {
           value: totalWithShipping,
           currency: 'EUR',
           content_ids: [contentId],
           content_type: contentType,
-        });
+        }, fbEventId);
         trackTikTokEvent('InitiateCheckout', {
           value: totalWithShipping,
           currency: 'EUR',
@@ -111,6 +114,11 @@ const Order = () => {
         localStorage.setItem('fb_last_purchase_type', 'poster');
         localStorage.setItem('fb_last_content_id', contentId);
         localStorage.setItem('fb_last_content_type', contentType);
+        // Store cookies for server
+        const fbp = getFbp();
+        const fbc = getFbc();
+        if (fbp) localStorage.setItem('fbp', fbp);
+        if (fbc) localStorage.setItem('fbc', fbc);
       } catch {}
 
       // Default one-off poster purchase via Stripe
@@ -131,6 +139,11 @@ const Order = () => {
             posterUrl: typeof finalUrl === 'string' && finalUrl.startsWith('data:') ? undefined : finalUrl,
             posterPreviewDataUrl: posterPreviewDataUrl ?? undefined,
             visitorId,
+            // Meta CAPI metadata
+            fbEventId: localStorage.getItem('fb_event_id') || undefined,
+            fbp: localStorage.getItem('fbp') || undefined,
+            fbc: localStorage.getItem('fbc') || undefined,
+            pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
           }),
         }
       );

@@ -68,4 +68,39 @@ export function trackEvent(eventName: string, params?: Record<string, unknown>):
   }
 }
 
+// Same as trackEvent but allows passing a specific eventID for deduplication with Conversions API
+export function trackEventWithId(eventName: string, params: Record<string, unknown> | undefined, eventId?: string): void {
+  if (typeof window === 'undefined') return;
+  const fbq: any = (typeof window !== 'undefined' ? (window as any).fbq : undefined);
+  if (!fbq) return;
+  if (eventId) {
+    fbq('track', eventName, params || {}, { eventID: eventId });
+  } else {
+    fbq('track', eventName, params || {});
+  }
+}
+
+function readCookie(name: string): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
+export function getFbp(): string | undefined {
+  return readCookie('_fbp');
+}
+
+export function getFbc(): string | undefined {
+  // Prefer cookie if set
+  const fromCookie = readCookie('_fbc');
+  if (fromCookie) return fromCookie;
+  if (typeof window === 'undefined') return undefined;
+  const url = new URL(window.location.href);
+  const fbclid = url.searchParams.get('fbclid');
+  if (!fbclid) return undefined;
+  // Format: fb.1.<timestamp>.<fbclid>
+  const ts = Math.floor(Date.now() / 1000);
+  return `fb.1.${ts}.${fbclid}`;
+}
+
 

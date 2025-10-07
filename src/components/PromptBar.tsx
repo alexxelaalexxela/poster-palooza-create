@@ -19,6 +19,7 @@ import { AttemptsCounter } from "@/components/AttemptsCounter";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { useProfile } from "@/hooks/useProfile";
 import { findPosterById } from "@/lib/posterCatalog";
+import { trackEventWithId, getFbp, getFbc } from "@/lib/metaPixel";
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
 /* -------------------------------------------------------------------------- */
@@ -294,6 +295,11 @@ const PromptBar = () => {
       const { name, description } = useTemplate ? getTemplate(selectedTemplate) : { name: "LibraryPoster", description: libraryPoster?.stylePrompt || "" };
 
       /* ②  appel Supabase */
+      // Prepare Meta identifiers for StartTrial dedupe
+      const trialEventId = crypto.randomUUID();
+      const fbp = getFbp();
+      const fbc = getFbc();
+      const pageUrl = typeof window !== 'undefined' ? window.location.href : undefined;
       const { data } = await supabase.functions.invoke("generate-posters", {
         body: {
           prompt: prompt.trim(),
@@ -303,6 +309,10 @@ const PromptBar = () => {
           hasImage: !!imageDataUrl,
           imageDataUrl: imageDataUrl ?? undefined,
           visitorId,
+          fbEventId: trialEventId,
+          fbp,
+          fbc,
+          pageUrl,
           // Champs optionnels
           manualTitle: manualTitle.trim() || undefined,
           manualSubtitle: manualSubtitle.trim() || undefined,
@@ -338,6 +348,21 @@ const PromptBar = () => {
       
       // Demande aux composants d'actualiser les compteurs (profils/visiteur)
       try { window.dispatchEvent(new CustomEvent('attempts:refresh')); } catch {}
+
+      // Meta Pixel: StartTrial pour visiteurs non payants (déduplication avec CAPI via eventID)
+      try {
+        if (!isPaid) {
+          const contentId = selectedLibraryPosterId
+            ? `library-${selectedLibraryPosterId}`
+            : selectedTemplate
+              ? `template-${selectedTemplate}`
+              : 'poster';
+          trackEventWithId('StartTrial', {
+            content_type: 'product',
+            content_ids: [contentId],
+          }, trialEventId);
+        }
+      } catch {}
 
     } catch (err) {
       /* ④  attrape les codes != 200 */

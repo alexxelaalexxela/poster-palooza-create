@@ -30,7 +30,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
-import { initMetaPixel, trackPageView } from '@/lib/metaPixel';
+import { initMetaPixel, trackPageView, getFbp, getFbc } from '@/lib/metaPixel';
 import { initTikTokPixel, trackTikTokPage, identifyTikTokUser } from '@/lib/tiktokPixel';
 import { useAuth } from '@/hooks/useAuth';
 import { useFingerprint } from '@/hooks/useFingerprint';
@@ -59,6 +59,27 @@ function MetaPixelTracker() {
     if (!pixelId) return;
     initMetaPixel({ pixelId });
     trackPageView();
+    // Also send ViewContent via CAPI for better coverage
+    try {
+      const fbEventId = crypto.randomUUID();
+      const fbp = getFbp();
+      const fbc = getFbc();
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-capi`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          eventName: 'ViewContent',
+          pageUrl: window.location.href,
+          fbEventId,
+          fbp,
+          fbc,
+        }),
+      }).catch(() => {});
+    } catch {}
   }, [pathname]);
   return null;
 }

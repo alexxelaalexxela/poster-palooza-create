@@ -24,6 +24,10 @@ interface GenerateRequest {
   hasImage?: boolean;
   imageDataUrl?: string;
   visitorId?: string;
+  fbEventId?: string;
+  fbp?: string;
+  fbc?: string;
+  pageUrl?: string;
   manualTitle?: string;
   manualSubtitle?: string;
   manualDate?: string;
@@ -35,7 +39,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, templateName, templateDescription, libraryPosterId, hasImage, imageDataUrl, visitorId, manualTitle, manualSubtitle, manualDate }: GenerateRequest = await req.json();
+    const { prompt, templateName, templateDescription, libraryPosterId, hasImage, imageDataUrl, visitorId, fbEventId, fbp, fbc, pageUrl, manualTitle, manualSubtitle, manualDate }: GenerateRequest = await req.json();
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const authHeader = req.headers.get('Authorization')!;
@@ -125,6 +129,7 @@ serve(async (req) => {
     } else {
       // 2) No manual title: generate, then optionally override subtitle, and add date later in prompt composition
       console.log('Generating title from prompt...');
+      console.log(effectivePrompt);
       const generatedTitle = await generateTitle(effectivePrompt);
       console.log('Generated title:', generatedTitle);
       if (generatedTitle && typeof generatedTitle === 'string') {
@@ -250,6 +255,46 @@ serve(async (req) => {
         template: templateName,
       }));
       await supabase.from('visitor_posters').insert(posterRows);
+    }
+
+    // Send StartTrial via Meta CAPI for unpaid visitor successful generation
+    try {
+      const META_PIXEL_ID = Deno.env.get('META_PIXEL_ID') || Deno.env.get('VITE_META_PIXEL_ID');
+      const META_CAPI_ACCESS_TOKEN = Deno.env.get('META_CAPI_ACCESS_TOKEN');
+      if (!isPaid && visitorId && META_PIXEL_ID && META_CAPI_ACCESS_TOKEN) {
+        const userAgent = req.headers.get('user-agent') || undefined;
+        const ip = (req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for') || '').split(',')[0] || undefined;
+        const eventId = fbEventId || crypto.randomUUID();
+        const user_data: Record<string, unknown> = {
+          client_user_agent: userAgent,
+          client_ip_address: ip,
+          fbp: fbp || undefined,
+          fbc: fbc || undefined,
+        };
+        const payload = {
+          data: [
+            {
+              event_name: 'StartTrial',
+              event_time: Math.floor(Date.now() / 1000),
+              action_source: 'website',
+              event_source_url: pageUrl || 'https://neoma-ai.fr/',
+              event_id: eventId,
+              user_data,
+              custom_data: {
+                content_type: 'product',
+                content_ids: [templateName || 'poster']
+              }
+            }
+          ]
+        };
+        await fetch(`https://graph.facebook.com/v18.0/${META_PIXEL_ID}/events?access_token=${META_CAPI_ACCESS_TOKEN}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+    } catch (e) {
+      console.error('Meta CAPI StartTrial failed', e);
     }
 
 

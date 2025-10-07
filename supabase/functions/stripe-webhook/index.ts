@@ -14,6 +14,32 @@ const supabase = createClient(
 );
 const signupEncKeyB64 = Deno.env.get('SIGNUP_ENC_KEY')!; // same key as in checkout
 
+const META_PIXEL_ID = Deno.env.get('META_PIXEL_ID') || Deno.env.get('VITE_META_PIXEL_ID');
+const META_CAPI_ACCESS_TOKEN = Deno.env.get('META_CAPI_ACCESS_TOKEN');
+
+async function sendMetaEvent(payload: any) {
+    if (!META_PIXEL_ID || !META_CAPI_ACCESS_TOKEN) return;
+    const url = `https://graph.facebook.com/v18.0/${META_PIXEL_ID}/events?access_token=${META_CAPI_ACCESS_TOKEN}`;
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (!res.ok) console.error('Meta CAPI error', json);
+        return json;
+    } catch (e) {
+        console.error('Meta CAPI request failed', e);
+    }
+}
+
+async function sha256Hex(s: string): Promise<string> {
+    const buf = new TextEncoder().encode(s);
+    const digest = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 serve(async (req) => {
     const signature = req.headers.get('Stripe-Signature');
     const body = await req.text();
@@ -132,6 +158,46 @@ serve(async (req) => {
             }
 
             console.log(`Successfully upgraded user (plan): ${userId}`);
+            // Send Purchase via CAPI
+            try {
+                const eventId = metadata?.fb_event_id || crypto.randomUUID();
+                const value = Number(session?.amount_total ? (session.amount_total / 100).toFixed(2) : '0');
+                const currency = session?.currency ? String(session.currency).toUpperCase() : 'EUR';
+                const email = receiptEmail?.trim().toLowerCase();
+                const userAgent = (session?.user_agent || '') as string;
+                const ip = (session?.client_ip || '') as string;
+                const fbp = metadata?.fbp || undefined;
+                const fbc = metadata?.fbc || undefined;
+                const pageUrl = metadata?.page_url || undefined;
+                const user_data: any = {
+                    client_user_agent: userAgent || undefined,
+                    client_ip_address: ip || undefined,
+                    fbp,
+                    fbc,
+                };
+                if (email) user_data.em = await sha256Hex(email);
+                const payload = {
+                    data: [
+                        {
+                            event_name: 'Purchase',
+                            event_time: Math.floor(Date.now() / 1000),
+                            action_source: 'website',
+                            event_source_url: pageUrl || 'https://neoma-ai.fr/subscribe/success',
+                            event_id: eventId,
+                            user_data,
+                            custom_data: {
+                                currency,
+                                value,
+                                content_type: 'product',
+                                content_ids: [`plan-${metadata?.plan_format}-${metadata?.plan_quality}`]
+                            }
+                        }
+                    ]
+                };
+                await sendMetaEvent(payload);
+            } catch (e) {
+                console.error('Meta CAPI purchase (plan) failed', e);
+            }
         } else {
             // Poster one-off purchase (legacy behaviour)
             const metaUserId = session?.metadata?.user_id;
@@ -186,6 +252,48 @@ serve(async (req) => {
                 console.log(`Visitor order stored for ${visitorId}`);
             } else {
                 console.warn('Poster purchase without user or visitor id');
+            }
+
+            // Send Purchase via CAPI for poster
+            try {
+                const eventId = metadata?.fb_event_id || crypto.randomUUID();
+                const value = Number(session?.amount_total ? (session.amount_total / 100).toFixed(2) : '0');
+                const currency = session?.currency ? String(session.currency).toUpperCase() : 'EUR';
+                const email = receiptEmail?.trim().toLowerCase();
+                const userAgent = (session?.user_agent || '') as string;
+                const ip = (session?.client_ip || '') as string;
+                const fbp = metadata?.fbp || undefined;
+                const fbc = metadata?.fbc || undefined;
+                const pageUrl = metadata?.page_url || undefined;
+                const contentId = `poster-${metadata?.format ?? 'na'}-${metadata?.quality ?? 'na'}`;
+                const user_data: any = {
+                    client_user_agent: userAgent || undefined,
+                    client_ip_address: ip || undefined,
+                    fbp,
+                    fbc,
+                };
+                if (email) user_data.em = await sha256Hex(email);
+                const payload = {
+                    data: [
+                        {
+                            event_name: 'Purchase',
+                            event_time: Math.floor(Date.now() / 1000),
+                            action_source: 'website',
+                            event_source_url: pageUrl || 'https://neoma-ai.fr/poster/success',
+                            event_id: eventId,
+                            user_data,
+                            custom_data: {
+                                currency,
+                                value,
+                                content_type: 'product',
+                                content_ids: [contentId]
+                            }
+                        }
+                    ]
+                };
+                await sendMetaEvent(payload);
+            } catch (e) {
+                console.error('Meta CAPI purchase (poster) failed', e);
             }
         }
     } else if (event.type === 'payment_intent.succeeded') {

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
-import { trackEvent } from '@/lib/metaPixel';
+import { trackEventWithId } from '@/lib/metaPixel';
 import { trackTikTokEvent } from '@/lib/tiktokPixel';
 
 const SubscriptionSuccess = () => {
@@ -16,18 +16,19 @@ const SubscriptionSuccess = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Meta Pixel: Purchase
+    // Meta Pixel: Purchase (with eventID for CAPI dedupe)
     try {
       const value = Number(localStorage.getItem('fb_last_purchase_value') || '0');
       const currency = localStorage.getItem('fb_last_purchase_currency') || 'EUR';
       const contentId = localStorage.getItem('fb_last_content_id') || undefined;
       const contentType = 'product';
-      trackEvent('Purchase', {
+      const fbEventId = localStorage.getItem('fb_event_id') || undefined;
+      trackEventWithId('Purchase', {
         value,
         currency,
         ...(contentId ? { content_ids: [contentId] } : {}),
         ...(contentType ? { content_type: contentType } : {}),
-      });
+      }, fbEventId);
       trackTikTokEvent('CompletePayment', {
         value,
         currency,

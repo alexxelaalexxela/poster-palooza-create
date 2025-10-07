@@ -75,7 +75,9 @@ serve(async (req) => {
 
   /*---------- 3) Lecture & validation du JSON ----------*/
 
-  let body: { format: string; quality: string; posterUrl?: string; posterPreviewDataUrl?: string; purchaseType?: 'poster' | 'plan'; email?: string; password?: string; visitorId?: string };
+
+
+  let body: { format: string; quality: string; posterUrl?: string; posterPreviewDataUrl?: string; purchaseType?: 'poster' | 'plan'; email?: string; password?: string; visitorId?: string; fbEventId?: string; fbp?: string; fbc?: string; pageUrl?: string };
 
   try {
     body = await req.json();
@@ -86,7 +88,7 @@ serve(async (req) => {
     );
   }
 
-  const { format, quality, posterUrl, posterPreviewDataUrl, purchaseType = 'poster', email, password, visitorId } = body;
+  const { format, quality, posterUrl, posterPreviewDataUrl, purchaseType = 'poster', email, password, visitorId, fbEventId, fbp, fbc, pageUrl } = body;
   const priceId = `${format}-${quality}`;
   let unit_amount = prices[priceId];
 
@@ -164,6 +166,11 @@ serve(async (req) => {
     bodyParams.append("metadata[visitor_id]", String(visitorId));
     bodyParams.append("client_reference_id", String(visitorId));
   }
+  // Meta CAPI metadata for dedupe and match
+  if (fbEventId) bodyParams.append("metadata[fb_event_id]", fbEventId);
+  if (fbp) bodyParams.append("metadata[fbp]", fbp);
+  if (fbc) bodyParams.append("metadata[fbc]", fbc);
+  if (pageUrl) bodyParams.append("metadata[page_url]", pageUrl);
   if (purchaseType === 'plan') {
     bodyParams.append("metadata[plan_format]", String(format));
     bodyParams.append("metadata[plan_quality]", String(quality));

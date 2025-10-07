@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { usePosterStore } from '@/store/usePosterStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { trackEvent } from '@/lib/metaPixel';
+import { trackEventWithId, getFbp, getFbc } from '@/lib/metaPixel';
 import { trackTikTokEvent } from '@/lib/tiktokPixel';
 
 const SubscribeCheckout = () => {
@@ -73,12 +73,14 @@ const SubscribeCheckout = () => {
       try {
         const contentId = `plan-${selectedFormat}-${selectedQuality}`;
         const contentType = 'product'; // TikTok requires 'product' or 'product_group'
-        trackEvent('InitiateCheckout', {
+        const fbEventId = crypto.randomUUID();
+        localStorage.setItem('fb_event_id', fbEventId);
+        trackEventWithId('InitiateCheckout', {
           value: totalWithShipping,
           currency: 'EUR',
           content_ids: [contentId],
           content_type: contentType,
-        });
+        }, fbEventId);
         trackTikTokEvent('InitiateCheckout', {
           value: totalWithShipping,
           currency: 'EUR',
@@ -93,6 +95,10 @@ const SubscribeCheckout = () => {
         localStorage.setItem('fb_last_purchase_type', 'plan');
         localStorage.setItem('fb_last_content_id', contentId);
         localStorage.setItem('fb_last_content_type', contentType);
+        const fbp = getFbp();
+        const fbc = getFbc();
+        if (fbp) localStorage.setItem('fbp', fbp);
+        if (fbc) localStorage.setItem('fbc', fbc);
       } catch {}
       // Créer la session Stripe pour un forfait (plan)
       const { data: { session } } = await supabase.auth.getSession();
@@ -113,6 +119,10 @@ const SubscribeCheckout = () => {
           quality: selectedQuality,
           email: user ? undefined : email,
           password: user ? undefined : password,
+          fbEventId: localStorage.getItem('fb_event_id') || undefined,
+          fbp: localStorage.getItem('fbp') || undefined,
+          fbc: localStorage.getItem('fbc') || undefined,
+          pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
         }),
       });
       const data = await res.json();
