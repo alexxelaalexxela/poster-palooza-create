@@ -22,7 +22,7 @@ const signupEncKeyB64 = Deno.env.get('SIGNUP_ENC_KEY')!; // 32 bytes base64
 
 const prices = {
   // A4
-  'A4-classic': 4499,
+  'A4-classic': 100,
   'A4-premium': 5299,
   'A4-museum': 5499,
 

@@ -272,23 +272,7 @@ serve(async (req) => {
           fbp: fbp || undefined,
           fbc: fbc || undefined,
         };
-        const payload = {
-          data: [
-            {
-              event_name: 'StartTrial',
-              event_time: Math.floor(Date.now() / 1000),
-              action_source: 'website',
-              event_source_url: pageUrl || 'https://neoma-ai.fr/',
-              event_id: eventId,
-              user_data,
-              custom_data: {
-                content_type: 'product',
-                content_ids: [templateName || 'poster']
-              }
-            }
-          ]
-        };
-        const payload: any = payload = {
+        const payload: any = {
           data: [
             {
               event_name: 'StartTrial',
