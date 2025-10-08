@@ -14,7 +14,7 @@ export const SHIPPING_FEE_CENTS = 500;
 // Museum   => museum
 export const PRICE_CENTS: Record<PriceKey, number> = {
   // A4
-  'A4-classic': 100,  // 44,99 € (Standard A4)
+  'A4-classic': 4499,  // 44,99 € (Standard A4)
   'A4-premium': 5299,  // 52,99 € (Premium A4)
   'A4-museum': 5499,   // 54,99 € (Museum A4)
 

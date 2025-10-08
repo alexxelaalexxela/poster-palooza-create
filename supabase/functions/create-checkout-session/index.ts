@@ -22,29 +22,29 @@ const signupEncKeyB64 = Deno.env.get('SIGNUP_ENC_KEY')!; // 32 bytes base64
 
 const prices = {
   // A4
-  'A4-classic': 100,
-  'A4-premium': 5299,
-  'A4-museum': 5499,
+  'A4-classic': 4498,
+  'A4-premium': 5298,
+  'A4-museum': 5498,
 
   // A3
-  'A3-classic': 5499,
-  'A3-premium': 6499,
-  'A3-museum': 6999,
+  'A3-classic': 5498,
+  'A3-premium': 6498,
+  'A3-museum': 6998,
 
   // A2
-  'A2-classic': 6499,
-  'A2-premium': 7499,
-  'A2-museum': 7999,
+  'A2-classic': 6498,
+  'A2-premium': 7498,
+  'A2-museum': 7998,
 
   // A1
-  'A1-classic': 8499,
-  'A1-premium': 9799,
-  'A1-museum': 10499,
+  'A1-classic': 8498,
+  'A1-premium': 9798,
+  'A1-museum': 10498,
 
   // A0
-  'A0-classic': 10499,
-  'A0-premium': 12499,
-  'A0-museum': 13499,
+  'A0-classic': 10498,
+  'A0-premium': 12498,
+  'A0-museum': 13498,
 };
 
 const baseCorsHeaders = {
