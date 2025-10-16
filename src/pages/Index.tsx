@@ -145,6 +145,8 @@ const Index = () => {
         <meta property="og:image" content={buildCanonical('/images/hero-background.png')} />
         <meta property="og:url" content={buildCanonical('/')} />
         <meta name="twitter:card" content="summary_large_image" />
+        {/* Preload hero background to improve LCP */}
+        <link rel="preload" as="image" href={buildCanonical('/images/hero-background.png')} />
         <script type="application/ld+json">{JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'WebSite',

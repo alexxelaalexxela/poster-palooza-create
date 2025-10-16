@@ -191,7 +191,7 @@ export default function Login() {
 
                     {/* Footer */}
                     <div className="text-center mt-8 text-white/50 text-xs">
-                        <p>© 2025 Poster Palooza. Créé pour les créateurs.</p>
+                        <p>© 2025 Neoma Poster. Créé pour les créateurs.</p>
                     </div>
                 </div>
             </div>

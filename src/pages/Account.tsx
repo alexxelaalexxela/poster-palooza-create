@@ -122,6 +122,7 @@ export default function Account() {
                 <div 
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
                     style={{ backgroundImage: 'url(/images/hero-background.png)' }}
+                    aria-hidden="true"
                 ></div>
                 <div className="absolute inset-0 bg-black/20"></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/30 to-purple-600/30"></div>

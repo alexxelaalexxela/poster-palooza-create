@@ -55,7 +55,7 @@ const Subscribe = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50/30">
       {/* Hero Section Premium */}
       <section className="relative overflow-hidden bg-gradient-to-br from-blue-900 via-indigo-800 to-purple-800">
-        <div className="absolute inset-0 bg-[url('/images/hero-background.png')] opacity-5 bg-cover bg-center" />
+        <div className="absolute inset-0 bg-[url('/images/hero-background.png')] opacity-5 bg-cover bg-center" aria-hidden="true" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
         
         {/* Floating particles effect */}

@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
 import { trackEventWithId } from '@/lib/metaPixel';
-import { trackTikTokEvent } from '@/lib/tiktokPixel';
 
 const SubscriptionSuccess = () => {
   const navigate = useNavigate();
@@ -29,24 +28,7 @@ const SubscriptionSuccess = () => {
         ...(contentId ? { content_ids: [contentId] } : {}),
         ...(contentType ? { content_type: contentType } : {}),
       }, fbEventId);
-      trackTikTokEvent('CompletePayment', {
-        value,
-        currency,
-        ...(contentId ? { content_id: contentId } : {}),
-        content_type: 'product',
-        ...(contentId
-          ? {
-              contents: [
-                {
-                  content_id: contentId,
-                  content_type: 'product',
-                  quantity: 1,
-                  price: value,
-                },
-              ],
-            }
-          : {}),
-      });
+      // TikTok pixel removed
     } catch {}
 
     // Simuler un délai pour l'animation

@@ -6,24 +6,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Canonical and page-specific tags are injected dynamically via react-helmet-async -->
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/logoo.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/logoo.png" />
+    <!-- Favicon (lighter .ico for small sizes) -->
+    <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/logoo.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/logoo.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/logoo.png" />
     <!-- Default title/description are set per-page via react-helmet-async -->
 
-    <!-- Inter Font -->
+    <!-- Preconnect to critical origins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://jzjwaadxzaqvsjcnqabj.supabase.co" crossorigin>
+    <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
+
+    <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Preload LCP background image for home -->
+    <link rel="preload" as="image" href="/images/hero-background.png" imagesrcset="/images/hero-background.png" fetchpriority="high" />
   </head>
 
   <body>
     <div id="root"></div>
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+    <!-- Load analytics helper after app boot to not delay LCP -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

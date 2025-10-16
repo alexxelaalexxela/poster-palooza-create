@@ -14,7 +14,6 @@ import { usePosterStore } from '@/store/usePosterStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { trackEventWithId, getFbp, getFbc } from '@/lib/metaPixel';
-import { trackTikTokEvent } from '@/lib/tiktokPixel';
 
 const SubscribeCheckout = () => {
   const navigate = useNavigate();
@@ -81,15 +80,7 @@ const SubscribeCheckout = () => {
           content_ids: [contentId],
           content_type: contentType,
         }, fbEventId);
-        trackTikTokEvent('InitiateCheckout', {
-          value: totalWithShipping,
-          currency: 'EUR',
-          content_id: contentId,
-          content_type: 'product',
-          contents: [
-            { content_id: contentId, content_type: 'product', quantity: 1, price: totalWithShipping },
-          ],
-        });
+        // TikTok pixel removed
         localStorage.setItem('fb_last_purchase_value', String(totalWithShipping));
         localStorage.setItem('fb_last_purchase_currency', 'EUR');
         localStorage.setItem('fb_last_purchase_type', 'plan');

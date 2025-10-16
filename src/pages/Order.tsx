@@ -19,7 +19,6 @@ import { createWatermarkedPreview } from '@/lib/watermarkPreview';
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
 import { trackEventWithId, getFbp, getFbc } from '@/lib/metaPixel';
-import { trackTikTokEvent } from '@/lib/tiktokPixel';
 
 const Order = () => {
   const { selectedPoster, selectedPosterUrl, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
@@ -95,20 +94,7 @@ const Order = () => {
           content_ids: [contentId],
           content_type: contentType,
         }, fbEventId);
-        trackTikTokEvent('InitiateCheckout', {
-          value: totalWithShipping,
-          currency: 'EUR',
-          content_id: contentId,
-          content_type: 'product',
-          contents: [
-            {
-              content_id: contentId,
-              content_type: 'product',
-              quantity: 1,
-              price: totalWithShipping,
-            },
-          ],
-        });
+        // TikTok pixel removed
         localStorage.setItem('fb_last_purchase_value', String(totalWithShipping));
         localStorage.setItem('fb_last_purchase_currency', 'EUR');
         localStorage.setItem('fb_last_purchase_type', 'poster');
