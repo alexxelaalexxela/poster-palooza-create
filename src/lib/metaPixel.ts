@@ -99,7 +99,8 @@ export function getFbc(): string | undefined {
   const fbclid = url.searchParams.get('fbclid');
   if (!fbclid) return undefined;
   // Format: fb.1.<timestamp>.<fbclid>
-  const ts = Math.floor(Date.now() / 1000);
+  // Use milliseconds since epoch, to match Meta's _fbc cookie format
+  const ts = Date.now();
   return `fb.1.${ts}.${fbclid}`;
 }
 
