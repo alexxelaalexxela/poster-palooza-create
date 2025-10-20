@@ -6,7 +6,7 @@ export type Quality = 'classic' | 'premium' | 'museum';
 
 type PriceKey = `${Format}-${Quality}`;
 
-export const SHIPPING_FEE_CENTS = 500;
+export const SHIPPING_FEE_CENTS = 499;
 
 // New prices with psychological ",99" endings
 // Standard => classic

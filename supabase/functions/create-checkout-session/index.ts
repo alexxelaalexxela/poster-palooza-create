@@ -91,10 +91,16 @@ serve(async (req) => {
   const { format, quality, posterUrl, posterPreviewDataUrl, purchaseType = 'poster', email, password, visitorId, fbEventId, fbp, fbc, pageUrl, promo } = body;
   const priceId = `${format}-${quality}`;
   let unit_amount = prices[priceId];
-
-  if (purchaseType === 'poster') {
-    unit_amount += 0;
+  if (!unit_amount) {
+    return new Response(JSON.stringify({ error: "Invalid format or quality" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
   }
+
+  // Apply promo on the product price EXCLUDING shipping, then add shipping back
+  const SHIPPING_FEE_CENTS = 499;
+  let base_ex_shipping = Math.max(0, unit_amount - SHIPPING_FEE_CENTS);
 
   if (!unit_amount) {
     return new Response(JSON.stringify({ error: "Invalid format or quality" }), {
@@ -150,14 +156,17 @@ serve(async (req) => {
     if (allowedPercent) {
       const capped = Math.min(allowedPercent, Math.max(0, incomingPercent || allowedPercent));
       if (capped > 0) {
-        const discountCents = Math.floor(unit_amount * (capped / 100));
-        unit_amount = Math.max(0, unit_amount - discountCents);
+        const discountCents = Math.floor(base_ex_shipping * (capped / 100));
+        base_ex_shipping = Math.max(0, base_ex_shipping - discountCents);
         promoApplied = true;
         promoCode = incomingCode;
         promoPercent = capped;
       }
     }
   }
+
+  // Recompose unit amount: discounted base + shipping
+  unit_amount = Math.max(0, base_ex_shipping + SHIPPING_FEE_CENTS);
 
   const bodyParams = new URLSearchParams({
     mode: "payment",
