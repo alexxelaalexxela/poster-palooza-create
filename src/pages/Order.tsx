@@ -2,7 +2,7 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft, Check, CreditCard, MapPin, User, Package, Star, Shield, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { usePosterStore } from '@/store/usePosterStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,9 +19,10 @@ import { createWatermarkedPreview } from '@/lib/watermarkPreview';
 import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
 import { trackEventWithId, getFbp, getFbc } from '@/lib/metaPixel';
+import PromoCode from '@/components/PromoCode';
 
 const Order = () => {
-  const { selectedPoster, selectedPosterUrl, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls } = usePosterStore();
+  const { selectedPoster, selectedPosterUrl, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls, promoApplied, promoPercent, promoCode } = usePosterStore();
   const mergedUrls = [...generatedUrls, ...cachedUrls];
   const { toast } = useToast();
   const { user } = useAuth();
@@ -32,7 +33,23 @@ const Order = () => {
   //const finalUrl = primaryUrl ?? fallbackUrl;
   const finalUrl = selectedPosterUrl ?? (selectedPoster != null ? mergedUrls[selectedPoster] : null);
   const SHIPPING_FEE = 4.99;
-  const totalWithShipping = Number((price + SHIPPING_FEE).toFixed(2));
+  // price from store is already discounted; compute original (pre-discount, shipping already removed) and savings
+  const discountedPrice = price;
+  const originalNoShip = useMemo(() => {
+    if (promoApplied && promoPercent > 0) {
+      const frac = promoPercent / 100;
+      if (frac >= 1) return price; // safeguard
+      return Number((price / (1 - frac)).toFixed(2));
+    }
+    return price;
+  }, [price, promoApplied, promoPercent]);
+  const savedAmount = useMemo(() => {
+    if (promoApplied && promoPercent > 0) {
+      return Number((originalNoShip - discountedPrice).toFixed(2));
+    }
+    return 0;
+  }, [originalNoShip, discountedPrice, promoApplied, promoPercent]);
+  const totalWithShipping = Number((discountedPrice + SHIPPING_FEE).toFixed(2));
   const hasIncludedPlanActive = !!(user && profile?.is_paid && profile?.subscription_format && profile?.subscription_quality && !profile?.included_poster_selected_url);
   const shippingDisplay = hasIncludedPlanActive ? 0 : SHIPPING_FEE;
   const totalDisplay = hasIncludedPlanActive ? 0 : totalWithShipping;
@@ -125,6 +142,7 @@ const Order = () => {
             posterUrl: typeof finalUrl === 'string' && finalUrl.startsWith('data:') ? undefined : finalUrl,
             posterPreviewDataUrl: posterPreviewDataUrl ?? undefined,
             visitorId,
+            promo: promoApplied ? { code: promoCode, percent: promoPercent } : undefined,
             // Meta CAPI metadata
             fbEventId: localStorage.getItem('fb_event_id') || undefined,
             fbp: localStorage.getItem('fbp') || undefined,
@@ -295,9 +313,26 @@ const Order = () => {
                         {hasIncludedPlanActive ? 'Gratuite' : `${shippingDisplay.toFixed(2)} €`}
                       </span>
                     </div>
+                    {/* Promo summary */}
+                    {!hasIncludedPlanActive && promoApplied && (
+                      <div className="flex justify-between items-center py-2 border-b border-white/10">
+                        <span className="text-white/70">Code promo:</span>
+                        <span className="text-green-300 font-medium">
+                          
+                          {savedAmount > 0 ? ` −${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(savedAmount)}` : ''}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <Separator className="bg-white/20" />
+
+                  {/* Promo code entry if not applied */}
+                  {!hasIncludedPlanActive && !promoApplied && (
+                    <div>
+                      <PromoCode compact variant="dark" />
+                    </div>
+                  )}
 
                   {/* Total */}
                   <div className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-xl p-4 border border-white/20">
@@ -307,6 +342,9 @@ const Order = () => {
                         {hasIncludedPlanActive ? 'Gratuit' : `${totalDisplay.toFixed(2)} €`}
                       </span>
                     </div>
+                    {!hasIncludedPlanActive && promoApplied && (
+                      <p className="text-white/60 text-xs mt-1">Plus que quelques réductions disponibles</p>
+                    )}
                     {hasIncludedPlanActive && (
                       <p className="text-white/60 text-xs mt-1">Inclus dans votre abonnement Premium</p>
                     )}
@@ -338,7 +376,7 @@ const Order = () => {
                     </div>
                   </div>
 
-                  {/* Order Button */}
+                  {/* Order Button - revert to original style */}
                   <Button
                     onClick={handleSubmitOrder}
                     disabled={!canCheckout || isSubmitting}
@@ -351,7 +389,7 @@ const Order = () => {
                           ? 'Confirmer la Commande' 
                           : `Finaliser la Commande - ${totalDisplay.toFixed(2)} €`
                         }
-                        <Star className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                        <span className="sr-only">Payer en toute sécurité</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">

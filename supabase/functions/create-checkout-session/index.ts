@@ -77,7 +77,7 @@ serve(async (req) => {
 
 
 
-  let body: { format: string; quality: string; posterUrl?: string; posterPreviewDataUrl?: string; purchaseType?: 'poster' | 'plan'; email?: string; password?: string; visitorId?: string; fbEventId?: string; fbp?: string; fbc?: string; pageUrl?: string };
+  let body: { format: string; quality: string; posterUrl?: string; posterPreviewDataUrl?: string; purchaseType?: 'poster' | 'plan'; email?: string; password?: string; visitorId?: string; fbEventId?: string; fbp?: string; fbc?: string; pageUrl?: string; promo?: { code?: string; percent?: number } };
 
   try {
     body = await req.json();
@@ -88,7 +88,7 @@ serve(async (req) => {
     );
   }
 
-  const { format, quality, posterUrl, posterPreviewDataUrl, purchaseType = 'poster', email, password, visitorId, fbEventId, fbp, fbc, pageUrl } = body;
+  const { format, quality, posterUrl, posterPreviewDataUrl, purchaseType = 'poster', email, password, visitorId, fbEventId, fbp, fbc, pageUrl, promo } = body;
   const priceId = `${format}-${quality}`;
   let unit_amount = prices[priceId];
 
@@ -134,6 +134,31 @@ serve(async (req) => {
     });
   }
 
+  // Apply promo discount (poster and plan) if valid
+  let promoApplied = false;
+  let promoCode: string | undefined = undefined;
+  let promoPercent: number | undefined = undefined;
+  if (promo) {
+    const incomingCode = String(promo.code || '').trim().toUpperCase();
+    const incomingPercent = Number(promo.percent || 0);
+    // Server-side validation: accept NEOMA25 (25%) and FIRST100 (50%)
+    const serverValid: Record<string, number> = {
+      'NEOMA25': 25,
+      'FIRST100': 50,
+    };
+    const allowedPercent = serverValid[incomingCode];
+    if (allowedPercent) {
+      const capped = Math.min(allowedPercent, Math.max(0, incomingPercent || allowedPercent));
+      if (capped > 0) {
+        const discountCents = Math.floor(unit_amount * (capped / 100));
+        unit_amount = Math.max(0, unit_amount - discountCents);
+        promoApplied = true;
+        promoCode = incomingCode;
+        promoPercent = capped;
+      }
+    }
+  }
+
   const bodyParams = new URLSearchParams({
     mode: "payment",
     success_url: purchaseType === 'plan' 
@@ -162,6 +187,11 @@ serve(async (req) => {
   }
   bodyParams.append("metadata[purchase_type]", purchaseType);
   bodyParams.append("metadata[user_id]", userId);
+  if (promoApplied) {
+    bodyParams.append("metadata[promo_applied]", "true");
+    if (promoCode) bodyParams.append("metadata[promo_code]", promoCode);
+    if (typeof promoPercent === 'number') bodyParams.append("metadata[promo_percent]", String(promoPercent));
+  }
   if (visitorId && (!userId || userId === 'anonymous')) {
     bodyParams.append("metadata[visitor_id]", String(visitorId));
     bodyParams.append("client_reference_id", String(visitorId));

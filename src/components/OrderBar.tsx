@@ -41,14 +41,15 @@ const OrderBar = () => {
         <span className="text-lg md:text-xl font-semibold">
           {(() => {
             const fmt = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 });
-            return `Prix : ${hasIncludedPlanActive ? fmt.format(0) : fmt.format(price)}`;
+            if (hasIncludedPlanActive) return `Prix : ${fmt.format(0)}`;
+            return `Prix : ${fmt.format(price)}`;
           })()}
         </span>
 
         <div className="relative">
           <button
             onClick={handleOrder}
-            disabled={selectedQuality === null}
+            disabled={!canOrder()}
             className="px-6 md:px-8 py-3 bg-indigo-500 text-white font-medium
                    rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-500"
           >

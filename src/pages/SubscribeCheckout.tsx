@@ -11,13 +11,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { usePosterStore } from '@/store/usePosterStore';
+import PromoCode from '@/components/PromoCode';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { trackEventWithId, getFbp, getFbc } from '@/lib/metaPixel';
 
 const SubscribeCheckout = () => {
   const navigate = useNavigate();
-  const { selectedFormat, selectedQuality, price } = usePosterStore();
+  const { selectedFormat, selectedQuality, price, promoApplied, promoCode, promoPercent } = usePosterStore();
   const { user } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -31,6 +32,13 @@ const SubscribeCheckout = () => {
 
   const SHIPPING_FEE = 4.99; // Livraison express
   const totalWithShipping = Number((price + SHIPPING_FEE).toFixed(2));
+  // Savings display (price is already discounted)
+  const originalNoShip = promoApplied && promoPercent > 0
+    ? Number((price / (1 - promoPercent / 100)).toFixed(2))
+    : price;
+  const savedAmount = promoApplied && promoPercent > 0
+    ? Number((originalNoShip - price).toFixed(2))
+    : 0;
 
   // Password validation
   const getPasswordStrength = (password: string) => {
@@ -114,6 +122,7 @@ const SubscribeCheckout = () => {
           fbp: localStorage.getItem('fbp') || undefined,
           fbc: localStorage.getItem('fbc') || undefined,
           pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+          promo: promoApplied ? { code: promoCode || undefined, percent: promoPercent || undefined } : undefined,
         }),
       });
       const data = await res.json();
@@ -236,10 +245,20 @@ const SubscribeCheckout = () => {
                         {selectedQuality}
                       </Badge>
             </div>
-                                        <div className="flex justify-between items-center py-2 border-b border-white/10">
+                    <div className="flex justify-between items-center py-2 border-b border-white/10">
                       <span className="text-white/70">Livraison :</span>
                       <span className="text-white font-medium">4,99 €</span>
-            </div>
+                    </div>
+                    {promoApplied && (
+                      <div className="flex justify-between items-center py-2 border-b border-white/10">
+                        <span className="text-white/70">Code promo:</span>
+                        <span className="text-green-300 font-medium">
+                          
+                          {savedAmount > 0 ? ` −${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(savedAmount)}` : ''}
+                        </span>
+                      </div>
+                    )}
+                    
           </div>
 
                   <Separator className="bg-white/20" />
@@ -415,6 +434,12 @@ const SubscribeCheckout = () => {
                             {passwordsMatch ? 'Les mots de passe correspondent' : 'Les mots de passe ne correspondent pas'}
                           </div>
                         )}
+                      </div>
+
+                      {/* Promo Code inside account card */}
+                      <div>
+                        <Label className="text-white/90 font-medium mb-2 block">Code promo</Label>
+                        <PromoCode compact={false} variant="dark" />
                       </div>
 
                       {/* Info */}

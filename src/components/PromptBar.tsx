@@ -625,7 +625,7 @@ const PromptBar = () => {
                     `}
                   >
                     <Settings size={14} />
-                    <span>Options</span>
+                    <span>Titres</span>
                     <ChevronDown size={16} className={`${hasManualOptions ? 'text-emerald-700' : 'text-gray-700'}`} />
                   </button>
                 </PopoverTrigger>

@@ -31,6 +31,11 @@ interface PosterStore {
   generatedUrls: string[];
   cachedUrls: string[];
 
+  // Promo code state
+  promoCode: string | null;
+  promoApplied: boolean;
+  promoPercent: number; // e.g., 25 for 25%
+
   setSelectedTemplate: (id: number | null) => void;
   setSelectedPoster: (id: number | null) => void;
   setSelectedPosterUrl: (url: string | null) => void;
@@ -42,6 +47,11 @@ interface PosterStore {
   canOrder: () => boolean;
   setGeneratedUrls: (urls: string[]) => void;
   setCachedUrls: (urls: string[]) => void;
+
+  // Promo code actions
+  setPromoCode: (code: string) => void;
+  applyPromoCode: (code: string) => boolean; // returns true if applied
+  clearPromoCode: () => void;
 }
 
 export const usePosterStore = create<PosterStore>((set, get) => ({
@@ -51,10 +61,15 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
   selectedPosterUrl: null,
   selectedLibraryPosterId: null,
   selectedFormat: null,
-  selectedQuality: null,
+  selectedQuality: 'classic',
   price: 0,
   generatedUrls: [],
   cachedUrls: [],
+
+  // Promo defaults
+  promoCode: null,
+  promoApplied: false,
+  promoPercent: 0,
 
   setSelectedTemplate: (id) => {
     set({ selectedTemplate: id });
@@ -94,7 +109,7 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
   },
 
   calculatePrice: () => {
-    const { selectedFormat, selectedQuality } = get();
+    const { selectedFormat, selectedQuality, promoApplied, promoPercent } = get();
     if (!selectedFormat || !selectedQuality) {
       set({ price: 0 });
       return;
@@ -103,11 +118,39 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
     const euros = getPriceEuros(selectedFormat as any, normalizedQuality as any);
     // Subtract shipping (4.99) on all pre-order pages, Order page will add it back
     const eurosMinusShipping = Math.max(0, euros - SHIPPING_FEE_CENTS / 100);
-    set({ price: Number(eurosMinusShipping.toFixed(2)) });
+    const discounted = promoApplied && (promoPercent || 0) > 0
+      ? Math.max(0, eurosMinusShipping * (1 - (promoPercent! / 100)))
+      : eurosMinusShipping;
+    set({ price: Number(discounted.toFixed(2)) });
   },
 
   canOrder: () => {
     const { selectedPoster, selectedFormat, selectedQuality } = get();
     return selectedPoster !== null && selectedFormat !== null && selectedQuality !== null;
+  },
+
+  // Promo code helpers
+  setPromoCode: (code) => set({ promoCode: code }),
+  applyPromoCode: (code) => {
+    const normalized = (code || '').trim().toUpperCase();
+    // Simple built-in validation: NEOMA25 -> 25%
+    const validCodes: Record<string, number> = {
+      'NEOMA25': 25,
+      'FIRST100': 50,
+    };
+    const percent = validCodes[normalized];
+    if (percent) {
+      set({ promoCode: normalized, promoApplied: true, promoPercent: percent });
+      get().calculatePrice();
+      return true;
+    }
+    // Not valid
+    set({ promoApplied: false, promoPercent: 0 });
+    get().calculatePrice();
+    return false;
+  },
+  clearPromoCode: () => {
+    set({ promoCode: null, promoApplied: false, promoPercent: 0 });
+    get().calculatePrice();
   },
 }));

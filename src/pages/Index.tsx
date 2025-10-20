@@ -8,6 +8,7 @@ import PosterGallery from '@/components/PosterGallery';
 import FormatPicker from '@/components/FormatPicker';
 import QualityPicker from '@/components/QualityPicker';
 import OrderBar from '@/components/OrderBar';
+import PromoCode from '@/components/PromoCode';
 import { usePosterStore } from '@/store/usePosterStore';
 import { useRef, useState, useEffect } from 'react';
 import { ChevronRight, ChevronUp } from 'lucide-react';
@@ -82,7 +83,17 @@ const templates = [
 ];
 
 const Index = () => {
-  const { selectedTemplate, setSelectedTemplate, setSelectedFormat, setSelectedQuality } = usePosterStore();
+  const {
+    selectedTemplate,
+    setSelectedTemplate,
+    setSelectedFormat,
+    setSelectedQuality,
+    selectedFormat,
+    selectedPoster,
+    selectedPosterUrl,
+    generatedUrls,
+    cachedUrls,
+  } = usePosterStore();
   const { user } = useAuth();
   const { profile } = useProfile();
 
@@ -90,6 +101,9 @@ const Index = () => {
 
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const formatRef = useRef<HTMLDivElement>(null);
+  const qualityRef = useRef<HTMLDivElement>(null);
   const [showHint, setShowHint] = useState(true);
 
 
@@ -108,6 +122,72 @@ const Index = () => {
       setSelectedQuality(profile!.subscription_quality as any);
     }
   }, [hasIncludedPlan, profile, setSelectedFormat, setSelectedQuality]);
+
+  // Smooth scroll with easing, alignment and offset
+  const smoothScrollTo = (
+    ref: React.RefObject<HTMLDivElement>,
+    opts?: { duration?: number; offset?: number; align?: 'start' | 'center' | 'end' }
+  ) => {
+    if (!ref.current) return;
+    const duration = opts?.duration ?? 700;
+    const offset = opts?.offset ?? -16;
+    const align = opts?.align ?? 'start';
+
+    const startY = window.scrollY || window.pageYOffset;
+    const rect = ref.current.getBoundingClientRect();
+    let targetY = rect.top + startY + offset;
+    if (align === 'center') {
+      targetY = rect.top + startY + (rect.height / 2) - (window.innerHeight / 2) + offset;
+    } else if (align === 'end') {
+      targetY = rect.top + startY + rect.height - window.innerHeight + offset;
+    }
+
+    const startTime = performance.now();
+    const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const eased = easeInOutCubic(progress);
+      window.scrollTo(0, Math.round(startY + (targetY - startY) * eased));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+
+  // 1) Scroll to gallery when NEW posters are generated (ignore cached on load)
+  const prevGenCountRef = useRef<number>(generatedUrls?.length || 0);
+  useEffect(() => {
+    const current = generatedUrls?.length || 0;
+    if (current > prevGenCountRef.current) {
+      smoothScrollTo(galleryRef, { duration: 800, align: 'start', offset: -24 });
+    }
+    prevGenCountRef.current = current;
+  }, [generatedUrls]);
+
+  // 2) After POSTER selection (from gallery), scroll to format
+  const firstPosterScrollRef = useRef(true);
+  useEffect(() => {
+    if (firstPosterScrollRef.current) {
+      firstPosterScrollRef.current = false;
+      return;
+    }
+    if (selectedPoster !== null || selectedPosterUrl) {
+      smoothScrollTo(formatRef, { duration: 850, align: 'center', offset: 96 });
+    }
+  }, [selectedPoster, selectedPosterUrl]);
+
+  // 3) After format selection, scroll to quality
+  const firstFormatScrollRef = useRef(true);
+  useEffect(() => {
+    if (firstFormatScrollRef.current) {
+      firstFormatScrollRef.current = false;
+      return;
+    }
+    if (selectedFormat) {
+      smoothScrollTo(qualityRef, { duration: 900, align: 'center', offset: -10 });
+    }
+  }, [selectedFormat]);
 
   return (
     <div className="min-h-screen bg-[#E1D7CA]">
@@ -366,8 +446,10 @@ const Index = () => {
           <PromptBar />
         </motion.section>*/}
 
-        {/* Poster Gallery */}
-        <PosterGallery />
+      {/* Poster Gallery */}
+        <div ref={galleryRef}>
+          <PosterGallery />
+        </div>
 
         <motion.div
           initial={{ opacity: 0, scaleX: 0 }}
@@ -376,7 +458,11 @@ const Index = () => {
           className="h-px w-full max-w-4xl mx-auto bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
         />
         {/* Format Picker */}
-        {!hasIncludedPlan && <FormatPicker />}
+        {!hasIncludedPlan && (
+          <div ref={formatRef}>
+            <FormatPicker />
+          </div>
+        )}
         <motion.div
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
@@ -385,7 +471,21 @@ const Index = () => {
         />
 
         {/* Quality Picker */}
-        {!hasIncludedPlan && <QualityPicker />}
+        {!hasIncludedPlan && (
+          <div ref={qualityRef}>
+            <QualityPicker />
+          </div>
+        )}
+        {/* Promo code appears when a format is selected (same time as quality) */}
+        {!hasIncludedPlan && selectedFormat && (
+
+          <div className="max-w-3xl mx-auto w-full">
+            <p className= 'text-neutral-900 text-sm'>
+          Vous avez un code promo ?
+        </p>
+            <PromoCode />
+          </div>
+        )}
         <motion.div
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}

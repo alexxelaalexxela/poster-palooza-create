@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { usePosterStore, type Quality, type Format } from "@/store/usePosterStore";
-import { Crown, Gem, Layers, Sparkles, Truck, User, Check, ArrowRight } from "lucide-react";
+import { Crown, Gem, Layers, Sparkles, Truck, User, ArrowRight, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import PosterWall from "@/components/SofaPoster";
 import { useAuth } from "@/hooks/useAuth";
+import PromoCode from "@/components/PromoCode";
 
 const benefits = [
   { icon: Sparkles, text: "15 générations premium", highlight: "premium" },
@@ -15,10 +17,10 @@ const benefits = [
   { icon: Truck, text: "Livraison rapide & emballage soigné", highlight: "rapide" },
 ];
 
-const qualityOptions: { id: Quality; name: string; subtitle: string; price: string; ring: string; popular?: boolean }[] = [
-  { id: "classic", name: "Classic", subtitle: "250 g/m²", price: "Base", ring: "from-blue-50/50 via-blue-100/60 to-blue-200/70" },
-  { id: "premium", name: "Premium", subtitle: "250 g/m² · Laminé Mat", price: "", ring: "from-indigo-500/20 via-blue-600/30 to-purple-600/40", popular: true },
-  { id: "museum", name: "Museum", subtitle: "250 g/m² · Premium", price: "", ring: "from-orange-100/50 via-yellow-100/60 to-amber-200/70" },
+const qualityOptions: { id: Quality; name: string; subtitle: string }[] = [
+  { id: "classic", name: "Classic", subtitle: "Papier 250 g/m² · qualité standard équilibrée" },
+  { id: "premium", name: "Premium", subtitle: "250 g/m² + laminé mat · anti‑reflets, couleurs plus denses" },
+  { id: "museum", name: "Museum", subtitle: "Papier premium 250 g/m² · rendu artistique et durabilité" },
 ];
 
 const Subscribe = () => {
@@ -215,59 +217,68 @@ const Subscribe = () => {
                     <span className="text-indigo-700 font-medium">Format sélectionné: {selectedFormat}</span>
                   </motion.div>
                 )}
+                {/* subtle separator */}
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent my-6" />
               </div>
 
               {/* Quality Selection */}
               <div className="p-8 pt-0">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Qualité d'impression</h3>
-                  <p className="text-gray-600">Sélectionnez le niveau de qualité souhaité</p>
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center gap-2">
+                    <h3 className="text-2xl font-bold text-gray-900">Qualité d'impression</h3>
+                    <TooltipProvider>
+                      <Tooltip delayDuration={150}>
+                        <TooltipTrigger asChild>
+                          <button type="button" aria-label="En savoir plus sur les qualités" className="p-1 rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition">
+                            <Info size={18} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" align="center" className="max-w-xs text-xs leading-relaxed">
+                          Classic: papier 250 g/m². Premium: 250 g/m² avec laminé mat anti‑reflets. Museum: rendu artistique sur papier premium.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {qualityOptions.map((opt) => {
-                    const active = selectedQuality === opt.id;
-                    return (
-                      <motion.button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => setSelectedQuality(opt.id)}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`relative p-6 rounded-2xl border-2 transition-all duration-300 ${
-                          active
-                            ? `border-indigo-500 bg-gradient-to-br ${opt.ring} shadow-xl shadow-indigo-500/20`
-                            : "border-gray-200 bg-white hover:border-indigo-300 hover:shadow-lg"
-                        }`}
-                      >
-                        {opt.popular && (
-                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                              POPULAIRE
-                            </span>
-                          </div>
-                        )}
-                        
-                        <div className="text-center">
-                          <h4 className="text-xl font-bold text-gray-900 mb-2">{opt.name}</h4>
-                          <div className="w-12 h-px bg-gray-300 mx-auto mb-3" />
-                          <p className="text-sm text-gray-600 mb-3">{opt.subtitle}</p>
-                          <div className="text-lg font-semibold text-indigo-600">{opt.price}</div>
-                        </div>
-                        
-                        {active && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="absolute -top-2 -right-2 w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center"
-                          >
-                            <Check size={14} className="text-white" />
-                          </motion.div>
-                        )}
-                      </motion.button>
-                    );
-                  })}
+
+                <div className="flex justify-center">
+                  <div className="inline-flex rounded-full bg-white/80 backdrop-blur border border-gray-200 p-1 shadow-sm">
+                    {qualityOptions.map((opt) => {
+                      const active = selectedQuality ? selectedQuality === opt.id : opt.id === 'classic';
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setSelectedQuality(opt.id)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            active ? 'bg-gray-900 text-white shadow' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                          }`}
+                          aria-pressed={active}
+                        >
+                          {opt.name}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                <div className="mt-3 text-center">
+                  {(() => {
+                    const active = qualityOptions.find(q => q.id === selectedQuality) ?? qualityOptions[0];
+                    return <p className="text-sm text-gray-600">{active.subtitle}</p>;
+                  })()}
+                </div>
+                {/* subtle separator */}
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent my-6" />
+
+                {/* Promo Code (shown once a format is selected) */}
+                {selectedFormat && (
+                  <div className="mt-6 flex justify-center">
+                    <div className="w-full max-w-md">
+                      <PromoCode />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Price & CTA */}
