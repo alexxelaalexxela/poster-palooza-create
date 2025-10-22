@@ -54,7 +54,7 @@ const PromoCode = ({ compact = false, variant = 'light' }: PromoCodeProps) => {
     return (
       <div className="flex items-center justify-between gap-3">
         <Badge variant="outline" className={badgeClass}>
-          Code appliqué −{percent}%
+          Code {(promoCode || '').toUpperCase()} appliqué −{percent}%
         </Badge>
         <div className="flex items-center gap-2">
           {savedAmount > 0 && (

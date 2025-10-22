@@ -150,13 +150,20 @@ serve(async (req) => {
     // Determine final style description: if a library poster is selected, treat its description as the only style source (ignore old templates)
     const styleDescription = templateDescription || '';
 
-    // Generate 4 different prompts using GPT-4
+    // Generate prompts (1 for free, 4 for paid) using GPT-4
     console.log('template description');
-    const promptVariations = await generatePromptVariations(effectivePrompt, styleDescription, mainTitle, subtitle, normalizedDate);
+    const promptVariations = await generatePromptVariations(
+      effectivePrompt,
+      styleDescription,
+      mainTitle,
+      subtitle,
+      normalizedDate,
+      isPaid ? 4 : 1
+    );
     console.log('Generated prompt variationsss:', promptVariations);
 
     // Decide how many images to generate depending on user status
-    const variationsToUse = isPaid ? promptVariations : [promptVariations[0]];
+    const variationsToUse = promptVariations;
 
     // Génère, superpose le logo et uploade en parallèle, sans conserver d'intermédiaires volumineux
     const folder = userId ? `users/${userId}` : `visitors/${visitorId || 'unknown'}`;
@@ -324,6 +331,7 @@ async function generateTitle(prompt: string): Promise<string> {
   
   Exemples de bons titres :
   - "Paris, France"
+  - "Les Arcs, Alpes"
   - "Paris, ville des lumières"
   - "Plage des Estagnot, Hossegor"
   - "Côte d'Azur, Nice"
@@ -372,7 +380,7 @@ async function generateTitle(prompt: string): Promise<string> {
   return title;
 }
 
-async function generatePromptVariations(originalPrompt: string, templateDescription: string, mainTitle: string, subtitle: string, date?: string): Promise<string[]> {
+async function generatePromptVariations(originalPrompt: string, templateDescription: string, mainTitle: string, subtitle: string, date?: string, numPrompts: number = 4): Promise<string[]> {
   const systemPromptOld = `You are a creative poster design expert. Given a user's prompt and template style, create 4 prompts for gpt-image to generate posters in the "${templateDescription}" style.
 
 Each prompt should:
@@ -384,7 +392,11 @@ Each prompt should:
 The objective is to take the following idea and very importantly to make it in the aesthetic of "${templateDescription}" !
 Return 4 slightly different from each other prompts, one prompt per line so that i can separate after, no numbering or formatting.`;
 
-  const systemPrompt = `You are a creative poster-design expert. Given a user's prompt, a main title and subtitle${date && date.trim() ? ' and a date' : ''}, and the template style, create 4 prompts for GPT-Image that will generate posters in the "${templateDescription}" style.
+  const returnInstruction = numPrompts === 1
+    ? 'Return one complete prompt that describes the entire poster. Output it as a JSON array with exactly 1 string and no extra text or numbering.'
+    : `Return ${numPrompts} slightly different prompts (different background, different perspective, different composition, but same title and subtitle), that each describe the entire poster. Output them as a JSON array with exactly ${numPrompts} strings and no extra text or numbering.`;
+
+  const systemPrompt = `You are a creative poster-design expert. Given a user's prompt, a main title and subtitle${date && date.trim() ? ' and a date' : ''}, and the template style, create ${numPrompts} prompt${numPrompts > 1 ? 's' : ''} for GPT-Image that will generate posters in the "${templateDescription}" style.
 
   Each prompt must:
     •\tBe specific and detailed for the poster design (composition, colour palette, typography hints).
@@ -395,9 +407,10 @@ Return 4 slightly different from each other prompts, one prompt per line so that
     •\tDo not include any other title than these two${date && date.trim() ? ' (the date is not a title)' : ''}.
     •\tOffer unique, creative variations of the original idea.
     •\tIncorporate the user's prompt that will follow.
+    •\tIf people are present, they should occupy no more than one-fifth of the scene. The remaining space should focus on a rich, detailed, and visually complete landscape description.
     The most important is to take the aesthetic described "${templateDescription}" !!
   
-   Return 4 slightly different (different background, different perspective, different composition, but same title and subtitle), complete prompts that each describe the entire poster. Output them in a table formatted exactly like ["prompt1", "prompt2", "prompt3", "prompt4"], with one prompt per line and no numbering or extra formatting.`
+   ${returnInstruction}`
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -443,7 +456,7 @@ Return 4 slightly different from each other prompts, one prompt per line so that
 
   console.log(variations);
 
-  return variations.slice(0, 4);
+  return variations.slice(0, numPrompts);
 }
 
 

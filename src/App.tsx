@@ -9,6 +9,8 @@ import Layout from "@/components/Layout";
 import Index from "@/pages/Index";
 
 import About from "@/pages/About";
+import MentionsLegales from "@/pages/MentionsLegales";
+import ConditionsGeneralesVente from "@/pages/ConditionsGeneralesVente";
 import Library from "@/pages/Library";
 import PosterDetails from "@/pages/PosterDetails";
 import Order from "@/pages/Order";
@@ -115,6 +117,8 @@ const App = () => {
                 <Route path="/subscribe/checkout" element={<SubscribeCheckout />} />
                 <Route path="/subscribe/success" element={<SubscriptionSuccess />} />
                 <Route path="/poster/success" element={<PosterSuccess />} />
+                <Route path="/mentions-legales" element={<MentionsLegales />} />
+                <Route path="/conditions-generales-de-vente" element={<ConditionsGeneralesVente />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/mot-de-passe-oublie" element={<ForgotPassword />} />

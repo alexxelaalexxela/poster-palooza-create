@@ -9,9 +9,10 @@ import FormatPicker from '@/components/FormatPicker';
 import QualityPicker from '@/components/QualityPicker';
 import OrderBar from '@/components/OrderBar';
 import PromoCode from '@/components/PromoCode';
+import FloatingPromo from '@/components/FloatingPromo';
 import { usePosterStore } from '@/store/usePosterStore';
 import { useRef, useState, useEffect } from 'react';
-import { ChevronRight, ChevronUp } from 'lucide-react';
+import { ChevronRight, ChevronUp, BadgePercent } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -93,6 +94,7 @@ const Index = () => {
     selectedPosterUrl,
     generatedUrls,
     cachedUrls,
+    promoApplied,
   } = usePosterStore();
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -105,6 +107,8 @@ const Index = () => {
   const formatRef = useRef<HTMLDivElement>(null);
   const qualityRef = useRef<HTMLDivElement>(null);
   const [showHint, setShowHint] = useState(true);
+  const [lastRemovedCode, setLastRemovedCode] = useState<string>('FIRST100');
+  const [lastRemovedPercent, setLastRemovedPercent] = useState<number>(50);
 
 
   const handleScroll = () => {
@@ -122,6 +126,26 @@ const Index = () => {
       setSelectedQuality(profile!.subscription_quality as any);
     }
   }, [hasIncludedPlan, profile, setSelectedFormat, setSelectedQuality]);
+
+  // Read promo removal hint state
+  useEffect(() => {
+    try {
+      const lc = (localStorage.getItem('promo_last_removed_code') || 'FIRST100').toUpperCase();
+      const lp = Number(localStorage.getItem('promo_last_removed_percent') || '50');
+      setLastRemovedCode(lc);
+      setLastRemovedPercent(isNaN(lp) ? 50 : lp);
+    } catch {}
+  }, []);
+
+  // Keep hint in sync when promo state changes (removed/reapplied)
+  useEffect(() => {
+    try {
+      const lc = (localStorage.getItem('promo_last_removed_code') || 'FIRST100').toUpperCase();
+      const lp = Number(localStorage.getItem('promo_last_removed_percent') || '50');
+      setLastRemovedCode(lc);
+      setLastRemovedPercent(isNaN(lp) ? 50 : lp);
+    } catch {}
+  }, [promoApplied]);
 
   // Smooth scroll with easing, alignment and offset
   const smoothScrollTo = (
@@ -263,6 +287,11 @@ const Index = () => {
           style={{ backgroundImage: "url('/images/hero-background.png')" }}
         />
         <div className="absolute inset-0 bg-white/10 backdrop-blur-sm z-10" />
+
+        {/* Promo overlay anchored to hero, not sticky */}
+        <div className="absolute inset-x-0 top-20 z-30 flex justify-center">
+          <FloatingPromo fixed={false} />
+        </div>
 
         {/* Contenu de la hero */}
         {/* Contenu de la hero */}
@@ -483,7 +512,20 @@ const Index = () => {
             <p className= 'text-neutral-900 text-sm'>
           Vous avez un code promo ?
         </p>
-            <PromoCode />
+            {/* Small static hint shown when promo has been removed */}
+            {!promoApplied && lastRemovedCode && (
+              <div className="mt-1 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/80 backdrop-blur px-2.5 py-1 shadow-sm">
+                <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-indigo-500/10 text-indigo-600 border border-indigo-400/40">
+                  <BadgePercent size={14} />
+                </span>
+                <span className="text-[12px] font-medium text-indigo-700 tracking-tight">
+                  {`${lastRemovedCode} −${lastRemovedPercent}% · 100 premières personnes`}
+                </span>
+              </div>
+            )}
+            <div className="mt-3 md:mt-4">
+              <PromoCode />
+            </div>
           </div>
         )}
         <motion.div
