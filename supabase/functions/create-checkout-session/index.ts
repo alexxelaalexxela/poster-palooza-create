@@ -197,6 +197,11 @@ serve(async (req) => {
       const qty = Math.max(1, Number(it.quantity || 1));
       bodyParams.append(`line_items[${idx}][price_data][currency]`, "eur");
       bodyParams.append(`line_items[${idx}][price_data][product_data][name]`, `Poster ${it.format} – ${it.quality}`);
+      if (it.posterUrl && typeof it.posterUrl === 'string' && (it.posterUrl.startsWith('http://') || it.posterUrl.startsWith('https://'))) {
+        try {
+          bodyParams.append(`line_items[${idx}][price_data][product_data][images][0]`, it.posterUrl);
+        } catch (_e) {}
+      }
       bodyParams.append(`line_items[${idx}][price_data][unit_amount]`, `${perUnit}`);
       bodyParams.append(`line_items[${idx}][quantity]`, `${qty}`);
       idx += 1;
