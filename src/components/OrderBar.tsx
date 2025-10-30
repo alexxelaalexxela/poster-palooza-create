@@ -32,7 +32,8 @@ const OrderBar = () => {
       toast({ title: 'Sélection incomplète', description: 'Choisissez un poster, un format et une qualité.' });
       return;
     }
-    addItem({ posterUrl: finalUrl, format: selectedFormat as any, quality: selectedQuality as any, quantity: 1 });
+    const normalizedQuality = (selectedQuality === 'paper2' ? 'premium' : selectedQuality) as any;
+    addItem({ posterUrl: finalUrl, format: selectedFormat as any, quality: normalizedQuality, quantity: 1 });
     toast({ title: 'Ajouté au panier', description: 'Le poster a été ajouté à votre panier.' });
   };
 

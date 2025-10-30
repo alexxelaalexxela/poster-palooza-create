@@ -106,7 +106,7 @@ serve(async (req) => {
   const SHIPPING_FEE_CENTS = 499;
   let base_ex_shipping = isCart ? 0 : Math.max(0, unit_amount - SHIPPING_FEE_CENTS);
 
-  if (!unit_amount) {
+  if (!isCart && !unit_amount) {
     return new Response(JSON.stringify({ error: "Invalid format or quality" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" }

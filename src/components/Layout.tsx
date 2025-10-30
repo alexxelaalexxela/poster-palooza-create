@@ -226,7 +226,8 @@ function CartList() {
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto divide-y">
         {items.map((it) => {
-          const unit = Math.max(0, getPriceEuros(it.format as any, it.quality as any) - SHIPPING_FEE_CENTS / 100);
+          const normalizedQuality = (it.quality as any) === 'paper2' ? 'premium' : it.quality;
+          const unit = Math.max(0, getPriceEuros(it.format as any, normalizedQuality as any) - SHIPPING_FEE_CENTS / 100);
           const lineTotal = Number((unit * it.quantity).toFixed(2));
           return (
             <div key={`${it.posterUrl}-${it.format}-${it.quality}`} className="py-3 flex gap-3 items-center">
