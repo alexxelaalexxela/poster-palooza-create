@@ -136,6 +136,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_carts: {
+        Row: {
+          user_id: string
+          items: Json
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          items?: Json
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          items?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       visitor_orders: {
         Row: {
           id: string

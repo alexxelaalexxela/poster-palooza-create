@@ -77,7 +77,7 @@ serve(async (req) => {
 
 
 
-  let body: { format: string; quality: string; posterUrl?: string; posterPreviewDataUrl?: string; purchaseType?: 'poster' | 'plan'; email?: string; password?: string; visitorId?: string; fbEventId?: string; fbp?: string; fbc?: string; pageUrl?: string; promo?: { code?: string; percent?: number } };
+  let body: { format?: string; quality?: string; posterUrl?: string; posterPreviewDataUrl?: string; purchaseType?: 'poster' | 'plan' | 'cart'; email?: string; password?: string; visitorId?: string; fbEventId?: string; fbp?: string; fbc?: string; pageUrl?: string; promo?: { code?: string; percent?: number }; items?: Array<{ format: string; quality: string; posterUrl?: string; posterPreviewDataUrl?: string; quantity?: number }> };
 
   try {
     body = await req.json();
@@ -88,19 +88,23 @@ serve(async (req) => {
     );
   }
 
-  const { format, quality, posterUrl, posterPreviewDataUrl, purchaseType = 'poster', email, password, visitorId, fbEventId, fbp, fbc, pageUrl, promo } = body;
-  const priceId = `${format}-${quality}`;
-  let unit_amount = prices[priceId];
-  if (!unit_amount) {
-    return new Response(JSON.stringify({ error: "Invalid format or quality" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+  const { format, quality, posterUrl, posterPreviewDataUrl, purchaseType = 'poster', email, password, visitorId, fbEventId, fbp, fbc, pageUrl, promo, items } = body;
+  let unit_amount = 0;
+  let isCart = purchaseType === 'cart' && Array.isArray(items) && items.length > 0;
+  if (!isCart) {
+    const priceId = `${format}-${quality}`;
+    unit_amount = prices[priceId];
+    if (!unit_amount) {
+      return new Response(JSON.stringify({ error: "Invalid format or quality" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
   }
 
   // Apply promo on the product price EXCLUDING shipping, then add shipping back
   const SHIPPING_FEE_CENTS = 499;
-  let base_ex_shipping = Math.max(0, unit_amount - SHIPPING_FEE_CENTS);
+  let base_ex_shipping = isCart ? 0 : Math.max(0, unit_amount - SHIPPING_FEE_CENTS);
 
   if (!unit_amount) {
     return new Response(JSON.stringify({ error: "Invalid format or quality" }), {
@@ -140,7 +144,7 @@ serve(async (req) => {
     });
   }
 
-  // Apply promo discount (poster and plan) if valid
+  // Apply promo discount (poster, cart and plan) if valid
   let promoApplied = false;
   let promoCode: string | undefined = undefined;
   let promoPercent: number | undefined = undefined;
@@ -156,17 +160,21 @@ serve(async (req) => {
     if (allowedPercent) {
       const capped = Math.min(allowedPercent, Math.max(0, incomingPercent || allowedPercent));
       if (capped > 0) {
-        const discountCents = Math.floor(base_ex_shipping * (capped / 100));
-        base_ex_shipping = Math.max(0, base_ex_shipping - discountCents);
-        promoApplied = true;
-        promoCode = incomingCode;
-        promoPercent = capped;
+        if (isCart && Array.isArray(items)) {
+          // For cart, we'll apply the discount later per line by multiplying by (1 - capped/100)
+          promoApplied = true;
+          promoCode = incomingCode;
+          promoPercent = capped;
+        } else {
+          const discountCents = Math.floor(base_ex_shipping * (capped / 100));
+          base_ex_shipping = Math.max(0, base_ex_shipping - discountCents);
+          promoApplied = true;
+          promoCode = incomingCode;
+          promoPercent = capped;
+        }
       }
     }
   }
-
-  // Recompose unit amount: discounted base + shipping
-  unit_amount = Math.max(0, base_ex_shipping + SHIPPING_FEE_CENTS);
 
   const bodyParams = new URLSearchParams({
     mode: "payment",
@@ -174,17 +182,43 @@ serve(async (req) => {
       ? "https://neoma-ai.fr/subscribe/success"
       : "https://neoma-ai.fr/poster/success",
     cancel_url: "https://neoma-ai.fr/subscribe",
-    "line_items[0][price_data][currency]": "eur",
-    "line_items[0][price_data][product_data][name]":
-      purchaseType === 'plan'
-        ? `Forfait 1 poster ${format} – ${quality} (15 générations incluses)`
-        : `Poster ${format} – ${quality} + frais de livraison`,
-    "line_items[0][price_data][unit_amount]": `${unit_amount}`, "line_items[0][quantity]": "1",
     "payment_method_types[0]": "card",
   });
+
+  if (isCart && Array.isArray(items)) {
+    const discountFactor = typeof promoPercent === 'number' && promoPercent > 0 ? Math.max(0, 1 - (promoPercent / 100)) : 1;
+    let idx = 0;
+    for (const it of items) {
+      const key = `${it.format}-${it.quality}`;
+      const price = prices[key];
+      if (!price) continue;
+      const exShipping = Math.max(0, price - SHIPPING_FEE_CENTS);
+      const perUnit = Math.max(0, Math.floor(exShipping * discountFactor));
+      const qty = Math.max(1, Number(it.quantity || 1));
+      bodyParams.append(`line_items[${idx}][price_data][currency]`, "eur");
+      bodyParams.append(`line_items[${idx}][price_data][product_data][name]`, `Poster ${it.format} – ${it.quality}`);
+      bodyParams.append(`line_items[${idx}][price_data][unit_amount]`, `${perUnit}`);
+      bodyParams.append(`line_items[${idx}][quantity]`, `${qty}`);
+      idx += 1;
+      if (idx >= 20) break; // safety cap
+    }
+    // add shipping as session-level option (single fee)
+    bodyParams.append("shipping_address_collection[allowed_countries][]", "FR");
+    bodyParams.append("shipping_options[0][shipping_rate_data][display_name]", "Livraison");
+    bodyParams.append("shipping_options[0][shipping_rate_data][type]", "fixed_amount");
+    bodyParams.append("shipping_options[0][shipping_rate_data][fixed_amount][amount]", `${SHIPPING_FEE_CENTS}`);
+    bodyParams.append("shipping_options[0][shipping_rate_data][fixed_amount][currency]", "eur");
+  } else {
+    // Recompose unit amount: discounted base + shipping (single poster)
+    unit_amount = Math.max(0, base_ex_shipping + SHIPPING_FEE_CENTS);
+    bodyParams.append("line_items[0][price_data][currency]", "eur");
+    bodyParams.append("line_items[0][price_data][product_data][name]", purchaseType === 'plan' ? `Forfait 1 poster ${format} – ${quality} (15 générations incluses)` : `Poster ${format} – ${quality} + frais de livraison`);
+    bodyParams.append("line_items[0][price_data][unit_amount]", `${unit_amount}`);
+    bodyParams.append("line_items[0][quantity]", "1");
+  }
   // Ajoute une image d'aperçu filigranée (Stripe Checkout) si possible
   // Ajoute une image d'aperçu fournie par le client (déjà filigranée) si possible
-  if (purchaseType === 'poster' && typeof posterPreviewDataUrl === 'string' && posterPreviewDataUrl.startsWith('data:image')) {
+  if (!isCart && purchaseType === 'poster' && typeof posterPreviewDataUrl === 'string' && posterPreviewDataUrl.startsWith('data:image')) {
     try {
       const uploadedUrl = await uploadPreviewFromDataUrl(posterPreviewDataUrl);
       if (uploadedUrl) {
@@ -196,6 +230,9 @@ serve(async (req) => {
   }
   bodyParams.append("metadata[purchase_type]", purchaseType);
   bodyParams.append("metadata[user_id]", userId);
+  if (isCart && Array.isArray(items)) {
+    bodyParams.append("metadata[cart_count]", String(Math.min(items.length, 20)));
+  }
   if (promoApplied) {
     bodyParams.append("metadata[promo_applied]", "true");
     if (promoCode) bodyParams.append("metadata[promo_code]", promoCode);

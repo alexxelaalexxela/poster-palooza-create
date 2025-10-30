@@ -1,3 +1,4 @@
+// @ts-nocheck
 // supabase/functions/stripe-webhook/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -198,6 +199,71 @@ serve(async (req) => {
                 await sendMetaEvent(payload);
             } catch (e) {
                 console.error('Meta CAPI purchase (plan) failed', e);
+            }
+        } else if (purchaseType === 'cart') {
+            // Cart purchase: update user shipping and mark paid; skip detailed item storage for visitors
+            if (userId) {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({
+                        is_paid: true,
+                        generations_remaining: 15,
+                        stripe_customer_id: session.customer ?? null,
+                        shipping_name: shippingName,
+                        shipping_address_line1: shippingLine1,
+                        shipping_address_line2: shippingLine2,
+                        shipping_city: shippingCity,
+                        shipping_postal_code: shippingPostalCode,
+                        shipping_country: shippingCountry,
+                    })
+                    .eq('id', userId);
+                if (error) {
+                    console.error('Supabase update error (user cart):', error);
+                    return new Response('Failed to update user profile (cart)', { status: 500 });
+                }
+                console.log(`Cart purchase stored for user ${userId}`);
+            } else {
+                console.log('Cart purchase completed for visitor', visitorId);
+            }
+            // Send Purchase via CAPI for cart
+            try {
+                const eventId = metadata?.fb_event_id || crypto.randomUUID();
+                const value = Number(session?.amount_total ? (session.amount_total / 100).toFixed(2) : '0');
+                const currency = session?.currency ? String(session.currency).toUpperCase() : 'EUR';
+                const email = receiptEmail?.trim().toLowerCase();
+                const userAgent = (session?.user_agent || '') as string;
+                const ip = (session?.client_ip || '') as string;
+                const fbp = metadata?.fbp || undefined;
+                const fbc = metadata?.fbc || undefined;
+                const pageUrl = metadata?.page_url || undefined;
+                const user_data: any = {
+                    client_user_agent: userAgent || undefined,
+                    client_ip_address: ip || undefined,
+                    fbp,
+                    fbc,
+                };
+                if (email) user_data.em = await sha256Hex(email);
+                const payload = {
+                    data: [
+                        {
+                            event_name: 'Purchase',
+                            event_time: Math.floor(Date.now() / 1000),
+                            action_source: 'website',
+                            event_source_url: pageUrl || 'https://neoma-ai.fr/poster/success',
+                            event_id: eventId,
+                            user_data,
+                            custom_data: {
+                                currency,
+                                value,
+                                content_type: 'product',
+                                content_ids: ['cart']
+                            }
+                        }
+                    ]
+                };
+                await sendMetaEvent(payload);
+            } catch (e) {
+                console.error('Meta CAPI purchase (cart) failed', e);
             }
         } else {
             // Poster one-off purchase (legacy behaviour)

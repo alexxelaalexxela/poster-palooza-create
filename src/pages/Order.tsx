@@ -20,9 +20,14 @@ import { Helmet } from 'react-helmet-async';
 import { buildCanonical } from '@/lib/utils';
 import { trackEventWithId, getFbp, getFbc } from '@/lib/metaPixel';
 import PromoCode from '@/components/PromoCode';
+import { useCartStore } from '@/store/useCartStore';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 const Order = () => {
   const { selectedPoster, selectedPosterUrl, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls, promoApplied, promoPercent, promoCode } = usePosterStore();
+  const { items: cartItems, getSubtotal: getCartSubtotal, clear: clearCart } = useCartStore();
+  const isCart = cartItems.length > 0;
+  const singleCartItem = isCart && cartItems.length === 1 ? cartItems[0] : null;
   const mergedUrls = [...generatedUrls, ...cachedUrls];
   const { toast } = useToast();
   const { user } = useAuth();
@@ -44,13 +49,24 @@ const Order = () => {
     return price;
   }, [price, promoApplied, promoPercent]);
   const savedAmount = useMemo(() => {
+    if (isCart) return 0; // handled separately for cart below
     if (promoApplied && promoPercent > 0) {
       return Number((originalNoShip - discountedPrice).toFixed(2));
     }
     return 0;
-  }, [originalNoShip, discountedPrice, promoApplied, promoPercent]);
-  const totalWithShipping = Number((discountedPrice + SHIPPING_FEE).toFixed(2));
-  const hasIncludedPlanActive = !!(user && profile?.is_paid && profile?.subscription_format && profile?.subscription_quality && !profile?.included_poster_selected_url);
+  }, [isCart, originalNoShip, discountedPrice, promoApplied, promoPercent]);
+  const cartSubtotal = useMemo(() => (isCart ? Number(getCartSubtotal().toFixed(2)) : 0), [isCart, getCartSubtotal]);
+  const cartDiscount = useMemo(() => {
+    if (!isCart) return 0;
+    if (promoApplied && (promoPercent || 0) > 0) {
+      return Number((cartSubtotal * ((promoPercent || 0) / 100)).toFixed(2));
+    }
+    return 0;
+  }, [isCart, cartSubtotal, promoApplied, promoPercent]);
+  const totalWithShipping = isCart
+    ? Number(((cartSubtotal - cartDiscount) + SHIPPING_FEE).toFixed(2))
+    : Number((discountedPrice + SHIPPING_FEE).toFixed(2));
+  const hasIncludedPlanActive = !isCart && !!(user && profile?.is_paid && profile?.subscription_format && profile?.subscription_quality && !profile?.included_poster_selected_url);
   const shippingDisplay = hasIncludedPlanActive ? 0 : SHIPPING_FEE;
   const totalDisplay = hasIncludedPlanActive ? 0 : totalWithShipping;
   const canCheckout = !!user || !!visitorId;
@@ -66,7 +82,7 @@ const Order = () => {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (!finalUrl) {
+      if (!isCart && !finalUrl) {
         toast({
           title: 'Image manquante',
           description: 'Aucune URL de poster disponible.',
@@ -75,16 +91,18 @@ const Order = () => {
         return;
       }
 
-      // Crée une preview filigranée pour Stripe
+      // Crée une preview filigranée (uniquement pour l'achat unitaire)
       let posterPreviewDataUrl: string | null = null;
-      try {
-        posterPreviewDataUrl = await createWatermarkedPreview(finalUrl, {
-          text: 'apercu Neoma',
-          tile: 120,
-          opacity: 0.18,
-          fontSize: 14,
-        });
-      } catch {}
+      if (!isCart && finalUrl) {
+        try {
+          posterPreviewDataUrl = await createWatermarkedPreview(finalUrl, {
+            text: 'apercu Neoma',
+            tile: 120,
+            opacity: 0.18,
+            fontSize: 14,
+          });
+        } catch {}
+      }
 
       if (hasIncludedPlanActive) {
         // No Stripe: store selected poster url as included poster and confirm
@@ -100,31 +118,30 @@ const Order = () => {
 
       // Meta Pixel: InitiateCheckout + store value for Purchase on success
       try {
-        const contentId = `poster-${selectedPoster ?? 'na'}-${selectedFormat}-${selectedQuality}`;
-        const contentType = 'product'; // TikTok only accepts 'product' or 'product_group'
-        // Generate event id for dedupe with CAPI
+        const contentType = 'product';
+        const contentIds = isCart
+          ? cartItems.map((it, i) => `poster-${i}-${it.format}-${it.quality}`)
+          : [`poster-${selectedPoster ?? 'na'}-${selectedFormat}-${selectedQuality}`];
         const fbEventId = crypto.randomUUID();
         localStorage.setItem('fb_event_id', fbEventId);
         trackEventWithId('InitiateCheckout', {
           value: totalWithShipping,
           currency: 'EUR',
-          content_ids: [contentId],
+          content_ids: contentIds,
           content_type: contentType,
         }, fbEventId);
-        // TikTok pixel removed
         localStorage.setItem('fb_last_purchase_value', String(totalWithShipping));
         localStorage.setItem('fb_last_purchase_currency', 'EUR');
-        localStorage.setItem('fb_last_purchase_type', 'poster');
-        localStorage.setItem('fb_last_content_id', contentId);
+        localStorage.setItem('fb_last_purchase_type', isCart ? 'cart' : 'poster');
+        localStorage.setItem('fb_last_content_id', contentIds[0] || 'cart');
         localStorage.setItem('fb_last_content_type', contentType);
-        // Store cookies for server
         const fbp = getFbp();
         const fbc = getFbc();
         if (fbp) localStorage.setItem('fbp', fbp);
         if (fbc) localStorage.setItem('fbc', fbc);
       } catch {}
 
-      // Default one-off poster purchase via Stripe
+      // Achat panier (multi) ou unitaire via Stripe
       const res = await fetch(
         import.meta.env.VITE_SUPABASE_FUNCTION_URL,
         {
@@ -136,11 +153,17 @@ const Order = () => {
             'X-Client-Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
-            purchaseType: 'poster',
-            format: selectedFormat,
-            quality: selectedQuality,
-            posterUrl: typeof finalUrl === 'string' && finalUrl.startsWith('data:') ? undefined : finalUrl,
-            posterPreviewDataUrl: posterPreviewDataUrl ?? undefined,
+            purchaseType: isCart ? 'cart' : 'poster',
+            format: !isCart ? selectedFormat : undefined,
+            quality: !isCart ? selectedQuality : undefined,
+            posterUrl: !isCart && typeof finalUrl === 'string' && finalUrl.startsWith('data:') ? undefined : (!isCart ? finalUrl : undefined),
+            posterPreviewDataUrl: !isCart ? (posterPreviewDataUrl ?? undefined) : undefined,
+            items: isCart ? cartItems.map((it) => ({
+              format: it.format,
+              quality: it.quality,
+              posterUrl: typeof it.posterUrl === 'string' && it.posterUrl.startsWith('data:') ? undefined : it.posterUrl,
+              quantity: it.quantity,
+            })) : undefined,
             visitorId,
             promo: promoApplied ? { code: promoCode, percent: promoPercent } : undefined,
             // Meta CAPI metadata
@@ -154,6 +177,9 @@ const Order = () => {
 
       const data = await res.json();
       if (res.ok && data.url) {
+        if (isCart) {
+          try { clearCart(); } catch {}
+        }
         window.location.href = data.url;   // redirection Stripe Checkout
       } else {
         throw new Error(data.error || 'Erreur lors de la création de la session de paiement');
@@ -240,33 +266,79 @@ const Order = () => {
                 <CardContent className="space-y-6">
                   {/* Poster Preview */}
                   <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                    <div className="relative aspect-[3/4] w-full max-w-xs mx-auto mb-4 rounded-lg bg-black/20 p-1 backdrop-blur-sm" onContextMenu={(e) => e.preventDefault()}>
-                      {finalUrl ? (
-                        <>
+                    {isCart ? (
+                      cartItems.length > 1 ? (
+                        <div className="relative">
+                          <Carousel className="relative">
+                            <CarouselContent>
+                              {cartItems.map((it, idx) => (
+                                <CarouselItem key={`${it.posterUrl}-${idx}`}>
+                                  <div className="relative aspect-[3/4] w-full max-w-xs mx-auto mb-4 rounded-lg bg-black/20 p-1 backdrop-blur-sm" onContextMenu={(e) => e.preventDefault()}>
+                                    {!profile?.is_paid && (
+                                      <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
+                                    )}
+                                    <img
+                                      src={it.posterUrl}
+                                      alt={`Poster ${idx + 1}`}
+                                      className="w-full h-full object-contain rounded-md select-none pointer-events-none"
+                                      draggable={false}
+                                      onDragStart={(e) => e.preventDefault()}
+                                      onContextMenu={(e) => e.preventDefault()}
+                                      style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                                    />
+                                  </div>
+                                </CarouselItem>
+                              ))}
+                            </CarouselContent>
+                            <CarouselPrevious className="-left-6" />
+                            <CarouselNext className="-right-6" />
+                          </Carousel>
+                        </div>
+                      ) : (
+                        <div className="relative aspect-[3/4] w-full max-w-xs mx-auto mb-4 rounded-lg bg-black/20 p-1 backdrop-blur-sm" onContextMenu={(e) => e.preventDefault()}>
                           {!profile?.is_paid && (
                             <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
                           )}
                           <img
-                            src={finalUrl}
-                            alt={`Poster ${selectedPoster}`}
+                            src={cartItems[0]?.posterUrl}
+                            alt={`Poster`}
                             className="w-full h-full object-contain rounded-md select-none pointer-events-none"
                             draggable={false}
                             onDragStart={(e) => e.preventDefault()}
                             onContextMenu={(e) => e.preventDefault()}
                             style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                           />
-                        </>
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center rounded-md">
-                          <span className="text-white/60 text-sm">
-                            Poster #{selectedPoster}
-                          </span>
                         </div>
-                      )}
-                    </div>
+                      )
+                    ) : (
+                      <div className="relative aspect-[3/4] w-full max-w-xs mx-auto mb-4 rounded-lg bg-black/20 p-1 backdrop-blur-sm" onContextMenu={(e) => e.preventDefault()}>
+                        {finalUrl ? (
+                          <>
+                            {!profile?.is_paid && (
+                              <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
+                            )}
+                            <img
+                              src={finalUrl}
+                              alt={`Poster ${selectedPoster}`}
+                              className="w-full h-full object-contain rounded-md select-none pointer-events-none"
+                              draggable={false}
+                              onDragStart={(e) => e.preventDefault()}
+                              onContextMenu={(e) => e.preventDefault()}
+                              style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                            />
+                          </>
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center rounded-md">
+                            <span className="text-white/60 text-sm">
+                              Poster #{selectedPoster}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <div className="text-center">
                       <Badge variant="outline" className="text-white border-white/30">
-                        Poster Sélectionné
+                        {isCart ? (cartItems.length > 1 ? 'Posters sélectionnés' : 'Poster sélectionné') : 'Poster Sélectionné'}
                       </Badge>
                     </div>
                   </div>
@@ -291,22 +363,52 @@ const Order = () => {
                 <CardContent className="space-y-6">
                   {/* Order Details */}
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-white/10">
-                      <span className="text-white/70">Format:</span>
-                      <Badge variant="outline" className="text-white border-white/30">
-                        {selectedFormat}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-white/10">
-                      <span className="text-white/70">Qualité:</span>
-                      <Badge variant="outline" className="text-white border-white/30">
-                        {selectedQuality === 'classic'
-                          ? 'Classic'
-                          : selectedQuality === 'premium'
-                            ? 'Premium'
-                            : 'Museum'}
-                      </Badge>
-                    </div>
+                    {!isCart && (
+                      <>
+                        <div className="flex justify-between items-center py-2 border-b border-white/10">
+                          <span className="text-white/70">Format:</span>
+                          <Badge variant="outline" className="text-white border-white/30">
+                            {selectedFormat}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-white/10">
+                          <span className="text-white/70">Qualité:</span>
+                          <Badge variant="outline" className="text-white border-white/30">
+                            {selectedQuality === 'classic'
+                              ? 'Classic'
+                              : selectedQuality === 'premium'
+                                ? 'Premium'
+                                : 'Museum'}
+                          </Badge>
+                        </div>
+                      </>
+                    )}
+                    {isCart && singleCartItem && (
+                      <>
+                        <div className="flex justify-between items-center py-2 border-b border-white/10">
+                          <span className="text-white/70">Format:</span>
+                          <Badge variant="outline" className="text-white border-white/30">
+                            {singleCartItem.format}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-white/10">
+                          <span className="text-white/70">Qualité:</span>
+                          <Badge variant="outline" className="text-white border-white/30">
+                            {singleCartItem.quality === 'classic'
+                              ? 'Classic'
+                              : singleCartItem.quality === 'premium'
+                                ? 'Premium'
+                                : 'Museum'}
+                          </Badge>
+                        </div>
+                      </>
+                    )}
+                    {isCart && (
+                      <div className="flex justify-between items-center py-2 border-b border-white/10">
+                        <span className="text-white/70">Articles:</span>
+                        <span className="text-white font-medium">{cartItems.length}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center py-2 border-b border-white/10">
                       <span className="text-white/70">Livraison:</span>
                       <span className="text-white font-medium">
@@ -318,8 +420,9 @@ const Order = () => {
                       <div className="flex justify-between items-center py-2 border-b border-white/10">
                         <span className="text-white/70">Code promo:</span>
                         <span className="text-green-300 font-medium">
-                          
-                          {savedAmount > 0 ? ` −${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(savedAmount)}` : ''}
+                          {isCart
+                            ? (cartDiscount > 0 ? ` −${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(cartDiscount)}` : '')
+                            : (savedAmount > 0 ? ` −${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(savedAmount)}` : '')}
                         </span>
                       </div>
                     )}
