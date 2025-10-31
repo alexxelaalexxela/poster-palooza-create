@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Crown, Sparkles } from "lucide-react";
 import { usePosterStore } from "@/store/usePosterStore";
 import { UpgradeModal } from "@/components/UpgradeModal";
+// Improve now routes back into PromptBar, so dialog is removed
 import { useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 import Watermark from "@/components/Watermark";
@@ -19,6 +20,7 @@ export default function PosterGallery() {
     selectedPoster,
     setSelectedPoster,
     setSelectedPosterUrl,
+    setImprovementRefUrl,
   } = usePosterStore();
 
   const navigate = useNavigate();
@@ -42,6 +44,8 @@ export default function PosterGallery() {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   /* Pagination for old posters */
   const [visibleOldCount, setVisibleOldCount] = useState<number>(8);
+
+  // No modal: clicking "Améliorer" sets improvementRefUrl and scrolls to PromptBar
 
   useEffect(() => {
     // Reset visible count when the cached list changes
@@ -153,6 +157,7 @@ export default function PosterGallery() {
                         try { (img as any).sizes = ''; } catch {}
                       }}
                     />
+                    {/* Improve button overlay removed; handled via separate section */}
                   </div>
                 </motion.div>
               );
@@ -275,6 +280,7 @@ export default function PosterGallery() {
                       draggable={false}
                       loading="lazy"
                     />
+                    {/* Improve button overlay removed; handled via separate section */}
                   </div>
                 </motion.div>
               );
@@ -356,6 +362,8 @@ export default function PosterGallery() {
         onClose={() => setShowUpgrade(false)}
         onSignup={() => { setShowUpgrade(false); navigate('/subscribe'); }}
       />
+
+      {/* No dialog anymore */}
     </motion.section>
   );
 }

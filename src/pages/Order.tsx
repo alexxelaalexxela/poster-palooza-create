@@ -1,7 +1,7 @@
 
 import { motion } from 'framer-motion';
 import { ArrowLeft, Check, CreditCard, MapPin, User, Package, Star, Shield, Truck } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { usePosterStore } from '@/store/usePosterStore';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,9 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 const Order = () => {
   const { selectedPoster, selectedPosterUrl, selectedFormat, selectedQuality, price, generatedUrls, cachedUrls, promoApplied, promoPercent, promoCode } = usePosterStore();
   const { items: cartItems, getSubtotal: getCartSubtotal, clear: clearCart } = useCartStore();
-  const isCart = cartItems.length > 0;
+  const locationRouter = useLocation();
+  const isCartMode = new URLSearchParams(locationRouter.search).get('cart') === '1';
+  const isCart = isCartMode && cartItems.length > 0;
   const singleCartItem = isCart && cartItems.length === 1 ? cartItems[0] : null;
   const mergedUrls = [...generatedUrls, ...cachedUrls];
   const { toast } = useToast();

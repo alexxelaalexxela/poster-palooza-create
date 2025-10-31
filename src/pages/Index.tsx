@@ -12,7 +12,7 @@ import PromoCode from '@/components/PromoCode';
 import FloatingPromo from '@/components/FloatingPromo';
 import { usePosterStore } from '@/store/usePosterStore';
 import { useRef, useState, useEffect } from 'react';
-import { ChevronRight, ChevronUp, BadgePercent } from 'lucide-react';
+import { ChevronRight, ChevronUp, BadgePercent, Sparkles } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -95,17 +95,21 @@ const Index = () => {
     generatedUrls,
     cachedUrls,
     promoApplied,
+    setImprovementRefUrl,
+    improvementRefUrl,
   } = usePosterStore();
   const { user } = useAuth();
   const { profile } = useProfile();
 
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showFormat, setShowFormat] = useState(false);
 
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
   const formatRef = useRef<HTMLDivElement>(null);
   const qualityRef = useRef<HTMLDivElement>(null);
+  const improvementRef = useRef<HTMLDivElement>(null);
   const [showHint, setShowHint] = useState(true);
   const [lastRemovedCode, setLastRemovedCode] = useState<string>('FIRST100');
   const [lastRemovedPercent, setLastRemovedPercent] = useState<number>(50);
@@ -189,7 +193,7 @@ const Index = () => {
     prevGenCountRef.current = current;
   }, [generatedUrls]);
 
-  // 2) After POSTER selection (from gallery), scroll to format
+  // 2) After POSTER selection (from gallery), scroll to improvement section
   const firstPosterScrollRef = useRef(true);
   useEffect(() => {
     if (firstPosterScrollRef.current) {
@@ -197,7 +201,7 @@ const Index = () => {
       return;
     }
     if (selectedPoster !== null || selectedPosterUrl) {
-      smoothScrollTo(formatRef, { duration: 850, align: 'center', offset: 96 });
+      smoothScrollTo(improvementRef, { duration: 850, align: 'start', offset: -140 });
     }
   }, [selectedPoster, selectedPosterUrl]);
 
@@ -212,6 +216,15 @@ const Index = () => {
       smoothScrollTo(qualityRef, { duration: 900, align: 'center', offset: -10 });
     }
   }, [selectedFormat]);
+
+  // Ensure visible scroll to Format when it becomes visible
+  useEffect(() => {
+    if (showFormat) {
+      requestAnimationFrame(() => {
+        smoothScrollTo(formatRef, { duration: 850, align: 'start', offset: -140 });
+      });
+    }
+  }, [showFormat]);
 
   return (
     <div className="min-h-screen bg-[#E1D7CA]">
@@ -288,10 +301,12 @@ const Index = () => {
         />
         <div className="absolute inset-0 bg-white/10 backdrop-blur-sm z-10" />
 
-        {/* Promo overlay anchored to hero, not sticky */}
-        <div className="absolute inset-x-0 top-20 z-30 flex justify-center">
-          <FloatingPromo fixed={false} />
-        </div>
+        {/* Promo overlay anchored to hero, not sticky (hidden in improvement mode) */}
+        {!improvementRefUrl && (
+          <div className="absolute inset-x-0 top-20 z-30 flex justify-center">
+            <FloatingPromo fixed={false} />
+          </div>
+        )}
 
         {/* Contenu de la hero */}
         {/* Contenu de la hero */}
@@ -480,14 +495,75 @@ const Index = () => {
           <PosterGallery />
         </div>
 
+        {/* Improve Section (appears after a poster selection) */}
+        {(selectedPoster !== null || selectedPosterUrl) && (
+          <>
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{ duration: 1, delay: 0.2 }}
+              className="h-px w-full max-w-4xl mx-auto bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
+            />
+            <motion.section
+              ref={improvementRef}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="max-w-4xl mx-auto w-full"
+            >
+              <div className="text-center mb-3 md:mb-4">
+                <div className="inline-flex items-center gap-2 md:gap-3">
+                  <div className="p-2 md:p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg md:rounded-xl shadow-lg">
+                    <Sparkles className="w-4 h-4 md:w-6 md:h-6 text-white" />
+                  </div>
+                  <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+                    Améliorer <span className="text-gray-500 font-normal text-base">(optionnel)</span>
+                  </h2>
+                </div>
+              </div>
+              <div className="mt-4 bg-white/70 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2] p-4 sm:p-6">
+                <ul className="list-disc pl-5 space-y-2 text-sm text-gray-700 text-left">
+                  <li>Affiner le poster: changer un personnage, un élément, des couleurs, l’ambiance, etc.</li>
+                  <li>Chaque amélioration utilise aussi une des 3 tentatives gratuites.</li>
+                  <li>Bonne nouvelle: après paiement, tu peux générer/modifier/polir jusqu’à 15 fois inclus avant de confirmer la livraison.</li>
+                </ul>
+                <div className="mt-5 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const merged = [...generatedUrls, ...cachedUrls];
+                      const currentUrl = selectedPosterUrl ?? (selectedPoster != null ? merged[selectedPoster] : null);
+                      if (currentUrl) {
+                        setImprovementRefUrl(currentUrl);
+                        try { window.dispatchEvent(new CustomEvent('promptbar:focus')); } catch {}
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full bg-gradient-to-tr from-indigo-600 to-fuchsia-600 text-white px-4 sm:px-5 py-2.5 shadow-md hover:shadow-lg ring-1 ring-white/30 backdrop-blur-sm hover:from-indigo-500 hover:to-fuchsia-500 transition"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span className="text-sm sm:text-base font-semibold">Améliorer ce poster</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowFormat(true); }}
+                    className="inline-flex items-center gap-2 rounded-full border border-indigo-200 text-indigo-700 bg-white/70 px-4 sm:px-5 py-2.5 shadow-sm hover:bg-white"
+                  >
+                    <span className="text-sm sm:text-base font-medium">Passer</span>
+                  </button>
+                </div>
+              </div>
+            </motion.section>
+          </>
+        )}
+
         <motion.div
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ duration: 1, delay: 0.4 }}
           className="h-px w-full max-w-4xl mx-auto bg-gradient-to-r from-transparent via-indigo-200 to-transparent"
         />
-        {/* Format Picker */}
-        {!hasIncludedPlan && (
+        {/* Format Picker (shown only after "Passer") */}
+        {!hasIncludedPlan && showFormat && (
           <div ref={formatRef}>
             <FormatPicker />
           </div>

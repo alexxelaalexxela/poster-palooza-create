@@ -31,6 +31,9 @@ interface GenerateRequest {
   manualTitle?: string;
   manualSubtitle?: string;
   manualDate?: string;
+  // New for iteration flow
+  iterateFromUrl?: string;
+  improvementInstructions?: string;
 }
 
 serve(async (req) => {
@@ -39,11 +42,21 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, templateName, templateDescription, libraryPosterId, hasImage, imageDataUrl, visitorId, fbEventId, fbp, fbc, pageUrl, manualTitle, manualSubtitle, manualDate }: GenerateRequest = await req.json();
+    const { prompt, templateName, templateDescription, libraryPosterId, hasImage, imageDataUrl, visitorId, fbEventId, fbp, fbc, pageUrl, manualTitle, manualSubtitle, manualDate, iterateFromUrl, improvementInstructions }: GenerateRequest = await req.json();
+    const reqId = crypto.randomUUID();
+    console.log('[gen] reqId=%s received', reqId, {
+      mode: iterateFromUrl ? 'improve' : 'generate',
+      templateName,
+      hasImage: !!hasImage,
+      iterateFromUrl: !!iterateFromUrl,
+      hasInstructions: !!(improvementInstructions && improvementInstructions.trim()),
+      visitorId,
+    });
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const authHeader = req.headers.get('Authorization')!;
     const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    console.log('[gen] reqId=%s user=%s', reqId, user?.id || null);
 
     let canGenerate = false;
     let userId = user?.id;
@@ -92,7 +105,8 @@ serve(async (req) => {
       });
     }
 
-    // Feature premium: description d'image réservée aux utilisateurs payants
+    // Feature premium: description d'image uploadée réservée aux utilisateurs payants
+    // (itération à partir d'un poster public n'est pas considérée comme un upload utilisateur)
     if (hasImage && !isPaid) {
       return new Response(JSON.stringify({ success: false, error: 'Premium required for image upload.' }), {
         status: 429,
@@ -100,20 +114,24 @@ serve(async (req) => {
       });
     }
 
-    // If an image is provided, describe it with GPT-4o-mini and merge into the prompt
+    // If an image is provided (normal flow), we can optionally enrich the prompt with a description
     let effectivePrompt = prompt || '';
-    if (hasImage && imageDataUrl) {
-      try {
-        const imageDescription = await describeImage(imageDataUrl);
-        console.log('Image description:', imageDescription);
-        effectivePrompt = effectivePrompt
-          ? `${effectivePrompt}\n\nDescription de la personne/batiment: ${imageDescription}`
-          : `Description de l'image: ${imageDescription}`;
-      } catch (e) {
-        console.error('Image description failed:', e);
-        // Continue without image description rather than failing hard
+    if (!iterateFromUrl) {
+      if (hasImage && imageDataUrl) {
+        try {
+          const imageDescription = await describeImage(imageDataUrl);
+          console.log('Image description:', imageDescription);
+          effectivePrompt = effectivePrompt
+            ? `${effectivePrompt}\n\nDescription de la personne/batiment: ${imageDescription}`
+            : `Description de l'image: ${imageDescription}`;
+        } catch (e) {
+          console.error('Image description failed:', e);
+          // Continue without image description rather than failing hard
+        }
       }
     }
+
+    // Iteration: do not describe the reference poster here; handled later in edit flow
 
     // Determine titles based on manual inputs
     let mainTitle = '';
@@ -150,6 +168,118 @@ serve(async (req) => {
     // Determine final style description: if a library poster is selected, treat its description as the only style source (ignore old templates)
     const styleDescription = templateDescription || '';
 
+    // Branch: Iteration mode → build a dedicated improvement prompt and use image-to-image
+    if (iterateFromUrl) {
+      console.log('[improve] reqId=%s compose start', reqId, { hasAttachedPhoto: !!imageDataUrl, hasInstructions: !!(improvementInstructions && improvementInstructions.trim()) });
+      // Optionally describe a user-attached photo (NOT the poster to improve)
+      let additionalImageDescription: string | undefined;
+      if (hasImage && imageDataUrl) {
+        try {
+          additionalImageDescription = await describeImage(imageDataUrl);
+          console.log('[improve] reqId=%s attached photo described (len=%s)', reqId, (additionalImageDescription || '').length);
+        } catch (e) {
+          console.error('Optional attached image description failed:', e);
+        }
+      }
+
+      // Build an improvement prompt using GPT text (fallback to rule-based builder)
+      let improvementPrompt: string;
+      try {
+        improvementPrompt = await composeImprovementPromptWithGPT({
+          userInstructions: (improvementInstructions || '').trim(),
+          additionalImageDescription: additionalImageDescription || '',
+          styleDescription,
+          mainTitle,
+          subtitle,
+          date: normalizedDate,
+        });
+        console.log('[improve] reqId=%s improvementPrompt (GPT):\n%s', reqId, improvementPrompt);
+      } catch (e) {
+        console.error('composeImprovementPromptWithGPT failed, falling back:', e);
+        improvementPrompt = buildImprovementPrompt({
+          instructions: (improvementInstructions || '').trim(),
+          styleDescription,
+          mainTitle,
+          subtitle,
+          date: normalizedDate,
+          additionalImageDescription,
+        });
+        console.log('[improve] reqId=%s improvementPrompt (fallback):\n%s', reqId, improvementPrompt);
+      }
+
+      // Generate a single edited image from the reference
+      let editedB64: string;
+      try {
+        console.log('[improve] reqId=%s calling OpenAI image edits', reqId);
+        editedB64 = await generateImageEdit(improvementPrompt, iterateFromUrl);
+        console.log('[improve] reqId=%s edits success (b64_len=%s)', reqId, editedB64?.length || 0);
+      } catch (e) {
+        console.error('OpenAI edit failed:', e);
+        return new Response(JSON.stringify({ success: false, error: 'Image edit failed' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Overlay + upload
+      const pngBytes: Uint8Array = base64ToUint8Array(editedB64);
+      const folder = userId ? `users/${userId}` : `visitors/${visitorId || 'unknown'}`;
+      const publicUrl = await uploadBytesToStorage(pngBytes, folder);
+      console.log('[improve] reqId=%s upload complete url=%s', reqId, publicUrl);
+
+      const postersWithMeta = [{ url: publicUrl, usedPrompt: improvementPrompt }];
+      const imageUrls: string[] = [publicUrl];
+
+      // Persist + decrement attempts (same logic as normal flow)
+      if (user) {
+        await supabase.rpc('decrement_generations', { user_id_param: user.id });
+        const posterRows = postersWithMeta.map(({ url }) => ({
+          visitor_id: visitorId,
+          url,
+          user_id: user.id,
+          used_prompt: improvementPrompt,
+          template: templateName,
+        }));
+        await supabase.from('visitor_posters').insert(posterRows);
+        console.log('[improve] reqId=%s persist linked to user', reqId);
+      } else if (visitorId) {
+        const { data: existingVisitor } = await supabase
+          .from('visitor_user_links')
+          .select('visitor_id, generation_count')
+          .eq('visitor_id', visitorId)
+          .single();
+        if (existingVisitor) {
+          await supabase
+            .from('visitor_user_links')
+            .update({ 
+              generation_count: (existingVisitor.generation_count || 0) + 1,
+              last_generated_at: new Date().toISOString()
+            })
+            .eq('visitor_id', visitorId);
+        } else {
+          await supabase.from('visitor_user_links').insert({ 
+            visitor_id: visitorId, 
+            generation_count: 1,
+            last_generated_at: new Date().toISOString()
+          });
+        }
+        const posterRows = postersWithMeta.map(({ url }) => ({
+          visitor_id: visitorId,
+          url,
+          used_prompt: improvementPrompt,
+          template: templateName,
+        }));
+        await supabase.from('visitor_posters').insert(posterRows);
+        console.log('[improve] reqId=%s persist linked to visitor', reqId);
+      }
+
+      console.log('[improve] reqId=%s success', reqId, { imageUrls });
+      return new Response(
+        JSON.stringify({ success: true, imageUrls }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Generate prompts (1 for free, 4 for paid) using GPT-4
     console.log('template description');
     const promptVariations = await generatePromptVariations(
@@ -172,18 +302,10 @@ serve(async (req) => {
         try {
           let b64 = await generateImage(variation);
           // Overlay -> retourne directement des bytes PNG (évite conversions base64 inutiles)
-          let pngBytes: Uint8Array;
-          try {
-            pngBytes = await addLogoToBase64ImageReturnBytes(b64);
-          } catch (e) {
-            console.error('Logo overlay failed:', e);
-            // fallback: upload l'image telle quelle
-            pngBytes = base64ToUint8Array(b64);
-          }
+          const pngBytes: Uint8Array = base64ToUint8Array(b64);
           const publicUrl = await uploadBytesToStorage(pngBytes, folder);
           // Aide le GC en relâchant les gros buffers
           b64 = '';
-          pngBytes = new Uint8Array(0);
           return { url: publicUrl, usedPrompt: variation };
         } catch (e) {
           console.error('Pipeline failed for a variation:', e);
@@ -405,7 +527,8 @@ Return 4 slightly different from each other prompts, one prompt per line so that
     ${date && date.trim() ? `•\tUnder the subtitle, include the date "${date.trim()}" in very small letters (smaller than the subtitle), aligned with the text block.` : ''}
     •\tIf the title : "${mainTitle}", corresponds to a place, monument, or specific location, make sure the generated prompt visually reflects that.
     •\tDo not include any other title than these two${date && date.trim() ? ' (the date is not a title)' : ''}.
-    •\tOffer unique, creative variations of the original idea.
+    •\tOffer unique, creative variations of the original idea. 
+    •\tThe answer must be in english.
     •\tIncorporate the user's prompt that will follow.
     •\tIf people are present, they should occupy no more than one-fifth of the scene. The remaining space should focus on a rich, detailed, and visually complete landscape description.
     The most important is to take the aesthetic described "${templateDescription}" !!
@@ -461,34 +584,36 @@ Return 4 slightly different from each other prompts, one prompt per line so that
 
 
 
-async function describeImage(imageDataUrl: string): Promise<string> {
+async function describeImage(imageDataOrUrl: string): Promise<string> {
   if (!openAIApiKey) throw new Error('OPENAI_API_KEY not set');
-  // Accept Data URL (data:image/*;base64,....). If not, wrap as JPEG data URL by default.
-  const imageUrlData = imageDataUrl.startsWith('data:')
-    ? imageDataUrl
-    : `data:image/jpeg;base64,${imageDataUrl}`;
+  // Accept HTTP(S) URL, Data URL (data:image/*;base64,....) or raw base64.
+  let imageUrlForApi: string;
+  if (imageDataOrUrl.startsWith('http://') || imageDataOrUrl.startsWith('https://')) {
+    imageUrlForApi = imageDataOrUrl;
+  } else if (imageDataOrUrl.startsWith('data:')) {
+    imageUrlForApi = imageDataOrUrl;
+  } else {
+    imageUrlForApi = `data:image/jpeg;base64,${imageDataOrUrl}`;
+  }
 
   const messages = [
     {
       role: 'user',
       content: [
-        { type: 'text', text: `Décris uniquement les éléments principaux visibles dans l’image.  
+        { type: 'text', text: `Describe only the main visible elements in the image.
+	•	If one or more people appear:
+➝ Provide a minimal and factual description: gender, approximate age, hair color and style, one or two clothing details.
+➝ Use a telegraphic format — no full sentences, only keywords separated by commas.
+	•	If no humans appear and the subject is a building:
+➝ Provide a detailed description: architectural style (modern, old, gothic, Haussmannian, industrial, etc.), dominant materials (stone, glass, concrete, wood), number of floors, overall condition (new, worn, renovated), main colors, and distinctive features (balconies, columns, sloped roof, windows, etc.).
+	•	No emotional or narrative interpretation.
 
-- Si une ou plusieurs personnes apparaissent :  
-  ➝ Donne une description minimale et factuelle : sexe, âge approximatif, couleur et style de cheveux, un ou deux détails vestimentaires.  
-  ➝ Format télégraphique, sans phrases, seulement des mots-clés séparés par des virgules.  
-
-- Si aucun humain n’apparaît et que c’est un bâtiment :  
-  ➝ Donne une description détaillée : style architectural (moderne, ancien, gothique, haussmannien, industriel, etc.), matériaux dominants (pierre, verre, béton, bois), nombre d’étages, état général (neuf, vétuste, rénové), couleurs principales, éléments particuliers (balcons, colonnes, toit en pente, vitres, etc.).  
-
-- Pas d’interprétation émotionnelle ou narrative.  
-
-Exemples :  
-- "homme, cheveux bruns, mi-longs bouclés, chemise noire rayée"  
-- "femme, cheveux blonds, attachés, robe rouge"  
-- "immeuble haussmannien, pierre beige, 6 étages, balcons en fer forgé, fenêtres hautes, toit mansardé gris"  
-- "gratte-ciel moderne, verre bleu, 40 étages, façade lisse, base en béton"` },
-        { type: 'image_url', image_url: { url: imageUrlData } },
+Examples:
+	•	“man, brown hair, medium length curly, black striped shirt”
+	•	“woman, blond hair, tied up, red dress”
+	•	“Haussmannian building, beige stone, 6 floors, wrought-iron balconies, tall windows, gray mansard roof”
+	•	“modern skyscraper, blue glass, 40 floors, smooth facade, concrete base”` },
+        { type: 'image_url', image_url: { url: imageUrlForApi } },
       ],
     },
   ];
@@ -545,6 +670,135 @@ async function generateImage(prompt: string): Promise<string> {
   return base64;
 
   //return data.data[0].url;
+}
+
+// Compose an improvement prompt using GPT (text) to precisely instruct an image edit
+async function composeImprovementPromptWithGPT(args: { userInstructions: string; additionalImageDescription?: string; styleDescription: string; mainTitle: string; subtitle: string; date?: string }): Promise<string> {
+  if (!openAIApiKey) throw new Error('OPENAI_API_KEY not set');
+  const { userInstructions, additionalImageDescription, styleDescription, mainTitle, subtitle, date } = args;
+  const system = `You are a senior prompt engineer creating prompts for GPT-Image edits.
+Your output must be a SINGLE plain text prompt (no JSON, no notes) that:
+- Enforces: "Keep the reference image EXACTLY as-is (composition, framing, palette, typography)."
+- Applies ONLY the requested modifications.
+- Preserves the aesthetic : ${styleDescription || '(style unspecified)'}.
+- If provided, includes text layout: main title "${mainTitle || ''}" prominently, subtitle "${subtitle || ''}" directly below (≥2x smaller),${date && date.trim() ? ` and a small date "${date.trim()}" under the block` : ''}.
+- If an extra user photo description is provided, integrate it as additional context, not as a replacement of the reference image.`;
+
+  const details: string[] = [];
+  if (additionalImageDescription && additionalImageDescription.trim()) {
+    details.push(`Attached photo (context): ${additionalImageDescription.trim()}`);
+  }
+  if (userInstructions && userInstructions.trim()) {
+    details.push(`Requested changes: ${userInstructions.trim()}`);
+  } else {
+    details.push('Requested changes: none specified (make minimal/no change).');
+  }
+
+  const user = details.join('\n');
+
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      temperature: 0.6,
+      max_tokens: 400,
+    }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) {
+    throw new Error(data?.error?.message || `OpenAI returned ${resp.status}`);
+  }
+  const content: string = data?.choices?.[0]?.message?.content?.trim?.();
+  if (!content) throw new Error('Empty prompt content');
+  return content;
+}
+
+// Build a unified prompt for improvement mode that strictly preserves the reference
+function buildImprovementPrompt(args: { instructions: string; styleDescription: string; mainTitle: string; subtitle: string; date?: string; additionalImageDescription?: string }) {
+  const { instructions, styleDescription, mainTitle, subtitle, date, additionalImageDescription } = args;
+  const lines: string[] = [];
+  lines.push('IMPORTANT: Conserver STRICTEMENT l\'image de référence (composition, cadrage, palette, typographie).');
+  lines.push('Appliquer uniquement les modifications demandées ci-dessous, sans altérer l\'identité visuelle.');
+  if (mainTitle && subtitle) {
+    lines.push(`Texte à afficher: Titre "${mainTitle}" au premier plan, sous-titre "${subtitle}" juste en dessous (au moins deux fois plus petit).`);
+  } else if (mainTitle) {
+    lines.push(`Texte à afficher: Titre "${mainTitle}".`);
+  }
+  if (date && date.trim()) {
+    lines.push(`Ajouter la date "${date.trim()}" en lettres très petites sous le bloc de texte.`);
+  }
+  if (styleDescription && styleDescription.trim()) {
+    lines.push(`Conserver le style: ${styleDescription.trim()}`);
+  }
+  if (additionalImageDescription && additionalImageDescription.trim()) {
+    lines.push(`Contexte (photo jointe): ${additionalImageDescription.trim()}`);
+  }
+  if (instructions && instructions.trim()) {
+    lines.push(`Modifications demandées: ${instructions.trim()}`);
+  }
+  // Final directive
+  lines.push('Ne PAS transformer la scène originale: uniquement les ajouts/corrections explicitement listés.');
+  return lines.join('\n');
+}
+
+// Edit an existing image by providing a reference image along with a prompt
+async function generateImageEdit(prompt: string, referenceImageUrlOrData: string): Promise<string> {
+  if (!openAIApiKey) throw new Error('OPENAI_API_KEY not set');
+
+  const form = new FormData();
+  form.append('model', 'gpt-image-1');
+  form.append('prompt', prompt);
+  form.append('size', '1024x1536');
+  form.append('n', '1');
+  form.append('quality', 'medium');
+
+  const blob = await fetchImageBlob(referenceImageUrlOrData);
+  form.append('image', blob, 'reference.png');
+
+  const resp = await fetch('https://api.openai.com/v1/images/edits', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+    },
+    body: form,
+  });
+  const data = await resp.json();
+  if (!resp.ok) {
+    console.error('OpenAI image edit failed:', data);
+    throw new Error(data?.error?.message || `OpenAI image edit API returned ${resp.status}`);
+  }
+  if (!data.data || !data.data.length || !data.data[0].b64_json) {
+    console.error('No image data in OpenAI edit response:', data);
+    throw new Error('No edited image returned by OpenAI');
+  }
+  return data.data[0].b64_json as string;
+}
+
+async function fetchImageBlob(imageUrlOrData: string): Promise<Blob> {
+  // Accept http(s) URL, data URL or raw base64
+  if (imageUrlOrData.startsWith('http://') || imageUrlOrData.startsWith('https://')) {
+    const r = await fetch(imageUrlOrData);
+    if (!r.ok) throw new Error(`Failed to fetch reference image: ${r.status}`);
+    const ab = await r.arrayBuffer();
+    return new Blob([ab], { type: r.headers.get('content-type') || 'image/png' });
+  }
+  if (imageUrlOrData.startsWith('data:')) {
+    // convert data URL to blob
+    const res = await fetch(imageUrlOrData);
+    const ab = await res.arrayBuffer();
+    return new Blob([ab], { type: 'image/png' });
+  }
+  // Raw base64
+  const bytes = base64ToUint8Array(imageUrlOrData);
+  return new Blob([bytes], { type: 'image/png' });
 }
 
 function base64ToUint8Array(base64: string): Uint8Array {

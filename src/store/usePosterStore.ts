@@ -25,6 +25,8 @@ interface PosterStore {
   selectedPosterUrl: string | null;
   // Library selection (poster catalog)
   selectedLibraryPosterId: string | null;
+  // Iteration reference from an existing poster URL
+  improvementRefUrl: string | null;
   selectedFormat: Format | 'A2';
   selectedQuality: Quality | null;
   price: number;
@@ -41,6 +43,7 @@ interface PosterStore {
   setSelectedPosterUrl: (url: string | null) => void;
   setSelectedLibraryPosterId: (id: string | null) => void;
   clearSelectedLibraryPoster: () => void;
+  setImprovementRefUrl: (url: string | null) => void;
   setSelectedFormat: (format: Format | null) => void;
   setSelectedQuality: (quality: Quality | null) => void;
   calculatePrice: () => void;
@@ -60,6 +63,7 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
   selectedPoster: null,
   selectedPosterUrl: null,
   selectedLibraryPosterId: null,
+  improvementRefUrl: null,
   selectedFormat: null,
   selectedQuality: 'classic',
   price: 0,
@@ -92,6 +96,10 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
   setSelectedLibraryPosterId: (id) => {
     set({ selectedLibraryPosterId: id });
     // Do not persist selection automatically; only session-level state
+  },
+
+  setImprovementRefUrl: (url) => {
+    set({ improvementRefUrl: url });
   },
 
   clearSelectedLibraryPoster: () => {

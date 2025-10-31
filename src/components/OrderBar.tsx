@@ -54,7 +54,7 @@ const OrderBar = () => {
     >
       <div className="bg-white/60 backdrop-blur rounded-2xl ring-1 ring-[#c8d9f2]
                   flex justify-between items-center gap-3 md:gap-4 p-3 md:p-4">
-        <span className="text-lg md:text-xl font-semibold">
+        <span className="text-base sm:text-lg md:text-xl font-semibold whitespace-nowrap">
           {(() => {
             const fmt = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 });
             if (hasIncludedPlanActive) return `Prix : ${fmt.format(0)}`;

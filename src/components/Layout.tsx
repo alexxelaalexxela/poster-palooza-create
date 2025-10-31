@@ -269,7 +269,7 @@ function CartList() {
           </div>
         )}
         <SheetClose asChild>
-          <Link to="/order" className="block mt-3">
+          <Link to="/order?cart=1" className="block mt-3">
             <Button className="w-full">Commander</Button>
           </Link>
         </SheetClose>

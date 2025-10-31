@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 // shadcn/ui components
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock, X, Info, ArrowUp, Settings } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Lock, X, Info, ArrowUp, Settings, Sparkles } from "lucide-react";
 import { useTypingPlaceholder } from "./useTypingPlaceholder";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFingerprint } from "@/hooks/useFingerprint";
@@ -218,7 +218,7 @@ const TemplateDropdown = ({ onUpgrade, isPaid }: { onUpgrade: () => void; isPaid
                 );
               })}
             </div>
-
+            
             {!atEnd && (
               <div className="sm:hidden pointer-events-none absolute inset-y-0 right-0 flex items-center pr-1 bg-gradient-to-l from-white/90 via-white/60 to-transparent rounded-r-xl">
                 <ChevronRight className="text-indigo-500 animate-pulse" size={20} />
@@ -243,7 +243,7 @@ const PromptBar = () => {
   const visitorId = useFingerprint();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const { selectedTemplate, selectedLibraryPosterId, setSelectedLibraryPosterId, setGeneratedUrls, setCachedUrls } = usePosterStore();
+  const { selectedTemplate, selectedLibraryPosterId, setSelectedLibraryPosterId, setGeneratedUrls, setCachedUrls, improvementRefUrl, setImprovementRefUrl } = usePosterStore();
   const { toast } = useToast();
   const [showUpgrade, setShowUpgrade] = useState(false);
   // const [showOffer, setShowOffer] = useState(false);
@@ -254,9 +254,21 @@ const PromptBar = () => {
 
   // État image uploadée
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [isIterating, setIsIterating] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const typingPlaceholder = useTypingPlaceholder(examples, prompt !== "");
+  const iterationExamples = [
+    "Enlever une personne au premier plan",
+    "Rendre le ciel plus orangé",
+    "Le garçon a les cheveux blonds",
+    "Réduire la taille des personnages",
+    "Ajouter un surfeur au loin",
+    "Remplacer la ville par Biarritz",
+    "Augmenter le contraste et la saturation",
+  ];
+  const typingPlaceholder = isIterating
+    ? useTypingPlaceholder(iterationExamples, prompt !== "")
+    : useTypingPlaceholder(examples, prompt !== "");
   const [showStyleInfo, setShowStyleInfo] = useState(false);
   const isMobile = useIsMobile();
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
@@ -271,7 +283,7 @@ const PromptBar = () => {
 
 
   const handleGenerate = async () => {
-    if (!prompt.trim() && !imageDataUrl) {
+    if (!prompt.trim() && !imageDataUrl && !(isIterating && improvementRefUrl)) {
       toast({ title: "Ajoutez un prompt ou une image", description: "Décrivez votre idée ou importez une image.", variant: "destructive" });
       return;
     }
@@ -302,13 +314,16 @@ const PromptBar = () => {
       const pageUrl = typeof window !== 'undefined' ? window.location.href : undefined;
       const { data } = await supabase.functions.invoke("generate-posters", {
         body: {
-          prompt: prompt.trim(),
+          prompt: isIterating ? "" : prompt.trim(),
           templateName: name,
           templateDescription: description,
           libraryPosterId: libraryPoster?.id,
           hasImage: !!imageDataUrl,
           imageDataUrl: imageDataUrl ?? undefined,
           visitorId,
+          // Iteration fields
+          iterateFromUrl: isIterating && improvementRefUrl ? improvementRefUrl : undefined,
+          improvementInstructions: isIterating ? (prompt.trim() || undefined) : undefined,
           fbEventId: trialEventId,
           fbp,
           fbc,
@@ -344,6 +359,7 @@ const PromptBar = () => {
       toast({ title: "Posters générés !", description: "Vos posters sont prêts." });
       setPrompt("");
       setImageDataUrl(null);
+      if (isIterating) { setImprovementRefUrl(null); setIsIterating(false); }
       // Conserver les paramètres manuels pour la session; ne pas reset
       
       // Demande aux composants d'actualiser les compteurs (profils/visiteur)
@@ -469,6 +485,23 @@ const PromptBar = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Focus PromptBar when coming from gallery "Améliorer"
+  useEffect(() => {
+    const onFocusPrompt = () => {
+      try {
+        const el = document.getElementById('prompt-textarea') as HTMLTextAreaElement | null;
+        if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      } catch {}
+      if (improvementRefUrl) setIsIterating(true);
+    };
+    window.addEventListener('promptbar:focus', onFocusPrompt);
+    return () => window.removeEventListener('promptbar:focus', onFocusPrompt);
+  }, [improvementRefUrl]);
+
+  useEffect(() => {
+    if (improvementRefUrl) setIsIterating(true);
+  }, [improvementRefUrl]);
+
   return (
     <>
       <motion.section initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className="space-y-4 sm:space-y-6">
@@ -498,30 +531,61 @@ const PromptBar = () => {
         {/* Compteur intégré dans la barre ci-dessous */}
 
         <div className="w-full sm:max-w-lg md:max-w-2xl px-0 sm:px-0 mx-auto">
-          <div className="relative bg-white/70 backdrop-blur rounded-3xl ring-1 ring-[#c8d9f2] p-2 sm:p-3">
-            {/* Attempts pill in top-right */}
-            {attemptsRemaining !== null && (
-              <div className="absolute top-2 right-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold border shadow-sm
-                        ${((attemptsRemaining / Math.max(1, maxAttempts)) * 100) > 66 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : ((attemptsRemaining / Math.max(1, maxAttempts)) * 100) > 33 ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-rose-50 text-rose-700 border-rose-200'}`}
-                      aria-label={`Tentatives restantes ${attemptsRemaining} sur ${maxAttempts}`}
-                    >
-                      {attemptsRemaining}/{maxAttempts}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" sideOffset={6} className="px-3 py-2 text-sm">
-                    <span className="font-medium text-gray-800">{attemptsRemaining} tentatives restantes</span>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
+          <div className={`relative bg-white/70 backdrop-blur rounded-3xl ring-1 ring-[#c8d9f2] ${isIterating ? 'p-3 sm:p-4 md:p-5' : 'p-2 sm:p-3'}`}>
+            {/* Header row: attempts pill (right) */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0" />
+              {attemptsRemaining !== null && (
+                <div className="shrink-0">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold border shadow-sm
+                          ${((attemptsRemaining / Math.max(1, maxAttempts)) * 100) > 66 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : ((attemptsRemaining / Math.max(1, maxAttempts)) * 100) > 33 ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border-rose-200'}`}
+                        aria-label={`Tentatives restantes ${attemptsRemaining} sur ${maxAttempts}`}
+                      >
+                        {attemptsRemaining}/{maxAttempts}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" sideOffset={6} className="px-3 py-2 text-sm">
+                      <span className="font-medium text-gray-800">{attemptsRemaining} tentatives restantes</span>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+            </div>
             <div className="space-y-1.5 sm:space-y-3">
+              {/* Iteration preview (compact, above composer) */}
+              {isIterating && improvementRefUrl && (
+                <div className="rounded-xl bg-amber-50/70 ring-1 ring-amber-200 p-2 sm:p-3 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="inline-flex items-center gap-2 text-amber-900">
+                      <Sparkles className="w-4 h-4" />
+                      <span className="text-xs sm:text-sm font-medium">Amélioration activée — décrivez vos modifications</span>
+                      <button
+                        type="button"
+                        onClick={() => { setImprovementRefUrl(null); setIsIterating(false); }}
+                        className="text-amber-800 hover:text-amber-900 text-xs"
+                        aria-label="Désactiver l'amélioration"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                    <div className="rounded-md border border-amber-200 bg-white p-1">
+                      <img
+                        src={improvementRefUrl}
+                        alt="Poster à améliorer"
+                        className="w-24 sm:w-28 md:w-32 h-auto object-contain rounded select-none pointer-events-none"
+                        draggable={false}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+ 
               {/* Selected library poster banner */}
               {selectedLibraryPoster && (
                 <div className="bg-indigo-50/80 border border-indigo-100 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2">
@@ -573,7 +637,7 @@ const PromptBar = () => {
                   )}
                 </div>
               )}
-              {/* Composer */}
+              {/* Composer (always visible) */}
               <div className="flex items-end gap-2">
                 <textarea
                   value={prompt}
@@ -581,7 +645,8 @@ const PromptBar = () => {
                   onKeyPress={handleKeyPress}
                   placeholder={typingPlaceholder}
                   className="flex-1 bg-transparent border-none focus:border-none focus:ring-0 outline-none resize-none px-2.5 sm:px-4 pt-8 sm:pt-7 pb-2.5 sm:pb-4 text-[16px] sm:text-base leading-relaxed"
-                  rows={isMobile ? 2 : 3}
+                  id="prompt-textarea"
+                  rows={isMobile ? (isIterating ? 3 : 2) : (isIterating ? 4 : 3)}
                   disabled={isGenerating}
                 />
               </div>
@@ -590,7 +655,7 @@ const PromptBar = () => {
               <div className="flex items-center justify-between px-1.5 sm:px-2 pb-2">
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   {/* Style pill (opens dropdown) */}
-                  {!selectedLibraryPoster && (
+                  {!selectedLibraryPoster && !isIterating && (
                     <TemplateDropdown onUpgrade={() => setShowUpgrade(true)} isPaid={isPaid} />
                   )}
                   {/* Photo pill */}
