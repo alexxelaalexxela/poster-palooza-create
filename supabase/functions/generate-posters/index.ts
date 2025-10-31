@@ -133,7 +133,7 @@ serve(async (req) => {
 
     // Iteration: do not describe the reference poster here; handled later in edit flow
 
-    // Determine titles based on manual inputs
+    // Determine titles based on manual inputs (skip auto-generation in improvement mode)
     let mainTitle = '';
     let subtitle = '';
     const hasManualTitle = !!(manualTitle && manualTitle.trim());
@@ -144,8 +144,8 @@ serve(async (req) => {
       // 1) User provided a title -> do not generate
       mainTitle = manualTitle!.trim();
       subtitle = hasManualSubtitle ? manualSubtitle!.trim() : '';
-    } else {
-      // 2) No manual title: generate, then optionally override subtitle, and add date later in prompt composition
+    } else if (!iterateFromUrl) {
+      // 2) Normal generation flow: generate title, optionally override subtitle
       console.log('Generating title from prompt...');
       console.log(effectivePrompt);
       const generatedTitle = await generateTitle(effectivePrompt);
@@ -159,6 +159,11 @@ serve(async (req) => {
           subtitle = '';
         }
       }
+      if (hasManualSubtitle) {
+        subtitle = manualSubtitle!.trim();
+      }
+    } else {
+      // 3) Improvement mode without manual title: do not auto-generate titles
       if (hasManualSubtitle) {
         subtitle = manualSubtitle!.trim();
       }
@@ -676,13 +681,31 @@ async function generateImage(prompt: string): Promise<string> {
 async function composeImprovementPromptWithGPT(args: { userInstructions: string; additionalImageDescription?: string; styleDescription: string; mainTitle: string; subtitle: string; date?: string }): Promise<string> {
   if (!openAIApiKey) throw new Error('OPENAI_API_KEY not set');
   const { userInstructions, additionalImageDescription, styleDescription, mainTitle, subtitle, date } = args;
-  const system = `You are a senior prompt engineer creating prompts for GPT-Image edits.
-Your output must be a SINGLE plain text prompt (no JSON, no notes) that:
-- Enforces: "Keep the reference image EXACTLY as-is (composition, framing, palette, typography)."
-- Applies ONLY the requested modifications.
-- Preserves the aesthetic : ${styleDescription || '(style unspecified)'}.
-- If provided, includes text layout: main title "${mainTitle || ''}" prominently, subtitle "${subtitle || ''}" directly below (≥2x smaller),${date && date.trim() ? ` and a small date "${date.trim()}" under the block` : ''}.
-- If an extra user photo description is provided, integrate it as additional context, not as a replacement of the reference image.`;
+  const hasTitle = !!(mainTitle && mainTitle.trim());
+  const hasSubtitle = !!(subtitle && subtitle.trim());
+  const hasDate = !!(date && date.trim());
+  const hasAttachedPhotoDesc = !!(additionalImageDescription && additionalImageDescription.trim());
+  const systemBullets: string[] = [
+    'You are a senior prompt engineer creating prompts for GPT-Image edits.',
+    'Your output must be a SINGLE plain text prompt in english (no JSON, no notes) that:',
+    '- Enforces: "Keep the reference image EXACTLY as-is (composition, framing, palette, typography)."',
+    '- Applies ONLY the requested modifications. ',
+    '- Ensure any changes fully preserve and match the existing aesthetic/style of the poster; modifications must integrate seamlessly with the rest of the image.',
+    'Recreate the input poster as faithfully as possible, keeping every visual detail identical unless a modification is explicitly requested. Only apply the described changes — everything else must remain unchanged.',
+  ];
+  if (hasTitle || hasSubtitle || hasDate) {
+    const parts: string[] = [];
+    if (hasTitle) parts.push(`modify the main title "${mainTitle!.trim()}" prominently`);
+    if (hasSubtitle) parts.push(`modify the subtitle "${subtitle!.trim()}" directly below (≥2x smaller)`);
+    let textLayout = parts.length ? `- If provided, includes text layout: ${parts.join(', ')}` : '';
+    if (hasDate) textLayout += `, and a small date "${date!.trim()}" under the block`;
+    textLayout += '.';
+    systemBullets.push(textLayout);
+  }
+  if (hasAttachedPhotoDesc) {
+    systemBullets.push('- Integrate the attached photo context, not as a replacement of the reference image.');
+  }
+  const system = systemBullets.join('\n');
 
   const details: string[] = [];
   if (additionalImageDescription && additionalImageDescription.trim()) {
@@ -708,7 +731,7 @@ Your output must be a SINGLE plain text prompt (no JSON, no notes) that:
         { role: 'system', content: system },
         { role: 'user', content: user },
       ],
-      temperature: 0.6,
+      temperature: 0.4,
       max_tokens: 400,
     }),
   });
@@ -798,6 +821,7 @@ async function fetchImageBlob(imageUrlOrData: string): Promise<Blob> {
   }
   // Raw base64
   const bytes = base64ToUint8Array(imageUrlOrData);
+  console.log('bytes', bytes);
   return new Blob([bytes], { type: 'image/png' });
 }
 

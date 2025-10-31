@@ -13,6 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useFingerprint } from "@/hooks/useFingerprint";
 
 import { UpgradeModal } from "@/components/UpgradeModal";
+import Watermark from "@/components/Watermark";
 import { AttemptsCounter } from "@/components/AttemptsCounter";
 // import OfferModal from "@/components/OfferModal"; // switched to full page route
 
@@ -34,13 +35,15 @@ interface TemplateMeta {
 const templates: Record<number, TemplateMeta> = {
   1: {
     name: "Vintage",
-    description: `Illustration vectorielle minimaliste au style rétro, inspirée des affiches touristiques vintage. La scène représente un paysage naturel épuré, avec de larges aplats de couleurs chaudes et douces (sable, ocre, orange, verts doux ou teintes adaptées au thème), sans contours ni détails superflus ! Perspective simple avec un horizon visible et possiblement un couché de soleil (ex. : plage et mer sous un soleil couchant). 
-      
-      Les personnages, s'ils sont présents, sont stylisés de manière minimaliste mais colorée : pas de silhouettes sombres ou noires, mais des corps représentés avec des aplats de couleurs variées et harmonieuses. Ils n'ont PAS de traits du visage ! mais des postures expressives et naturelles. Les vêtements et accessoires sont également représentés sans ombres ni textures, avec des couleurs unies. L'objectif est de garder un style vivant mais épuré, sans tomber dans un effet "ombre chinoise". Ils ne doivent pas prendre tout l'espace, seulement 1/5 de la surface.
+    description: `Minimalist vector illustration in a retro style, inspired by vintage travel posters. The scene depicts a clean, natural landscape with large, flat areas of warm and soft colors (sand, ochre, orange, gentle greens, or tones matching the theme), without outlines or unnecessary details. The perspective is simple, with a visible horizon and possibly a sunset (e.g., beach and sea under a setting sun).
 
-      La composition est équilibrée, avec un titre centré en haut de l'image, écrit en lettres majuscules, utilisant une typographie sans-serif épaisse, arrondie et bien espacée, dans une couleur qui contraste agréablement avec le fond.
-      Il faut absulument que le prompt dise qu'on veut un paysage naturel épuré avec des forme et large aplat et que les personnage soit minimaliste coloré et sans traits de visage .
-      `,
+If characters are present, they are stylized in a minimalist yet colorful way: no dark or black silhouettes, but bodies shown in harmonious, varied color blocks. They have no facial features, only expressive and natural postures. Clothing and accessories are also shown without shadows or textures, using solid colors. The goal is to maintain a vibrant yet clean style—avoiding any “silhouette” or “shadow puppet” effect. The characters should not occupy more than one-fifth of the image space.
+
+The composition is balanced, with a centered title at the top of the image, written in uppercase letters using a thick, rounded, sans-serif typeface, in a color that contrasts nicely with the background.
+
+It is essential that the prompt clearly specifies:
+	•	a clean, natural landscape with simple shapes and large color areas, and
+	•	minimalist, colorful characters without facial features.`,
     thumbnail: "/images/poster10.png",
   },
   2: {
@@ -574,7 +577,10 @@ const PromptBar = () => {
                         <X size={14} />
                       </button>
                     </div>
-                    <div className="rounded-md border border-amber-200 bg-white p-1">
+                    <div className="relative rounded-md border border-amber-200 bg-white p-1">
+                      {!isPaid && (
+                        <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
+                      )}
                       <img
                         src={improvementRefUrl}
                         alt="Poster à améliorer"
