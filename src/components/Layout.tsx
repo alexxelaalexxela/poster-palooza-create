@@ -11,6 +11,7 @@ import { usePosterStore } from '@/store/usePosterStore';
 import PromoCode from '@/components/PromoCode';
 import { getPriceEuros, SHIPPING_FEE_CENTS } from '@/lib/pricing';
 import { useCartSync } from '@/hooks/useCartSync';
+import { Separator } from '@/components/ui/separator';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -254,10 +255,13 @@ function CartList() {
           <span className="font-semibold">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(subtotal)}</span>
         </div>
         {promoApplied && discount > 0 && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-green-700">Code promo (−{promoPercent}%)</span>
-            <span className="font-medium text-green-700">−{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(discount)}</span>
-          </div>
+          <>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-green-700">Code promo (−{promoPercent}%)</span>
+              <span className="font-medium text-green-700">−{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(discount)}</span>
+            </div>
+            <Separator className="my-1 bg-gray-200" />
+          </>
         )}
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-800 font-medium">Sous-total après réduction</span>

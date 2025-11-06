@@ -1,13 +1,24 @@
+// Optional per-poster metadata loaded from JSON (labels, rank, note)
+// You can edit src/lib/postersMeta.json to control labels/rank/rating per ID
+// JSON shape: { "1": { "labels": ["ville"], "rank": 1, "note": 4.5 }, ... }
+// Vite bundler supports JSON imports
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import postersMeta from './postersMeta.json';
+
 export interface PosterCatalogItem {
   id: string;
   title: string;
   styleName?: string; // short style label used in UI
   priceCents: number;
   imageUrl: string;
+  imageOnlyUrl?: string; // poster-only variant used for adaptation reference
   rating: number; // 0–5
   ratingCount: number;
   stripePriceId: string; // reserved for future use (Stripe Price ID)
   stylePrompt: string; // used to augment prompt when customizing
+  labels?: string[]; // e.g., ['ville','vintage']
+  rank?: number;     // preferred order (1..N)
 }
 
 // Reusable style prompts (to avoid duplication across posters)
@@ -179,156 +190,70 @@ const EPURER_SOBRE = `
 	•	Le texte est centré, de couleur blanche, et se détache clairement du fond.
 `;
 
-export const posterCatalog: PosterCatalogItem[] = [
-  {
-    id: 'surfTorch',
-    title: 'Surf à la Torch',
-    styleName: 'Vintage Neoma',
-    priceCents: 4499,
-    imageUrl: '/images/poster666.png',
-    rating: 4.8,
-    ratingCount: 1,
-    stripePriceId: '',
-    stylePrompt: VINTAGE_APLATS_STYLE,
-  },
-  {
-    id: 'rolandgarros',
-    title: 'Tennis à Roland Garros',
-    styleName: 'Vintage Cadre Blanc',
-    priceCents: 4499,
-    imageUrl: '/images/poster777.png',
-    rating: 4.5,
-    ratingCount: 2,
-    stripePriceId: '',
-    stylePrompt: STYLE_CADRE_BLANC_VIN,
-  },
-  {
-    id: 'rando-mont-fuji',
-    title: 'Randonné au Mont Fuji ',
-    styleName: 'Vintage Neoma',
-    priceCents: 4499,
-    imageUrl: '/images/poster111.png',
-    rating: 4.8,
-    ratingCount: 2,
-    stripePriceId: 'price_vintage_cote_azur_a2',
-    stylePrompt: VINTAGE_APLATS_STYLE,
-  },
-  {
-    id: 'plongeon-zurich',
-    title: 'Plongeon de Zurich',
-    styleName: 'Vintage Neoma',
-    priceCents: 4499,                  // affichage seulement, le paiement reste format×qualité
-    imageUrl: '/images/poster555.png',
-    rating: 4.6,
-    ratingCount: 1,
-    stripePriceId: '',                 // pas utilisé aujourd’hui, laisse vide
-    stylePrompt: VINTAGE_APLATS_STYLE
-  },
-  {
-    id: 'tennis-paris',
-    title: 'Tennis à Paris',
-    styleName: 'Épuré',
-    priceCents: 4499,
-    imageUrl: '/images/poster999.png',
-    rating: 4.7,
-    ratingCount: 1,
-    stripePriceId: 'price_street_art_pop_a2',
-    stylePrompt: EPURER_SOBRE,
-  },
-  
-  {
-    id: 'plongee-koh-tao',
-    title: 'Plongée a Koh Tao',
-    styleName: 'Vintage Neoma',
-    priceCents: 4499,
-    imageUrl: '/images/poster444.png',
-    rating: 4.7,
-    ratingCount: 3,
-    stripePriceId: 'price_street_art_pop_a2',
-    stylePrompt: VINTAGE_APLATS_STYLE,
-  },
-  {
-    id: 'reserve-afrique-sud',
-    title: 'Réserve Afrique du Sud',
-    styleName: 'Vintage Neoma',
-    priceCents: 4499,
-    imageUrl: '/images/poster888.png',
-    rating: 4.4,
-    ratingCount: 1,
-    stripePriceId: 'price_street_art_pop_a2',
-    stylePrompt: VINTAGE_APLATS_STYLE,
-  },
-  {
-    id: 'football-paris',
-    title: 'Football à Paris',
-    styleName: 'Épuré',
-    priceCents: 4499,
-    imageUrl: '/images/poster1212.png',
-    rating: 4.7,
-    ratingCount: 1,
-    stripePriceId: 'price_minimaliste_rivage_a2',
-    stylePrompt: EPURER_SOBRE,
-  },
+// Build catalog dynamically from Supabase Storage
+// Base path configurable via environment for easy deployment changes
+const SUPABASE_LIBRARY_BASE: string = 'https://jzjwaadxzaqvsjcnqabj.supabase.co/storage/v1/object/public/assets/posters';
+const SUPABASE_LIBRARY_MAX: number = 109;
 
-  
-  {
-    id: 'wing-foil-boston',
-    title: 'Wing Foil à Boston',
-    styleName: 'Vintage Neoma',
+// Labels and order defined in code (fill as needed)
+// Only allowed labels: 'voiture', 'ville', 'vintage', 'art'
+const ALLOWED_LABELS = ['voiture', 'ville', 'vintage', 'art'];
+// Optional overrides; leave empty to auto-generate for all 1..110
+const LABELS_BY_ID: Record<string, string[]> = {};
+// Optional rank overrides; by default rank = id (1..110)
+const RANK_BY_ID: Record<string, number> = {};
+
+type PosterMeta = { labels?: string[]; rank?: number; note?: number; ratingCount?: number; title?: string };
+const META_BY_ID: Record<string, PosterMeta> = (postersMeta as any) || {};
+
+function defaultLabelsForId(idNum: number): string[] {
+  // Deterministic 1-2 labels from allowed set, covering all 110 IDs
+  const a = ALLOWED_LABELS[(idNum - 1) % ALLOWED_LABELS.length];
+  const b = ALLOWED_LABELS[Math.floor((idNum - 1) / ALLOWED_LABELS.length) % ALLOWED_LABELS.length];
+  return a === b ? [a] : [a, b];
+}
+
+function buildImageUrl(id: string, withFrame: boolean): string {
+  if (SUPABASE_LIBRARY_BASE) {
+    const file = withFrame ? `${id}_cadre.png` : `${id}.png`;
+    return `${SUPABASE_LIBRARY_BASE}/${id}/${file}`;
+    
+  }
+  // Fallback to local and avoid breaking builds
+  return withFrame ? `/images/${id}.png` : `/images/${id}.png`;
+}
+
+export const posterCatalog: PosterCatalogItem[] = Array.from({ length: SUPABASE_LIBRARY_MAX }, (_, i) => {
+  const id = String(i + 1);
+  const idNum = i + 1;
+  const meta = META_BY_ID[id] || {};
+  // Rank is optional preference (lower = higher). If not provided in JSON or overrides, leave undefined.
+  const rank = (typeof meta.rank === 'number' ? meta.rank : undefined) ?? (RANK_BY_ID[id] !== undefined ? RANK_BY_ID[id] : undefined);
+  const labelsRaw = (Array.isArray(meta.labels) && meta.labels.length ? meta.labels : (LABELS_BY_ID[id] && LABELS_BY_ID[id]!.length ? LABELS_BY_ID[id]! : defaultLabelsForId(idNum)));
+  const labels = labelsRaw.filter((l) => ALLOWED_LABELS.includes(l));
+  const rating = typeof meta.note === 'number' ? meta.note : 0;
+  const ratingCount = typeof meta.ratingCount === 'number' ? meta.ratingCount : 0;
+  const title = (typeof meta.title === 'string' && meta.title.trim()) ? meta.title.trim() : `Poster ${id}`;
+  return {
+    id,
+    title,
+    styleName: 'Neoma',
     priceCents: 4499,
-    imageUrl: '/images/poster1010.png',
-    rating: 4.5,
-    ratingCount: 1,
-    stripePriceId: 'price_minimaliste_rivage_a2',
+    imageUrl: buildImageUrl(id, true),
+    imageOnlyUrl: buildImageUrl(id, false),
+    rating,
+    ratingCount,
+    stripePriceId: '',
     stylePrompt: VINTAGE_APLATS_STYLE,
-  }, 
-  {
-    id: 'plongee-corse',
-    title: 'Plongée en Corse',
-    styleName: 'Vintage Cadre Blanc',
-    priceCents: 4499,
-    imageUrl: '/images/poster1111.png',
-    rating: 4.3,
-    ratingCount: 3,
-    stripePriceId: 'price_minimaliste_rivage_a2',
-    stylePrompt: STYLE_CADRE_BLANC_VIN,
-  },
-  {
-    id: 'surfeurs-vintage',
-    title: '2 surfeurs vintage',
-    styleName: 'Vintage Cadre Blanc',
-    priceCents: 4499,
-    imageUrl: '/images/poster222.png',
-    rating: 4.6,
-    ratingCount: 1,
-    stripePriceId: 'price_minimaliste_rivage_a2',
-    stylePrompt: STYLE_CADRE_BLANC_VIN,
-  },
-  {
-    id: 'Surf-californie',
-    title: 'Surf en Californie',
-    styleName: 'Vintage Cadre Blanc',
-    priceCents: 4499,
-    imageUrl: '/images/poster1313.png',
-    rating: 4.1,
-    ratingCount: 1,
-    stripePriceId: 'price_minimaliste_rivage_a2',
-    stylePrompt: STYLE_CADRE_BLANC_VIN,
-  },
- 
-  {
-    id: 'montagne-alpes',
-    title: '4x4 au milieu des montagnes',
-    styleName: 'Rétro Montagnes',
-    priceCents: 4499,
-    imageUrl: '/images/poster333.png',
-    rating: 4.5,
-    ratingCount: 1,
-    stripePriceId: 'price_city_vintage_a2',
-    stylePrompt: MOUNTAINS_VECTOR_RETRO_STYLE,
-  },
-  
-];
+    labels,
+    rank,
+  };
+}).sort((a, b) => {
+  const ra = typeof a.rank === 'number' ? a.rank : Number.POSITIVE_INFINITY;
+  const rb = typeof b.rank === 'number' ? b.rank : Number.POSITIVE_INFINITY;
+  if (ra !== rb) return ra - rb;
+  return Number(a.id) - Number(b.id);
+});
 
 export function findPosterById(id: string | null | undefined): PosterCatalogItem | null {
   if (!id) return null;

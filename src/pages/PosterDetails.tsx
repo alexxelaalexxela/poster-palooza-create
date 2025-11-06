@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { findPosterById } from '@/lib/posterCatalog';
 import { usePosterStore, Format, Quality } from '@/store/usePosterStore';
 import { motion } from 'framer-motion';
-import { Star, ArrowLeft, Sparkles, ShoppingCart, Info, Check } from 'lucide-react';
+import { Star, ArrowLeft, Sparkles, ShoppingCart, Info, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getPriceCents, SHIPPING_FEE_CENTS } from '@/lib/pricing';
 import { Helmet } from 'react-helmet-async';
-import { buildCanonical, truncate } from '@/lib/utils';
+import { buildCanonical, truncate, buildNetlifyImageUrl, buildNetlifySrcSet } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 function formatPriceEUR(cents: number): string {
@@ -19,11 +19,22 @@ export default function PosterDetails() {
   const { id } = useParams();
   const poster = useMemo(() => findPosterById(id), [id]);
 
-  const { setSelectedLibraryPosterId, setSelectedPosterUrl, setSelectedFormat, setSelectedQuality } = usePosterStore();
+  const { setSelectedLibraryPosterId, setSelectedPosterUrl, setSelectedFormat, setSelectedQuality, applyPromoCode, promoApplied, promoPercent, promoCode } = usePosterStore();
+  const sliderRef = useRef<HTMLDivElement | null>(null);
 
-  const [tempFormat, setTempFormat] = useState<Format>('A2');
-  const [tempQuality, setTempQuality] = useState<Quality>('premium');
-  const computedPrice = useMemo(() => {
+  const scrollDetail = (dir: 'next' | 'prev') => {
+    const el = sliderRef.current;
+    if (!el) return;
+    const width = el.clientWidth;
+    const current = Math.round(el.scrollLeft / Math.max(1, width));
+    const maxIndex = 1;
+    const next = dir === 'next' ? Math.min(current + 1, maxIndex) : Math.max(current - 1, 0);
+    el.scrollTo({ left: next * width, behavior: 'smooth' });
+  };
+
+  const [tempFormat, setTempFormat] = useState<Format>('A3');
+  const [tempQuality, setTempQuality] = useState<Quality>('classic');
+  const basePrice = useMemo(() => {
     if (!poster) return 0;
     const q = (tempQuality === 'paper2' ? 'premium' : tempQuality) as 'classic' | 'premium' | 'museum';
     try {
@@ -36,11 +47,24 @@ export default function PosterDetails() {
     }
   }, [poster, tempFormat, tempQuality]);
 
+  const computedPrice = useMemo(() => {
+    const p = basePrice;
+    const discounted = promoApplied && (promoPercent || 0) > 0
+      ? Math.max(0, Math.round(p * (1 - (promoPercent! / 100))))
+      : p;
+    return discounted;
+  }, [basePrice, promoApplied, promoPercent]);
+
   useEffect(() => {
     if (!poster) return;
     const img = new Image();
     img.src = poster.imageUrl;
   }, [poster]);
+
+  // Apply promo automatically for next page (Order)
+  useEffect(() => {
+    try { applyPromoCode('FIRST100'); } catch {}
+  }, [applyPromoCode]);
 
   if (!poster) {
     return (
@@ -57,6 +81,7 @@ export default function PosterDetails() {
   const handleCustomize = () => {
     setSelectedLibraryPosterId(poster.id);
     navigate(`/?selectedPoster=${encodeURIComponent(poster.id)}`);
+    try { setTimeout(() => { window.dispatchEvent(new CustomEvent('promptbar:focus')); }, 0); } catch {}
   };
 
   const handleOrder = () => {
@@ -110,7 +135,7 @@ export default function PosterDetails() {
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
         <div className="grid lg:grid-cols-2 gap-10">
-          {/* Image */}
+          {/* Image slider (2 images) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -118,7 +143,41 @@ export default function PosterDetails() {
             className="relative"
           >
             <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-gray-50 border border-gray-200">
-              <img src={poster.imageUrl} alt={poster.title} className="w-full h-full object-cover" />
+              <div ref={sliderRef} className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory">
+                <img
+                  src={buildNetlifyImageUrl(poster.imageUrl, { width: 1200, quality: 80 })}
+                  srcSet={buildNetlifySrcSet(poster.imageUrl, [600, 900, 1200, 1500])}
+                  alt={poster.title}
+                  className="w-full h-full object-cover shrink-0 snap-center"
+                />
+                <img
+                  src={buildNetlifyImageUrl(poster.imageOnlyUrl || poster.imageUrl, { width: 1200, quality: 80 })}
+                  srcSet={buildNetlifySrcSet(poster.imageOnlyUrl || poster.imageUrl, [600, 900, 1200, 1500])}
+                  alt={`${poster.title} — poster seul`}
+                  className="w-full h-full object-contain bg-white shrink-0 snap-center"
+                />
+              </div>
+              {/* Subtle arrows to hint horizontal sliding (clickable) */}
+              <button
+                type="button"
+                onClick={() => scrollDetail('prev')}
+                className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded-full bg-black/15 hover:bg-black/25 text-white/70 focus:outline-none focus:ring-0"
+                aria-label="Image précédente"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollDetail('next')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded-full bg-black/15 hover:bg-black/25 text-white/70 focus:outline-none focus:ring-0"
+                aria-label="Image suivante"
+              >
+                <ChevronRight size={16} />
+              </button>
+              <div className="absolute bottom-2 inset-x-0 flex items-center justify-center gap-1 pointer-events-none">
+                <span className="w-1.5 h-1.5 rounded-full bg-black/70" />
+                <span className="w-1.5 h-1.5 rounded-full bg-black/30" />
+              </div>
             </div>
           </motion.div>
 
@@ -131,27 +190,45 @@ export default function PosterDetails() {
           >
             <div className="space-y-3">
               <h1 className="text-3xl font-bold text-gray-900">{poster.title}</h1>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 text-amber-500">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} size={16} className={i < Math.round(poster.rating) ? '' : 'text-gray-300'} fill={i < Math.round(poster.rating) ? 'currentColor' : 'none'} />
-                  ))}
+              {poster.rating > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 text-amber-500">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} size={16} className={i < Math.round(poster.rating) ? '' : 'text-gray-300'} fill={i < Math.round(poster.rating) ? 'currentColor' : 'none'} />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600">{poster.rating} ({poster.ratingCount} avis)</span>
                 </div>
-                <span className="text-sm text-gray-600">{poster.rating} ({poster.ratingCount} avis)</span>
+              )}
+              <div>
+                {promoApplied && (promoPercent || 0) > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-500 line-through">{formatPriceEUR(basePrice)}</span>
+                      <span className="text-2xl font-bold text-indigo-700">{formatPriceEUR(computedPrice)}</span>
+                    </div>
+                    <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 text-xs px-2 py-0.5">
+                      -{promoPercent}% {promoCode ? promoCode : ''}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-2xl font-bold text-indigo-700">{formatPriceEUR(basePrice)}</span>
+                )}
               </div>
-              <div className="text-2xl font-bold text-indigo-700">{formatPriceEUR(computedPrice)}</div>
             </div>
 
             <div className="mt-6 space-y-4">
               <div>
                 <p className="text-sm text-gray-600 leading-snug">
-                Recréez votre propre affiche dans ce même style visuel: décrivez précisément le contenu (lieu, destinations, sujet, personnes…) — seul le style est copié 
+                  Personnalisez cette affiche à votre image grâce à l’IA.
+                  <br />
+                  Vous pouvez personnaliser les personnages, le lieu et les détails tout en conservant le style d’origine.
                 </p>
                 <div className="mt-2">
                 
                   <Button onClick={handleCustomize} className="bg-indigo-600 hover:bg-indigo-700 inline-flex items-center gap-2">
                     <Sparkles className="w-4 h-4" />
-                    <span>Copier le style avec Neoma</span>
+                    <span>Adapter pour vous avec l’IA</span>
                   </Button>
                   
                 </div>

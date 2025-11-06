@@ -269,9 +269,26 @@ const PromptBar = () => {
     "Remplacer la ville par Biarritz",
     "Augmenter le contraste et la saturation",
   ];
+  const adaptExamples = [
+    "Je veux que le ciel soit plus orangé, comme un coucher de soleil d’été",
+    "Je veux plutôt qu’il y ait 3 garçons dans le poster",
+  "Je veux que les personnages soient blonds",
+  "Je veux que ce soit à Paris et pas à Londres",
+  "Je veux qu’il y ait une rivière en plus dans la scène",
+  "Je veux que tu rajoutes un chat noir avec les gens",
+  "Je veux que ce soit au lever du soleil",
+  "Je veux remplacer la mer par un champ de lavande",
+  "Je veux que les personnages portent des vêtements d’hiver",
+  "Je veux ajouter une voiture vintage garée à côté",
+  "Je veux qu’il y ait un couple assis sur un banc dans le fond"
+  ];
+  const selectedLibraryPoster = findPosterById(selectedLibraryPosterId || undefined);
+  
   const typingPlaceholder = isIterating
     ? useTypingPlaceholder(iterationExamples, prompt !== "")
-    : useTypingPlaceholder(examples, prompt !== "");
+    : (selectedLibraryPoster
+        ? useTypingPlaceholder(adaptExamples, prompt !== "")
+        : useTypingPlaceholder(examples, prompt !== ""));
   const [showStyleInfo, setShowStyleInfo] = useState(false);
   const isMobile = useIsMobile();
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
@@ -309,6 +326,26 @@ const PromptBar = () => {
       const useTemplate = !libraryPoster;
       const { name, description } = useTemplate ? getTemplate(selectedTemplate) : { name: "LibraryPoster", description: libraryPoster?.stylePrompt || "" };
 
+      // Build adapt reference as data URL for Edge (cannot fetch localhost)
+      let adaptUrl: string | undefined;
+      if (!isIterating && libraryPoster) {
+        const src = (libraryPoster as any).imageOnlyUrl || libraryPoster.imageUrl;
+        if (/^https?:\/\//i.test(src)) {
+          adaptUrl = src;
+        } else {
+          try {
+            const res = await fetch(src);
+            const blob = await res.blob();
+            adaptUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = () => reject(new Error('dataURL conversion failed'));
+              reader.readAsDataURL(blob);
+            });
+          } catch {}
+        }
+      }
+
       /* ②  appel Supabase */
       // Prepare Meta identifiers for StartTrial dedupe
       const trialEventId = crypto.randomUUID();
@@ -321,6 +358,7 @@ const PromptBar = () => {
           templateName: name,
           templateDescription: description,
           libraryPosterId: libraryPoster?.id,
+          adaptFromUrl: adaptUrl,
           hasImage: !!imageDataUrl,
           imageDataUrl: imageDataUrl ?? undefined,
           visitorId,
@@ -432,7 +470,6 @@ const PromptBar = () => {
   };
 
   const currentTemplate = getTemplate(selectedTemplate);
-  const selectedLibraryPoster = findPosterById(selectedLibraryPosterId || undefined);
 
   // Hydration on homepage: only from URL param, otherwise clear selection
   useEffect(() => {
@@ -591,56 +628,40 @@ const PromptBar = () => {
                   </div>
                 </div>
               )}
- 
-              {/* Selected library poster banner */}
-              {selectedLibraryPoster && (
-                <div className="bg-indigo-50/80 border border-indigo-100 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2">
-                  <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <img src={selectedLibraryPoster.imageUrl} alt={selectedLibraryPoster.title} className="w-8 h-8 sm:w-10 sm:h-10 object-cover rounded-lg border border-indigo-200" />
-                    <div className="flex flex-col">
-                      <span className="text-xs sm:text-sm text-indigo-900 inline-flex items-center gap-2">
-                        <strong className="font-semibold">Style sélectionné : </strong>
-                        <span className="text-indigo-800/80 truncate max-w-[140px] sm:max-w-none">{selectedLibraryPoster.styleName || selectedLibraryPoster.title}</span>
-                        <button
-                          type="button"
-                          onClick={() => setShowStyleInfo((v) => !v)}
-                          className="hidden sm:inline-flex items-center gap-1 text-[11px] text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded whitespace-normal break-words cursor-pointer"
-                          title="En savoir plus"
-                        >
-                          <Info size={12} />
-                          <span>Seul le style est appliqué</span>
-                        </button>
-                      </span>
-                      {/* Mobile info toggler */}
+
+              {/* Adaptation banner (from Library) */}
+              {selectedLibraryPoster && !isIterating && (
+                <div className="rounded-xl bg-amber-50/70 ring-1 ring-amber-200 p-2 sm:p-3 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="inline-flex items-center gap-2 text-amber-900">
+                      <Sparkles className="w-4 h-4" />
+                      <span className="text-xs sm:text-sm font-medium"> Crée ta version personnalisée de ce poster</span>
                       <button
                         type="button"
-                        onClick={() => setShowStyleInfo((v) => !v)}
-                        className="sm:hidden inline-flex items-center justify-start gap-1 text-[11px] text-indigo-800 mt-1"
+                        onClick={() => {
+                          setSelectedLibraryPosterId(null);
+                          const p = new URLSearchParams(searchParams);
+                          p.delete('selectedPoster');
+                          setSearchParams(p);
+                        }}
+                        className="text-amber-800 hover:text-amber-900 text-xs"
+                        aria-label="Désactiver l'adaptation"
                       >
-                        <Info size={12} />
-                        <span>En savoir plus</span>
+                        <X size={14} />
                       </button>
                     </div>
+                    <div className="relative rounded-md border border-amber-200 bg-white p-1">
+                      {!isPaid && (
+                        <Watermark visible text="Aperçu • Neoma" opacity={0.12} tileSize={120} fontSize={14} />
+                      )}
+                      <img
+                        src={selectedLibraryPoster.imageUrl}
+                        alt={selectedLibraryPoster.title}
+                        className="w-24 sm:w-28 md:w-32 h-auto object-contain rounded select-none pointer-events-none"
+                        draggable={false}
+                      />
+                    </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      setSelectedLibraryPosterId(null);
-                      const p = new URLSearchParams(searchParams);
-                      p.delete('selectedPoster');
-                      setSearchParams(p);
-                    }}
-                    className="text-indigo-700 hover:text-indigo-900 text-xs sm:text-sm"
-                    aria-label="Retirer l'affiche sélectionnée"
-                  >
-                    <X size={16} />
-                  </button>
-                  </div>
-                  {showStyleInfo && (
-                    <p className="mt-2 text-xs text-indigo-900 whitespace-normal break-words max-w-none sm:max-w-3xl">
-                      Seul le style visuel s’applique à votre poster. Décrivez votre propre scène (lieu, ambiance, personnages).
-                    </p>
-                  )}
                 </div>
               )}
               {/* Composer (always visible) */}

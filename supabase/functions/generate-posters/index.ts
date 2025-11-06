@@ -21,6 +21,7 @@ interface GenerateRequest {
   templateName: string;
   templateDescription: string;
   libraryPosterId?: string;
+  adaptFromUrl?: string;
   hasImage?: boolean;
   imageDataUrl?: string;
   visitorId?: string;
@@ -42,13 +43,14 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, templateName, templateDescription, libraryPosterId, hasImage, imageDataUrl, visitorId, fbEventId, fbp, fbc, pageUrl, manualTitle, manualSubtitle, manualDate, iterateFromUrl, improvementInstructions }: GenerateRequest = await req.json();
+    const { prompt, templateName, templateDescription, libraryPosterId, adaptFromUrl, hasImage, imageDataUrl, visitorId, fbEventId, fbp, fbc, pageUrl, manualTitle, manualSubtitle, manualDate, iterateFromUrl, improvementInstructions }: GenerateRequest = await req.json();
     const reqId = crypto.randomUUID();
     console.log('[gen] reqId=%s received', reqId, {
-      mode: iterateFromUrl ? 'improve' : 'generate',
+      mode: iterateFromUrl ? 'improve' : (adaptFromUrl ? 'adapt' : 'generate'),
       templateName,
       hasImage: !!hasImage,
       iterateFromUrl: !!iterateFromUrl,
+      adaptFromUrl: !!adaptFromUrl,
       hasInstructions: !!(improvementInstructions && improvementInstructions.trim()),
       visitorId,
     });
@@ -116,7 +118,7 @@ serve(async (req) => {
 
     // If an image is provided (normal flow), we can optionally enrich the prompt with a description
     let effectivePrompt = prompt || '';
-    if (!iterateFromUrl) {
+    if (!iterateFromUrl && !adaptFromUrl) {
       if (hasImage && imageDataUrl) {
         try {
           const imageDescription = await describeImage(imageDataUrl);
@@ -144,7 +146,7 @@ serve(async (req) => {
       // 1) User provided a title -> do not generate
       mainTitle = manualTitle!.trim();
       subtitle = hasManualSubtitle ? manualSubtitle!.trim() : '';
-    } else if (!iterateFromUrl) {
+    } else if (!iterateFromUrl && !adaptFromUrl) {
       // 2) Normal generation flow: generate title, optionally override subtitle
       console.log('Generating title from prompt...');
       console.log(effectivePrompt);
@@ -279,6 +281,99 @@ serve(async (req) => {
       }
 
       console.log('[improve] reqId=%s success', reqId, { imageUrls });
+      return new Response(
+        JSON.stringify({ success: true, imageUrls }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Adaptation mode: edit from a selected library poster (non-iteration)
+    if (adaptFromUrl) {
+      console.log('[adapt] reqId=%s compose start', reqId);
+      let adaptationPrompt: string;
+      try {
+        adaptationPrompt = await composeAdaptationPromptWithGPT({
+          userRequest: (effectivePrompt || '').trim(),
+          styleDescription,
+          mainTitle,
+          subtitle,
+          date: normalizedDate,
+        });
+      } catch (e) {
+        console.error('composeAdaptationPromptWithGPT failed, falling back:', e);
+        adaptationPrompt = buildAdaptationPrompt({
+          userRequest: (effectivePrompt || '').trim(),
+          styleDescription,
+          mainTitle,
+          subtitle,
+          date: normalizedDate,
+        });
+      }
+
+      let editedB64: string;
+      try {
+        console.log('[adapt] reqId=%s calling OpenAI image edits', reqId);
+        editedB64 = await generateImageEdit(adaptationPrompt, adaptFromUrl);
+        console.log('[adapt] reqId=%s edits success (b64_len=%s)', reqId, editedB64?.length || 0);
+      } catch (e) {
+        console.error('OpenAI image edit failed (adapt):', e);
+        return new Response(JSON.stringify({ success: false, error: 'Image edit failed' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const pngBytes: Uint8Array = base64ToUint8Array(editedB64);
+      const folder = userId ? `users/${userId}` : `visitors/${visitorId || 'unknown'}`;
+      const publicUrl = await uploadBytesToStorage(pngBytes, folder);
+      console.log('[adapt] reqId=%s upload complete url=%s', reqId, publicUrl);
+
+      const postersWithMeta = [{ url: publicUrl, usedPrompt: adaptationPrompt }];
+      const imageUrls: string[] = [publicUrl];
+
+      if (user) {
+        await supabase.rpc('decrement_generations', { user_id_param: user.id });
+        const posterRows = postersWithMeta.map(({ url }) => ({
+          visitor_id: visitorId,
+          url,
+          user_id: user.id,
+          used_prompt: adaptationPrompt,
+          template: templateName,
+        }));
+        await supabase.from('visitor_posters').insert(posterRows);
+        console.log('[adapt] reqId=%s persist linked to user', reqId);
+      } else if (visitorId) {
+        const { data: existingVisitor } = await supabase
+          .from('visitor_user_links')
+          .select('visitor_id, generation_count')
+          .eq('visitor_id', visitorId)
+          .single();
+        if (existingVisitor) {
+          await supabase
+            .from('visitor_user_links')
+            .update({ 
+              generation_count: (existingVisitor.generation_count || 0) + 1,
+              last_generated_at: new Date().toISOString()
+            })
+            .eq('visitor_id', visitorId);
+        } else {
+          await supabase.from('visitor_user_links').insert({ 
+            visitor_id: visitorId, 
+            generation_count: 1,
+            last_generated_at: new Date().toISOString()
+          });
+        }
+        const posterRows = postersWithMeta.map(({ url }) => ({
+          visitor_id: visitorId,
+          url,
+          used_prompt: adaptationPrompt,
+          template: templateName,
+        }));
+        await supabase.from('visitor_posters').insert(posterRows);
+        console.log('[adapt] reqId=%s persist linked to visitor', reqId);
+      }
+
+      console.log('[adapt] reqId=%s success', reqId, { imageUrls });
       return new Response(
         JSON.stringify({ success: true, imageUrls }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -769,6 +864,85 @@ function buildImprovementPrompt(args: { instructions: string; styleDescription: 
   }
   // Final directive
   lines.push('Ne PAS transformer la scène originale: uniquement les ajouts/corrections explicitement listés.');
+  return lines.join('\n');
+}
+
+// Compose an adaptation prompt to edit from a library poster while allowing content changes but preserving style
+async function composeAdaptationPromptWithGPT(args: { userRequest: string; styleDescription: string; mainTitle: string; subtitle: string; date?: string }): Promise<string> {
+  if (!openAIApiKey) throw new Error('OPENAI_API_KEY not set');
+  const { userRequest, styleDescription, mainTitle, subtitle, date } = args;
+  const hasTitle = !!(mainTitle && mainTitle.trim());
+  const hasSubtitle = !!(subtitle && subtitle.trim());
+  const hasDate = !!(date && date.trim());
+
+  const systemBullets: string[] = [
+    'You are a senior prompt engineer creating prompts for GPT-Image edits.',
+    'Your output must be a SINGLE plain text prompt in english (no JSON, no notes) that:',
+    '- Enforces: "Keep the reference image EXACTLY as-is (composition, framing, palette, typography)."',
+    '- Applies ONLY the requested modifications. ',
+    '- Ensure any changes fully preserve and match the existing aesthetic/style of the poster; modifications must integrate seamlessly with the rest of the image.',
+    'Recreate the input poster as faithfully as possible, keeping every visual detail identical unless a modification is explicitly requested. Only apply the described changes — everything else must remain unchanged.'
+  ];
+  if (hasTitle || hasSubtitle || hasDate) {
+    const parts: string[] = [];
+    if (hasTitle) parts.push(`change the main title to "${mainTitle!.trim()}" prominently`);
+    if (hasSubtitle) parts.push(`and change the subtitle "${subtitle!.trim()}" directly below (≥2x smaller)`);
+    let textLayout = parts.length ? `- Text layout: ${parts.join(' ')}` : '';
+    if (hasDate) textLayout += `, add a small date "${date!.trim()}" under the block.`;
+    if (textLayout) systemBullets.push(textLayout);
+  }
+  
+  const system = systemBullets.join('\n');
+
+  const user = userRequest && userRequest.trim()
+    ? `User request: ${userRequest.trim()}`
+    : 'User request: personalize the scene for the user (light change if unspecified).';
+
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      temperature: 0.4,
+      max_tokens: 400,
+    }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) {
+    throw new Error(data?.error?.message || `OpenAI returned ${resp.status}`);
+  }
+  const content: string = data?.choices?.[0]?.message?.content?.trim?.();
+  if (!content) throw new Error('Empty prompt content');
+  return content;
+}
+
+// Fallback adaptation prompt builder
+function buildAdaptationPrompt(args: { userRequest: string; styleDescription: string; mainTitle: string; subtitle: string; date?: string }) {
+  const { userRequest, styleDescription, mainTitle, subtitle, date } = args;
+  const lines: string[] = [];
+  lines.push('Personalize the reference poster for the user while preserving its style and typography.');
+  if (mainTitle && subtitle) {
+    lines.push(`Maintain text: main title "${mainTitle}" with subtitle "${subtitle}" underneath (≥2x smaller).`);
+  } else if (mainTitle) {
+    lines.push(`Maintain text: main title "${mainTitle}".`);
+  }
+  if (date && date.trim()) {
+    lines.push(`Add a small date "${date.trim()}" under the text block.`);
+  }
+  if (styleDescription && styleDescription.trim()) {
+    lines.push(`Preserve style: ${styleDescription.trim()}`);
+  }
+  if (userRequest && userRequest.trim()) {
+    lines.push(`Apply user changes: ${userRequest.trim()}`);
+  }
+  lines.push('Keep composition close to the reference where possible, adjust only as needed.');
   return lines.join('\n');
 }
 
